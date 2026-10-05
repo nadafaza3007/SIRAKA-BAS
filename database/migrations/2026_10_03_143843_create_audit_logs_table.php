@@ -11,14 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('users', function (Blueprint $table) {
+        Schema::create('audit_logs', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('no_hp')->unique();
-            $table->string('role')->default('pelanggan'); // admin, anggota, pelanggan
-            $table->unsignedBigInteger('konsumen_id')->nullable();
-            $table->string('password');
-            $table->rememberToken();
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('entitas');
+            $table->text('aksi');
             $table->timestamps();
         });
     }
@@ -28,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('users');
+        Schema::dropIfExists('audit_logs');
     }
 };

@@ -3,6 +3,26 @@
 @section('title', 'Data Konsumen - SIRAKA')
 
 @section('content')
+<!-- Banner Notifikasi Alert (Sukses / Error Duplikasi) -->
+@if(session('success'))
+    <div class="mb-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-3 shadow-lg">
+        <i class="fa-solid fa-circle-check text-base"></i>
+        <span>{{ session('success') }}</span>
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-bold flex items-center justify-between shadow-lg">
+        <div class="flex items-center gap-3">
+            <i class="fa-solid fa-triangle-exclamation text-base"></i>
+            <span>{{ session('error') }}</span>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-rose-400 hover:text-white">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+@endif
+
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
     <div>
         <h2 class="text-xl font-extrabold text-white tracking-tight">Data Konsumen & Kendaraan</h2>
@@ -14,8 +34,8 @@
     </button>
 </div>
 
-<!-- Tabel: tampil di layar >= sm -->
-<div class="hidden sm:block bg-ink-900 rounded-2xl border border-neutral-800 shadow-sm overflow-hidden">
+<!-- Tabel Data Konsumen -->
+<div class="bg-ink-900 rounded-2xl border border-neutral-800 shadow-sm overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-left text-xs text-neutral-400">
             <thead class="bg-black/40 border-b border-neutral-800 uppercase font-bold text-neutral-500">
@@ -23,111 +43,90 @@
                     <th class="p-4">Konsumen</th>
                     <th class="p-4">No. HP / WhatsApp</th>
                     <th class="p-4">Kendaraan Terdaftar</th>
-                    <th class="p-4 text-center">Jumlah Unit</th>
+                    <th class="p-4 text-right">Jumlah Unit</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-neutral-800">
                 @forelse ($konsumen as $item)
                     <tr class="hover:bg-neutral-800/40 transition">
                         <td class="p-4 font-bold text-white">{{ $item->nama_lengkap }}</td>
-                        <td class="p-4 font-medium text-neutral-400">{{ $item->no_hp }}</td>
+                        <td class="p-4 text-neutral-300 font-mono">{{ $item->no_hp }}</td>
                         <td class="p-4">
                             <div class="flex flex-wrap gap-1.5">
-                                @foreach($item->kendaraans as $mobil)
-                                    <span class="px-2 py-0.5 rounded bg-neutral-800 border border-neutral-700 text-neutral-300 text-[11px] font-bold">
-                                        {{ $mobil->plat_nomor }} ({{ $mobil->merk }} {{ $mobil->tipe_model }})
+                                @forelse($item->kendaraans as $k)
+                                    <span class="px-2.5 py-1 rounded-lg bg-neutral-800 text-white text-[11px] font-semibold border border-neutral-700">
+                                        <span class="font-bold text-brand-400">{{ $k->plat_nomor }}</span> ({{ $k->merk }} {{ $k->tipe_model }})
                                     </span>
-                                @endforeach
+                                @empty
+                                    <span class="text-neutral-600 italic text-[11px]">Belum ada kendaraan</span>
+                                @endforelse
                             </div>
                         </td>
-                        <td class="p-4 text-center">
-                            <span class="px-2.5 py-0.5 rounded-full bg-brand-500/10 text-brand-400 font-bold">
+                        <td class="p-4 text-right">
+                            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-neutral-800 text-neutral-300">
                                 {{ $item->kendaraans->count() }} Unit
                             </span>
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="4" class="p-8 text-center text-neutral-600">Belum ada data konsumen.</td></tr>
+                    <tr>
+                        <td colspan="4" class="p-8 text-center text-neutral-600">Belum ada data konsumen terdaftar.</td>
+                    </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 </div>
 
-<!-- Kartu list: tampil di mobile -->
-<div class="sm:hidden space-y-3">
-    @forelse ($konsumen as $item)
-        <div class="bg-ink-900 rounded-2xl border border-neutral-800 p-4 shadow-sm">
-            <div class="flex items-start justify-between mb-1">
-                <h3 class="font-bold text-white text-sm">{{ $item->nama_lengkap }}</h3>
-                <span class="px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 text-[10px] font-bold flex items-center gap-1">
-                    <i class="fa-solid fa-car"></i> {{ $item->kendaraans->count() }} Kendaraan
-                </span>
-            </div>
-            <p class="text-xs text-neutral-500 mb-3">{{ $item->no_hp }}</p>
-            <div class="flex flex-wrap gap-1.5">
-                @foreach($item->kendaraans as $mobil)
-                    <span class="px-2 py-0.5 rounded bg-neutral-800 border border-neutral-700 text-neutral-300 text-[11px] font-bold">
-                        {{ $mobil->plat_nomor }}
-                    </span>
-                @endforeach
-            </div>
-        </div>
-    @empty
-        <div class="p-8 text-center text-neutral-600 text-xs bg-ink-900 rounded-2xl border border-neutral-800">Belum ada data konsumen.</div>
-    @endforelse
-</div>
-
-<!-- Modal Tambah Konsumen -->
+<!-- Modal Tambah Konsumen & Kendaraan -->
 <div id="modalTambahKonsumen" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-ink-900 border border-neutral-800 rounded-2xl w-full max-w-lg p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between mb-4 border-b border-neutral-800 pb-3">
-            <h3 class="font-extrabold text-sm text-white">Tambah Konsumen & Mobil</h3>
+            <h3 class="font-extrabold text-sm text-white">Tambah Konsumen & Kendaraan</h3>
             <button onclick="document.getElementById('modalTambahKonsumen').classList.add('hidden')" class="text-neutral-500 hover:text-white">
                 <i class="fa-solid fa-xmark"></i>
             </button>
         </div>
-        <form action="{{ route('admin.konsumen.store') }}" method="POST" class="space-y-3 text-xs">
+        <form action="{{ route('admin.konsumen.store') }}" method="POST" class="space-y-4 text-xs">
             @csrf
-            <div class="p-3 bg-black/40 rounded-xl space-y-2 border border-neutral-800">
-                <span class="font-extrabold text-neutral-500 uppercase text-[10px]">Data Pemilik</span>
+            
+            <!-- Identitas Konsumen -->
+            <div class="space-y-3">
+                <span class="text-[10px] font-extrabold text-brand-400 uppercase tracking-wider block">1. Identitas Konsumen</span>
                 <div>
                     <label class="block font-bold mb-1 text-neutral-300">Nama Lengkap *</label>
-                    <input type="text" name="nama_lengkap" required class="w-full p-2 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                    <input type="text" name="nama_lengkap" value="{{ old('nama_lengkap') }}" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Contoh: Nada Faza Suhaila">
                 </div>
                 <div>
-                    <label class="block font-bold mb-1 text-neutral-300">Nomor HP/WhatsApp *</label>
-                    <input type="text" name="no_hp" required class="w-full p-2 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="08xxxxxxxxxx">
+                    <label class="block font-bold mb-1 text-neutral-300">No. HP / WhatsApp *</label>
+                    <input type="text" name="no_hp" value="{{ old('no_hp') }}" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="083166644732">
                 </div>
             </div>
 
-            <div class="p-3 bg-black/40 rounded-xl space-y-2 border border-neutral-800">
-                <span class="font-extrabold text-neutral-500 uppercase text-[10px]">Data Unit Pertama</span>
-                <div class="grid grid-cols-2 gap-2">
-                    <div>
-                        <label class="block font-bold mb-1 text-neutral-300">Nomor Polisi (Plat) *</label>
-                        <input type="text" name="plat_nomor" required class="w-full p-2 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-lg uppercase focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="BM 1234 XX">
-                    </div>
-                    <div>
-                        <label class="block font-bold mb-1 text-neutral-300">Tahun</label>
-                        <input type="number" name="tahun" class="w-full p-2 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="2021">
-                    </div>
+            <hr class="border-neutral-800 my-2">
+
+            <!-- Identitas Kendaraan -->
+            <div class="space-y-3">
+                <span class="text-[10px] font-extrabold text-brand-400 uppercase tracking-wider block">2. Data Kendaraan Utama</span>
+                <div>
+                    <label class="block font-bold mb-1 text-neutral-300">Plat Nomor Kendaraan *</label>
+                    <input type="text" name="kendaraan[0][plat_nomor]" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl uppercase font-bold text-brand-400 focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="BM 1234 XX">
                 </div>
-                <div class="grid grid-cols-2 gap-2">
+                <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block font-bold mb-1 text-neutral-300">Merk (Toyota, Honda, dll) *</label>
-                        <input type="text" name="merk" required class="w-full p-2 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                        <label class="block font-bold mb-1 text-neutral-300">Merk *</label>
+                        <input type="text" name="kendaraan[0][merk]" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Toyota">
                     </div>
                     <div>
-                        <label class="block font-bold mb-1 text-neutral-300">Tipe / Model (Avanza, Brio) *</label>
-                        <input type="text" name="tipe_model" required class="w-full p-2 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+                        <label class="block font-bold mb-1 text-neutral-300">Tipe / Model *</label>
+                        <input type="text" name="kendaraan[0][tipe_model]" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500" placeholder="Avanza Veloz">
                     </div>
                 </div>
             </div>
 
-            <div class="flex justify-end gap-2 pt-2">
+            <div class="flex justify-end gap-2 pt-4 border-t border-neutral-800">
                 <button type="button" onclick="document.getElementById('modalTambahKonsumen').classList.add('hidden')" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-xl font-bold">Batal</button>
-                <button type="submit" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-bold shadow-md shadow-brand-500/20">Simpan</button>
+                <button type="submit" class="px-4 py-2 bg-brand-500 hover:bg-brand-600 text-white rounded-xl font-bold shadow-md shadow-brand-500/20">Simpan Data</button>
             </div>
         </form>
     </div>

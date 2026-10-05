@@ -46,6 +46,28 @@
         ::-webkit-scrollbar-track { background: #141414; }
         ::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 8px; }
         ::-webkit-scrollbar-thumb:hover { background: #f97316; }
+    @media print {
+        /* Sembunyikan sidebar, navbar, tombol, dan form input saat cetak */
+        .no-print, sidebar, header, nav, button, form {
+            display: none !important;
+        }
+        body {
+            background-color: white !important;
+            color: black !important;
+        }
+        #printAreaStandar {
+            border: none !important;
+            background: transparent !important;
+            color: black !important;
+            box-shadow: none !important;
+            width: 100% !important;
+            padding: 0 !important;
+        }
+        /* Paksa teks berwarna gelap agar terlihat di kertas */
+        #printAreaStandar * {
+            color: black !important;
+        }
+    }
     </style>
 </head>
 <body class="bg-ink-950 text-neutral-200 antialiased flex min-h-screen">
@@ -58,12 +80,14 @@
         <div class="overflow-y-auto">
             <!-- Header Brand Bengkel -->
             <div class="h-16 flex items-center gap-3 px-6 bg-black border-b border-neutral-900 sticky top-0">
-                <div class="w-9 h-9 rounded-lg bg-brand-500 flex items-center justify-center text-white shadow-md shadow-brand-500/30">
-                    <i class="fa-solid fa-wrench text-sm"></i>
-                </div>
+                <img src="{{ asset('images/logo-siraka.png') }}"
+                    alt="Logo SIRAKA"
+                    class="w-9 h-9 object-contain shrink-0">
                 <div>
                     <h1 class="font-extrabold text-sm text-white tracking-wide leading-none">SIRAKA</h1>
-                    <span class="text-[9px] text-brand-400 font-bold uppercase tracking-wider">Admin Bengkel</span>
+                    <span class="text-[9px] text-brand-400 font-bold uppercase tracking-wider">
+                        {{ auth()->check() && auth()->user()->role === 'admin' ? 'Admin Bengkel' : 'Mekanik Bengkel' }}
+                    </span>
                 </div>
                 <button onclick="toggleSidebar()" class="ml-auto lg:hidden text-neutral-500 hover:text-white">
                     <i class="fa-solid fa-xmark"></i>
@@ -88,30 +112,41 @@
                     <span>Data Konsumen</span>
                 </a>
 
-                <div class="pt-3 px-3 py-1.5 text-[10px] uppercase tracking-wider text-neutral-600 font-bold">Master Data (Admin)</div>
-                <a href="{{ route('admin.sparepart.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-neutral-900 hover:text-white transition {{ request()->routeIs('admin.sparepart.*') ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20' : '' }}">
-                    <i class="fa-solid fa-boxes-stacked w-4 text-center"></i>
-                    <span>Master Sparepart</span>
-                </a>
-                <a href="{{ route('admin.jasa.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-neutral-900 hover:text-white transition {{ request()->routeIs('admin.jasa.*') ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20' : '' }}">
-                    <i class="fa-solid fa-screwdriver-wrench w-4 text-center"></i>
-                    <span>Master Jasa</span>
-                </a>
-                <a href="{{ route('admin.diagnosa.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-neutral-900 hover:text-white transition {{ request()->routeIs('admin.diagnosa.*') ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20' : '' }}">
-                    <i class="fa-solid fa-wand-magic-sparkles w-4 text-center"></i>
-                    <span>Master Diagnosa</span>
-                </a>
+                <!-- KHUSUS ADMIN: Master Data & Keuangan (Disembunyikan untuk Mekanik) -->
+                @if(auth()->check() && auth()->user()->role === 'admin')
+                    <div class="pt-3 px-3 py-1.5 text-[10px] uppercase tracking-wider text-neutral-600 font-bold">Master Data (Admin)</div>
+                    <a href="{{ route('admin.sparepart.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-neutral-900 hover:text-white transition {{ request()->routeIs('admin.sparepart.*') ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20' : '' }}">
+                        <i class="fa-solid fa-boxes-stacked w-4 text-center"></i>
+                        <span>Master Sparepart</span>
+                    </a>
+                    <a href="{{ route('admin.jasa.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-neutral-900 hover:text-white transition {{ request()->routeIs('admin.jasa.*') ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20' : '' }}">
+                        <i class="fa-solid fa-screwdriver-wrench w-4 text-center"></i>
+                        <span>Master Jasa</span>
+                    </a>
+                    <a href="{{ route('admin.diagnosa.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-neutral-900 hover:text-white transition {{ request()->routeIs('admin.diagnosa.*') ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20' : '' }}">
+                        <i class="fa-solid fa-wand-magic-sparkles w-4 text-center"></i>
+                        <span>Master Diagnosa</span>
+                    </a>
 
-                <div class="pt-3 px-3 py-1.5 text-[10px] uppercase tracking-wider text-neutral-600 font-bold">Keuangan</div>
-                <a href="{{ route('admin.laporan.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-neutral-900 hover:text-white transition {{ request()->routeIs('admin.laporan.*') ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20' : '' }}">
-                    <i class="fa-solid fa-file-invoice-dollar w-4 text-center"></i>
-                    <span>Laporan Pemasukan</span>
-                </a>
+                    <div class="pt-3 px-3 py-1.5 text-[10px] uppercase tracking-wider text-neutral-600 font-bold">Keuangan</div>
+                    <a href="{{ route('admin.laporan.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-neutral-900 hover:text-white transition {{ request()->routeIs('admin.laporan.*') ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20' : '' }}">
+                        <i class="fa-solid fa-file-invoice-dollar w-4 text-center"></i>
+                        <span>Laporan Pemasukan</span>
+                    </a>
+                @endif
             </nav>
         </div>
 
-        <div class="p-4 border-t border-neutral-900 text-[11px] text-neutral-600 text-center">
-            SIRAKA &copy; {{ date('Y') }}
+        <div class="p-4 border-t border-neutral-900 text-[11px] text-neutral-600 text-center flex flex-col gap-2">
+            <div>SIRAKA &copy; {{ date('Y') }}</div>
+            <!-- Tombol Logout di Sidebar bawah -->
+            <form action="{{ route('logout') }}" method="POST">
+                @csrf
+                <button type="submit" class="w-full py-2 px-3 bg-neutral-900 hover:bg-rose-500/20 text-neutral-400 hover:text-rose-400 rounded-xl font-bold transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <span>Keluar Sistem</span>
+                </button>
+            </form>
         </div>
     </aside>
 
@@ -131,11 +166,12 @@
                     <span class="font-extrabold text-sm text-white">SIRAKA</span>
                 </div>
             </div>
+            <!-- Pojok Kanan Atas: Menampilkan Nama / Username yang sedang login -->
             <div class="flex items-center gap-2 text-xs font-bold text-neutral-300">
                 <div class="w-8 h-8 rounded-full bg-neutral-800 flex items-center justify-center text-brand-500 border border-neutral-700">
                     <i class="fa-solid fa-user"></i>
                 </div>
-                <span class="hidden sm:inline">Admin</span>
+                <span class="hidden sm:inline">{{ auth()->check() ? (auth()->user()->name ?? auth()->user()->username ?? 'Admin') : 'Guest' }}</span>
             </div>
         </header>
 
@@ -145,6 +181,13 @@
                 <div class="mb-5 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-2">
                     <i class="fa-solid fa-circle-check"></i>
                     <span>{{ session('success') }}</span>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>{{ session('error') }}</span>
                 </div>
             @endif
 
@@ -185,6 +228,6 @@
             document.getElementById('sidebarOverlay').classList.toggle('hidden');
         }
     </script>
-
+    @stack('scripts')
 </body>
 </html>

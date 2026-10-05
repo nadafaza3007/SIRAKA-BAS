@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="mb-6">
-    <h2 class="text-xl font-extrabold text-white tracking-tight">Dashboard Utama</h2>
+    <h2 class="text-xl font-extrabold text-white tracking-tight">Panel Owner & Manajerial</h2>
     <p class="text-xs text-neutral-500">Ringkasan operasional bengkel Baba Auto Service.</p>
 </div>
 

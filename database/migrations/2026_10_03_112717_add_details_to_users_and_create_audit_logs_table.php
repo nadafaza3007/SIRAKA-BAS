@@ -11,11 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('catatan_rekomendasis', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('rekam_servis_id')->constrained('rekam_servis')->onDelete('cascade');
-            $table->text('catatan');
-            $table->timestamps();
+        Schema::table('users_and_create_audit_logs', function (Blueprint $table) {
+            //
         });
     }
 
@@ -24,6 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('catatan_rekomendasis');
+        Schema::table('users_and_create_audit_logs', function (Blueprint $table) {
+            //
+        });
     }
 };
