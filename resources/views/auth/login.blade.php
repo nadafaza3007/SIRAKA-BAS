@@ -1,173 +1,609 @@
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
     <title>Login - SIRAKA</title>
-    <!-- Tailwind CSS via CDN -->
+
+    {{-- Tailwind CSS --}}
     <script src="https://cdn.tailwindcss.com"></script>
+
     <script>
         tailwind.config = {
             theme: {
                 extend: {
+                    fontFamily: {
+                        jakarta: [
+                            'Plus Jakarta Sans',
+                            'sans-serif'
+                        ],
+                    },
+
                     colors: {
                         brand: {
                             500: '#f97316',
                             600: '#ea580c',
                         },
+
                         ink: {
-                            950: '#0a0a0a',
-                            900: '#141414',
-                            800: '#1f1f1f',
+                            950: '#080b10',
+                            900: '#11151d',
+                            800: '#171c27',
                         }
                     }
                 }
             }
         }
     </script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+
+    {{-- Font Awesome --}}
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    >
+
+
+    {{-- Google Font --}}
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: scale(.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-in {
+            animation: modalIn .2s ease-out;
+        }
     </style>
+
 </head>
-<body class="bg-ink-950 text-neutral-200 min-h-screen flex flex-col items-center justify-center p-4 relative">
 
-    <!-- POP-UP MODAL BERHASIL MENDAFTAR (Muncul otomatis jika ada session success) -->
-    @if(session('success'))
-        <div id="successModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-            <div class="bg-ink-900 border border-neutral-800 rounded-3xl p-6 sm:p-8 max-w-sm w-full text-center space-y-4 shadow-2xl relative">
-                <!-- Icon Sukses -->
-                <div class="w-16 h-16 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto text-2xl shadow-inner">
+
+<body class="min-h-screen bg-ink-950 text-slate-200">
+
+    {{-- =========================================================
+        MODAL SUCCESS REGISTRASI
+    ========================================================== --}}
+    @if (session('success'))
+
+        <div
+            id="successModal"
+            class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+        >
+
+            <div class="modal-in w-full max-w-sm rounded-3xl border border-slate-700 bg-ink-900 p-7 text-center shadow-2xl">
+
+                <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-emerald-500/20 bg-emerald-500/10 text-2xl text-emerald-400">
+
                     <i class="fa-solid fa-circle-check"></i>
-                </div>
-                
-                <div class="space-y-1">
-                    <h3 class="text-base font-black text-white">Pendaftaran Berhasil!</h3>
-                    <p class="text-xs text-neutral-400 leading-relaxed">{{ session('success') }}</p>
+
                 </div>
 
-                <!-- Tombol Tutup Pop-up -->
-                <button onclick="closeModal()" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/20 transition">
+
+                <h3 class="mt-5 text-lg font-bold text-white">
+                    Pendaftaran Berhasil!
+                </h3>
+
+                <p class="mt-2 text-sm leading-6 text-slate-400">
+                    {{ session('success') }}
+                </p>
+
+
+                <button
+                    type="button"
+                    onclick="closeModal()"
+                    class="mt-6 w-full rounded-xl bg-emerald-500 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-600"
+                >
                     Masuk Sekarang
                 </button>
+
             </div>
+
         </div>
+
     @endif
 
-    <!-- Container Utama -->
-    <div class="w-full max-w-md space-y-6">
-        
-        <!-- Header / Logo di Atas -->
-        <div class="text-center space-y-3">
-            <div class="inline-flex p-2.5 bg-black border border-neutral-800 rounded-3xl shadow-xl">
-                <img src="{{ asset('images/logo-siraka.png') }}" alt="Logo SIRAKA" class="w-14 h-14 object-contain">
-            </div>
-            <div>
-                <h1 class="text-xl font-black tracking-wider text-white">SIRAKA</h1>
-                <p class="text-[11px] text-neutral-400">Sistem Informasi Rekam Kendaraan & Administrasi</p>
-                <p class="text-[11px] text-brand-500 font-bold tracking-widest mt-0.5">BABA AUTO SERVICE</p>
-            </div>
-        </div>
 
-        <!-- Error Alert -->
-        @if($errors->any())
-            <div class="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-400 text-xs font-semibold text-center">
-                {{ $errors->first() }}
-            </div>
-        @endif
 
-        <!-- Card Form Login -->
-        <div class="bg-ink-900 border border-neutral-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
-            <div>
-                <h2 class="text-base font-extrabold text-white">Selamat Datang</h2>
-                <p class="text-xs text-neutral-400 mt-0.5">Masuk untuk mengakses rekam medis kendaraan & layanan.</p>
-            </div>
+    {{-- =========================================================
+        LOGIN WRAPPER
+    ========================================================== --}}
+    <main class="flex min-h-screen items-center justify-center p-4 sm:p-6">
 
-            <form action="{{ route('login.post') }}" method="POST" class="space-y-4">
-                @csrf
-                
-                <!-- Input Username / No HP -->
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-bold text-neutral-300">Username atau Nomor HP</label>
-                    <div class="relative flex items-center">
-                        <span class="absolute left-3.5 text-neutral-500 text-xs">
-                            <i class="fa-solid fa-user"></i>
-                        </span>
-                        <input type="text" name="no_hp" required autofocus
-                            class="w-full py-2.5 pl-10 pr-4 bg-ink-800 border border-neutral-700 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                            placeholder="Contoh: admin / 081234567890">
+        <div class="w-full max-w-6xl overflow-hidden rounded-3xl border border-slate-800 bg-ink-900 shadow-2xl">
+
+            <div class="grid min-h-[650px] grid-cols-1 lg:grid-cols-2">
+
+
+                {{-- =================================================
+                    BAGIAN INFORMASI
+                ================================================== --}}
+                <section class="relative hidden overflow-hidden bg-ink-800 p-10 lg:flex lg:flex-col lg:justify-between xl:p-12">
+
+
+                    {{-- Dekorasi --}}
+                    <div class="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-orange-500/10 blur-3xl"></div>
+
+                    <div class="pointer-events-none absolute -bottom-32 -left-24 h-80 w-80 rounded-full bg-orange-600/5 blur-3xl"></div>
+
+
+
+                    {{-- Logo --}}
+                    <div class="relative z-10">
+
+                        <div class="flex items-center gap-4">
+
+                            <div class="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-slate-700 bg-black shadow-lg">
+
+                                <img
+                                    src="{{ asset('images/logo-siraka.png') }}"
+                                    alt="Logo SIRAKA"
+                                    class="h-full w-full object-cover"
+                                >
+
+                            </div>
+
+
+                            <div>
+
+                                <h2 class="text-2xl font-extrabold tracking-wide text-white">
+                                    SIRAKA
+                                </h2>
+
+                                <p class="mt-0.5 text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
+                                    Baba Auto Service
+                                </p>
+
+                            </div>
+
+                        </div>
+
                     </div>
-                </div>
 
-                <!-- Input Password -->
-                <div class="space-y-1.5">
-                    <label class="block text-xs font-bold text-neutral-300">Kata Sandi</label>
-                    <div class="relative flex items-center">
-                        <span class="absolute left-3.5 text-neutral-500 text-xs">
-                            <i class="fa-solid fa-lock"></i>
-                        </span>
-                        <input type="password" name="password" id="passwordInput" required
-                            class="w-full py-2.5 pl-10 pr-10 bg-ink-800 border border-neutral-700 rounded-xl text-xs text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-brand-500"
-                            placeholder="Masukkan kata sandi">
-                        <button type="button" onclick="togglePassword()" class="absolute right-3.5 text-neutral-500 hover:text-white text-xs">
-                            <i class="fa-solid fa-eye" id="toggleIcon"></i>
-                        </button>
+
+
+                    {{-- Deskripsi --}}
+                    <div class="relative z-10 max-w-lg">
+
+                        <div class="mb-5 inline-flex items-center gap-2 rounded-full border border-orange-500/20 bg-orange-500/10 px-3 py-1.5 text-xs font-semibold text-orange-400">
+
+                            <i class="fa-solid fa-car-side"></i>
+
+                            Portal Kendaraan
+
+                        </div>
+
+
+                        <h1 class="text-4xl font-extrabold leading-tight tracking-tight text-white xl:text-5xl">
+
+                            Pantau Histori &
+                            <br>
+
+                            <span class="text-orange-500">
+                                Performa Kendaraan
+                            </span>
+
+                            Anda
+
+                        </h1>
+
+
+                        <p class="mt-6 max-w-md text-sm leading-7 text-slate-400">
+
+                            Akses informasi kendaraan, riwayat servis,
+                            diagnosa, tindakan mekanik, sparepart,
+                            rekomendasi bengkel, hingga nota servis
+                            dalam satu sistem.
+
+                        </p>
+
+
+
+                        {{-- Fitur ringkas --}}
+                        <div class="mt-8 grid grid-cols-2 gap-3">
+
+                            <div class="rounded-2xl border border-slate-700/70 bg-black/20 p-4">
+
+                                <i class="fa-solid fa-clock-rotate-left text-orange-500"></i>
+
+                                <p class="mt-3 text-sm font-semibold text-white">
+                                    Riwayat Servis
+                                </p>
+
+                                <p class="mt-1 text-xs leading-5 text-slate-500">
+                                    Histori perawatan kendaraan.
+                                </p>
+
+                            </div>
+
+
+                            <div class="rounded-2xl border border-slate-700/70 bg-black/20 p-4">
+
+                                <i class="fa-solid fa-file-invoice text-orange-500"></i>
+
+                                <p class="mt-3 text-sm font-semibold text-white">
+                                    Nota Digital
+                                </p>
+
+                                <p class="mt-1 text-xs leading-5 text-slate-500">
+                                    Rincian biaya servis Anda.
+                                </p>
+
+                            </div>
+
+                        </div>
+
                     </div>
-                </div>
 
-                <!-- Ingat Saya -->
-                <div class="flex items-center justify-between text-xs">
-                    <label class="flex items-center gap-2 cursor-pointer text-neutral-400">
-                        <input type="checkbox" name="remember" class="w-4 h-4 rounded bg-ink-800 border-neutral-700 text-brand-500 focus:ring-brand-500">
-                        <span>Ingat saya di perangkat ini</span>
-                    </label>
-                </div>
 
-                <!-- Tombol Masuk -->
-                <button type="submit" class="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-brand-500/25 transition flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-right-to-bracket"></i>
-                    <span>Masuk ke Sistem</span>
-                </button>
-            </form>
 
-            <!-- Link Daftar -->
-            <div class="text-center text-xs text-neutral-400 pt-2 border-t border-neutral-800">
-                Belum punya akun? <a href="{{ route('register') }}" class="text-brand-500 font-bold hover:underline">Daftar di sini</a>
+                    {{-- Footer kiri --}}
+                    <p class="relative z-10 text-xs text-slate-500">
+                        © {{ date('Y') }} SIRAKA • Baba Auto Service
+                    </p>
+
+                </section>
+
+
+
+                {{-- =================================================
+                    FORM LOGIN
+                ================================================== --}}
+                <section class="flex items-center p-6 sm:p-10 lg:p-12">
+
+                    <div class="mx-auto w-full max-w-md">
+
+
+                        {{-- Logo mobile --}}
+                        <div class="mb-8 flex items-center gap-3 lg:hidden">
+
+                            <div class="h-12 w-12 overflow-hidden rounded-xl border border-slate-700 bg-black">
+
+                                <img
+                                    src="{{ asset('images/logo-siraka.png') }}"
+                                    alt="Logo SIRAKA"
+                                    class="h-full w-full object-cover"
+                                >
+
+                            </div>
+
+                            <div>
+
+                                <p class="font-extrabold tracking-wide text-white">
+                                    SIRAKA
+                                </p>
+
+                                <p class="text-xs text-slate-500">
+                                    Baba Auto Service
+                                </p>
+
+                            </div>
+
+                        </div>
+
+
+
+                        {{-- Header --}}
+                        <div>
+
+                            <p class="text-sm font-semibold text-orange-500">
+                                Selamat datang
+                            </p>
+
+                            <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-white">
+                                Masuk ke SIRAKA
+                            </h1>
+
+                            <p class="mt-2 text-sm leading-6 text-slate-400">
+                                Masukkan username atau nomor HP dan kata
+                                sandi untuk mengakses sistem.
+                            </p>
+
+                        </div>
+
+
+
+                        {{-- =================================================
+                            ERROR
+                        ================================================== --}}
+                        @if ($errors->any())
+
+                            <div class="mt-6 flex items-start gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4">
+
+                                <i class="fa-solid fa-circle-exclamation mt-0.5 text-rose-400"></i>
+
+                                <div>
+
+                                    <p class="text-sm font-semibold text-rose-300">
+                                        Gagal masuk
+                                    </p>
+
+                                    <p class="mt-1 text-xs leading-5 text-rose-400">
+                                        {{ $errors->first() }}
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        @endif
+
+
+
+                        {{-- =================================================
+                            FORM
+                        ================================================== --}}
+                        <form
+                            action="{{ route('login.post') }}"
+                            method="POST"
+                            class="mt-8 space-y-5"
+                        >
+
+                            @csrf
+
+
+                            {{-- Username / No HP --}}
+                            <div>
+
+                                <label
+                                    for="no_hp"
+                                    class="mb-2 block text-sm font-semibold text-slate-300"
+                                >
+                                    Username atau Nomor HP
+                                </label>
+
+
+                                <div class="relative">
+
+                                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500">
+
+                                        <i class="fa-solid fa-user text-sm"></i>
+
+                                    </span>
+
+
+                                    <input
+                                        id="no_hp"
+                                        type="text"
+                                        name="no_hp"
+                                        value="{{ old('no_hp') }}"
+                                        required
+                                        autofocus
+                                        autocomplete="username"
+                                        placeholder="Contoh: admin atau 081234567890"
+                                        class="w-full rounded-xl border border-slate-700 bg-ink-800 py-3.5 pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                                    >
+
+                                </div>
+
+                            </div>
+
+
+
+                            {{-- Password --}}
+                            <div>
+
+                                <div class="mb-2 flex items-center justify-between gap-3">
+
+                                    <label
+                                        for="passwordInput"
+                                        class="block text-sm font-semibold text-slate-300"
+                                    >
+                                        Kata Sandi
+                                    </label>
+
+
+                                    @if (Route::has('password.request'))
+
+                                        <a
+                                            href="{{ route('password.request') }}"
+                                            class="text-xs font-semibold text-orange-500 transition hover:text-orange-400"
+                                        >
+                                            Lupa kata sandi?
+                                        </a>
+
+                                    @endif
+
+                                </div>
+
+
+                                <div class="relative">
+
+                                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-500">
+
+                                        <i class="fa-solid fa-lock text-sm"></i>
+
+                                    </span>
+
+
+                                    <input
+                                        id="passwordInput"
+                                        type="password"
+                                        name="password"
+                                        required
+                                        autocomplete="current-password"
+                                        placeholder="Masukkan kata sandi"
+                                        class="w-full rounded-xl border border-slate-700 bg-ink-800 py-3.5 pl-11 pr-12 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                                    >
+
+
+                                    <button
+                                        type="button"
+                                        onclick="togglePassword()"
+                                        aria-label="Tampilkan atau sembunyikan kata sandi"
+                                        class="absolute inset-y-0 right-0 flex items-center px-4 text-slate-500 transition hover:text-white"
+                                    >
+
+                                        <i
+                                            id="toggleIcon"
+                                            class="fa-solid fa-eye text-sm"
+                                        ></i>
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+
+
+                            {{-- Remember --}}
+                            <div class="flex items-center">
+
+                                <label class="flex cursor-pointer items-center gap-2.5 text-sm text-slate-400">
+
+                                    <input
+                                        type="checkbox"
+                                        name="remember"
+                                        value="1"
+                                        class="h-4 w-4 rounded border-slate-700 bg-ink-800 text-orange-500 focus:ring-orange-500"
+                                    >
+
+                                    <span>
+                                        Ingat saya di perangkat ini
+                                    </span>
+
+                                </label>
+
+                            </div>
+
+
+
+                            {{-- Login --}}
+                            <button
+                                type="submit"
+                                class="flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-500/20 transition hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 focus:ring-offset-ink-900"
+                            >
+
+                                <i class="fa-solid fa-right-to-bracket"></i>
+
+                                Masuk ke Sistem
+
+                            </button>
+
+                        </form>
+
+
+
+                        {{-- =================================================
+                            REGISTER
+                        ================================================== --}}
+                        <div class="mt-7 border-t border-slate-800 pt-6 text-center">
+
+                            <p class="text-sm text-slate-400">
+
+                                Belum punya akun?
+
+                                <a
+                                    href="{{ route('register') }}"
+                                    class="ml-1 font-semibold text-orange-500 transition hover:text-orange-400"
+                                >
+                                    Registrasi sekarang
+                                </a>
+
+                            </p>
+
+                        </div>
+
+
+
+                        {{-- Mobile copyright --}}
+                        <p class="mt-8 text-center text-xs text-slate-600 lg:hidden">
+                            © {{ date('Y') }} SIRAKA • Baba Auto Service
+                        </p>
+
+                    </div>
+
+                </section>
+
             </div>
+
         </div>
 
-        <!-- Footer Copyright -->
-        <div class="text-center text-[11px] text-neutral-500">
-            SIRAKA &copy; {{ date('Y') }} Baba Auto Service &bull; Kelompok 3 PPSI
-        </div>
+    </main>
 
-    </div>
 
-    <!-- Script Toggle Password & Close Modal -->
+
+    {{-- =========================================================
+        JAVASCRIPT
+    ========================================================== --}}
     <script>
+
         function togglePassword() {
-            const input = document.getElementById('passwordInput');
-            const icon = document.getElementById('toggleIcon');
+
+            const input =
+                document.getElementById('passwordInput');
+
+            const icon =
+                document.getElementById('toggleIcon');
+
+
             if (input.type === 'password') {
+
                 input.type = 'text';
+
                 icon.classList.remove('fa-eye');
                 icon.classList.add('fa-eye-slash');
+
             } else {
+
                 input.type = 'password';
+
                 icon.classList.remove('fa-eye-slash');
                 icon.classList.add('fa-eye');
+
             }
+
         }
 
+
         function closeModal() {
-            const modal = document.getElementById('successModal');
+
+            const modal =
+                document.getElementById('successModal');
+
             if (modal) {
-                modal.style.display = 'none';
+                modal.remove();
             }
+
         }
+
     </script>
+
 </body>
+
 </html>
