@@ -28,10 +28,24 @@ class Kendaraan extends Model
 
     /*
     |--------------------------------------------------------------------------
+    | Casts
+    |--------------------------------------------------------------------------
+    |
+    | Field baru: cc, transmisi, jenis_bahan_bakar
+    |
+    */
+    protected $casts = [
+        'cc'                 => 'integer',
+        'transmisi'          => 'string',
+        'jenis_bahan_bakar'  => 'string',
+        'tahun'              => 'integer',
+    ];
+
+    /*
+    |--------------------------------------------------------------------------
     | Relasi
     |--------------------------------------------------------------------------
     */
-
     public function konsumen(): BelongsTo
     {
         return $this->belongsTo(Konsumen::class, 'konsumen_id');
@@ -75,7 +89,6 @@ class Kendaraan extends Model
     | Scope
     |--------------------------------------------------------------------------
     */
-
     /**
      * Memuat data yang diperlukan untuk menentukan
      * status kendaraan pada sisi pelanggan.
@@ -92,7 +105,6 @@ class Kendaraan extends Model
     | Accessor
     |--------------------------------------------------------------------------
     */
-
     /**
      * Contoh:
      * Toyota Avanza Veloz
@@ -112,6 +124,46 @@ class Kendaraan extends Model
     {
         return $this->nama
             . ($this->tahun ? ' ' . $this->tahun : '');
+    }
+
+    /**
+     * Label transmisi untuk ditampilkan ke user.
+     * 
+     * Contoh penggunaan: $kendaraan->transmisi_label
+     */
+    public function getTransmisiLabelAttribute(): string
+    {
+        return match ($this->transmisi) {
+            'manual'   => 'Manual',
+            'otomatis' => 'Otomatis',
+            'cvt'      => 'CVT',
+            default    => '-',
+        };
+    }
+
+    /**
+     * Label bahan bakar untuk ditampilkan ke user.
+     * 
+     * Contoh penggunaan: $kendaraan->bahan_bakar_label
+     */
+    public function getBahanBakarLabelAttribute(): string
+    {
+        return match ($this->jenis_bahan_bakar) {
+            'gasoline' => 'Gasoline',
+            'diesel'   => 'Diesel',
+            default    => '-',
+        };
+    }
+
+    /**
+     * Format CC dengan suffix "cc".
+     * 
+     * Contoh penggunaan: $kendaraan->cc_format
+     * Output: "1500 cc" atau "-"
+     */
+    public function getCcFormatAttribute(): string
+    {
+        return $this->cc ? $this->cc . ' cc' : '-';
     }
 
     /**
@@ -162,10 +214,10 @@ class Kendaraan extends Model
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status_servis) {
-            'baik' => 'Terpantau baik',
+            'baik'         => 'Terpantau baik',
             'perlu_servis' => 'Perlu servis',
-            'dikerjakan' => 'Sedang diproses',
-            default => 'Belum ada riwayat',
+            'dikerjakan'   => 'Sedang diproses',
+            default        => 'Belum ada riwayat',
         };
     }
 
@@ -175,10 +227,10 @@ class Kendaraan extends Model
     public function getStatusToneAttribute(): string
     {
         return match ($this->status_servis) {
-            'baik' => 'green',
+            'baik'         => 'green',
             'perlu_servis' => 'amber',
-            'dikerjakan' => 'blue',
-            default => 'gray',
+            'dikerjakan'   => 'blue',
+            default        => 'gray',
         };
     }
 
