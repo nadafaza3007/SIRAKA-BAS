@@ -69,6 +69,9 @@
         }
     }
     </style>
+
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body class="bg-ink-950 text-neutral-200 antialiased flex min-h-screen">
 
@@ -110,6 +113,10 @@
                 <a href="{{ route('admin.konsumen.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-neutral-900 hover:text-white transition {{ request()->routeIs('admin.konsumen.*') ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20' : '' }}">
                     <i class="fa-solid fa-users w-4 text-center"></i>
                     <span>Data Konsumen</span>
+                </a>
+                <a href="{{ route('admin.inspeksi.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-neutral-900 hover:text-white transition {{ request()->routeIs('admin.inspeksi.*') ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20' : '' }}">
+                    <i class="fa-solid fa-clipboard-check w-4 text-center"></i>
+                    <span>Laporan Inspeksi</span>
                 </a>
 
                 <!-- KHUSUS ADMIN: Master Data & Keuangan (Disembunyikan untuk Mekanik) -->
