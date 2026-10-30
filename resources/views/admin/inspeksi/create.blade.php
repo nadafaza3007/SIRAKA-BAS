@@ -529,37 +529,68 @@ function addEstimasi() {
     <div class="estimasi-row estimasi-grid rounded-xl bg-black/20 p-3">
         <div class="estimasi-field">
             <label class="estimasi-label">Kategori</label>
-            <select name="estimasi[${index}][kategori]" class="rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">
-                <option value="engine">Engine</option><option value="kaki_kaki">Kaki-Kaki</option>
-                <option value="kelistrikan">Kelistrikan</option><option value="exterior">Exterior</option>
+            <select name="estimasi[${index}][kategori]" class="kategori-select rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white" onchange="toggleEstimasiFields(this)">
+                <option value="">-- Pilih Kategori --</option>
+                <option value="mesin">Mesin</option>
+                <option value="kaki_kaki">Kaki-Kaki</option>
+                <option value="kelistrikan">Kelistrikan</option>
+                <option value="interior">Interior</option>
+                <option value="exterior">Exterior</option>
             </select>
         </div>
         <div class="estimasi-field">
             <label class="estimasi-label">Sparepart</label>
-            <select onchange="fillEstimasi(this, 'sp')" class="sp-select rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">${spOptions}</select>
+            <select name="estimasi[${index}][sparepart_id]" onchange="fillEstimasi(this, 'sp')" class="sp-select rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white" disabled>
+                ${spOptions}
+            </select>
         </div>
         <div class="estimasi-field">
             <label class="estimasi-label">Jasa</label>
-            <select onchange="fillEstimasi(this, 'jasa')" class="jasa-select rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">${jasaOptions}</select>
+            <select name="estimasi[${index}][jasa_id]" onchange="fillEstimasi(this, 'jasa')" class="jasa-select rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white" disabled>
+                ${jasaOptions}
+            </select>
         </div>
         <div class="estimasi-field">
             <label class="estimasi-label">Harga Part (Rp)</label>
-            <input type="number" name="estimasi[${index}][harga_part]" value="0" onchange="calcTotal()" oninput="calcTotal()" class="harga-part rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-right text-xs text-white">
+            <input type="number" name="estimasi[${index}][harga_part]" value="0" onchange="calcTotal()" oninput="calcTotal()" class="harga-part rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-right text-xs text-white" readonly>
         </div>
         <div class="estimasi-field">
             <label class="estimasi-label">Harga Jasa (Rp)</label>
-            <input type="number" name="estimasi[${index}][harga_jasa]" value="0" onchange="calcTotal()" oninput="calcTotal()" class="harga-jasa rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-right text-xs text-white">
+            <input type="number" name="estimasi[${index}][harga_jasa]" value="0" onchange="calcTotal()" oninput="calcTotal()" class="harga-jasa rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-right text-xs text-white" readonly>
         </div>
         <div class="estimasi-hapus flex justify-center lg:justify-end">
             <button type="button" onclick="this.closest('.estimasi-row').remove(); calcTotal()" class="text-rose-400 hover:text-rose-300" aria-label="Hapus item estimasi" title="Hapus item">
-                <i class="fa-solid fa-trash"></i><span class="ml-2 text-xs font-semibold lg:hidden">Hapus item</span>
+                <i class="fa-solid fa-trash"></i><span class="ml-2 text-xs font-semibold lg:hidden">Hapus</span>
             </button>
         </div>
-        <input type="hidden" name="estimasi[${index}][sparepart_id]" class="sp-id">
-        <input type="hidden" name="estimasi[${index}][jasa_id]" class="jasa-id">
         <input type="hidden" name="estimasi[${index}][nama_item]" class="nama-item">
     </div>`;
     container.insertAdjacentHTML('beforeend', html);
+}
+
+function toggleEstimasiFields(select) {
+    const row = select.closest('.estimasi-row');
+    const spSelect = row.querySelector('.sp-select');
+    const jasaSelect = row.querySelector('.jasa-select');
+    const hargaPart = row.querySelector('.harga-part');
+    const hargaJasa = row.querySelector('.harga-jasa');
+    const namaItem = row.querySelector('.nama-item');
+    
+    if (select.value === "") {
+        // Jika kategori dikosongkan, disable dan reset field lainnya
+        spSelect.disabled = true;
+        jasaSelect.disabled = true;
+        spSelect.value = "";
+        jasaSelect.value = "";
+        hargaPart.value = 0;
+        hargaJasa.value = 0;
+        namaItem.value = "";
+    } else {
+        // Jika kategori dipilih, enable field sparepart dan jasa
+        spSelect.disabled = false;
+        jasaSelect.disabled = false;
+    }
+    calcTotal();
 }
 
 function fillEstimasi(select, type) {
@@ -568,7 +599,6 @@ function fillEstimasi(select, type) {
     const namaInput = row.querySelector('.nama-item');
     
     if (type === 'sp') {
-        row.querySelector('.sp-id').value = option.value || '';
         if(option.value) {
             namaInput.value = option.dataset.nama;
             row.querySelector('.harga-part').value = option.dataset.harga;
@@ -577,12 +607,12 @@ function fillEstimasi(select, type) {
             row.querySelector('.harga-part').value = 0;
         }
     } else {
-        row.querySelector('.jasa-id').value = option.value || '';
         if(option.value) {
-            namaInput.value = option.dataset.nama;
+            // Gabungkan nama jika keduanya ada
+            const currentNama = namaInput.value;
+            namaInput.value = currentNama ? currentNama + ' + ' + option.dataset.nama : option.dataset.nama;
             row.querySelector('.harga-jasa').value = option.dataset.harga;
         } else {
-            namaInput.value = '';
             row.querySelector('.harga-jasa').value = 0;
         }
     }

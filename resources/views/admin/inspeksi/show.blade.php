@@ -3,17 +3,119 @@
 
 @section('content')
 <style>
-@media screen and (max-width: 639px) {
-  #printAreaStandar { overflow-x: auto; }
-  #printAreaStandar table { min-width: 600px; }
-  #printAreaStandar h1 { font-size: 1rem; overflow-wrap: anywhere; }
+/* ============================================
+   RESPONSIVE MOBILE - Tabel Tetap Tabel, Diperkecil
+   ============================================ */
+@media screen and (max-width: 768px) {
+    #printAreaStandar {
+        padding: 10px !important;
+    }
+    
+    /* Perkecil judul */
+    #printAreaStandar h1 {
+        font-size: 1rem !important;
+    }
+    
+    #printAreaStandar h2 {
+        font-size: 0.75rem !important;
+    }
+    
+    /* Info Kendaraan - tetap 2 kolom tapi lebih rapat */
+    #printAreaStandar .grid-cols-1 {
+        gap: 6px !important;
+    }
+    
+    #printAreaStandar .grid-cols-1 > div {
+        font-size: 11px !important;
+    }
+    
+    /* Kondisi Umum - 3 kolom di HP */
+    #printAreaStandar .sm\:grid-cols-5 {
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 4px !important;
+    }
+    
+    #printAreaStandar .sm\:grid-cols-5 > div {
+        padding: 6px !important;
+        font-size: 10px !important;
+    }
+    
+    /* ===== SEMUA TABEL: PERKECIL FONT & PADDING ===== */
+    #printAreaStandar table {
+        font-size: 10px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+    
+    #printAreaStandar table th {
+        padding: 4px 6px !important;
+        font-size: 9px !important;
+        font-weight: 700 !important;
+    }
+    
+    #printAreaStandar table td {
+        padding: 4px 6px !important;
+        font-size: 10px !important;
+        word-break: break-word !important;
+    }
+    
+    /* Header tabel tetap ada (tidak di-hide) */
+    #printAreaStandar table thead {
+        display: table-header-group !important;
+    }
+    
+    #printAreaStandar table tbody {
+        display: table-row-group !important;
+    }
+    
+    #printAreaStandar table tbody tr {
+        display: table-row !important;
+        margin: 0 !important;
+        border: none !important;
+        padding: 0 !important;
+        background: transparent !important;
+    }
+    
+    #printAreaStandar table tbody td {
+        display: table-cell !important;
+        border: 1px solid #d1d5db !important;
+        padding: 3px 5px !important;
+    }
+    
+    /* Hapus label ::before yang saya buat sebelumnya */
+    #printAreaStandar table tbody td::before {
+        content: none !important;
+    }
+    
+    /* Subtotal row */
+    #printAreaStandar table tbody tr.bg-gray-50 td {
+        background: #f9fafb !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Grand Total - perkecil */
+    #printAreaStandar .text-2xl {
+        font-size: 1.25rem !important;
+    }
+    
+    /* Tanda tangan - tetap horizontal tapi lebih kecil */
+    #printAreaStandar .flex.justify-between {
+        font-size: 10px !important;
+    }
+    
+    #printAreaStandar .flex.justify-between > div {
+        margin-bottom: 40px !important;
+    }
 }
+
+/* Print tetap normal */
 @media print {
-  #printAreaStandar .grid-cols-1 { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
-  #printAreaStandar .sm\:grid-cols-5 { grid-template-columns: repeat(5,minmax(0,1fr)) !important; }
-  #printAreaStandar table { min-width: 0 !important; }
+    #printAreaStandar .grid-cols-1 { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+    #printAreaStandar .sm\:grid-cols-5 { grid-template-columns: repeat(5,minmax(0,1fr)) !important; }
+    #printAreaStandar table { min-width: 0 !important; }
 }
 </style>
+
 {{-- Tombol Aksi (Akan hilang saat di-print) --}}
 <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between no-print">
     <a href="{{ route('admin.inspeksi.index') }}" class="inline-flex items-center gap-2 text-xs font-bold text-neutral-500 hover:text-white">
@@ -217,7 +319,6 @@
             padding: 0 !important; 
             border-radius: 0 !important;
         }
-        /* Paksa warna background tabel saat print */
         .bg-gray-100 { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; }
         .bg-gray-50 { background-color: #f9fafb !important; -webkit-print-color-adjust: exact; }
     }
