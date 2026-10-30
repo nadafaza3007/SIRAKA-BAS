@@ -161,37 +161,30 @@ class RekamServisController extends Controller
         return back()->with('success', 'Rekomendasi ditambahkan.');
     }
 
-        public function konfirmasiNota(Request $request, $id)
-{
-    $servis = RekamServis::with(['detailSpareparts', 'detailJasas'])->findOrFail($id);
-    $subtotal = $servis->subtotal();
-    
-    // Ambil nilai ribuan, lalu kalikan 1000
-    $ribuan = (int) ($request->diskon_ribuan ?? 0);
-    $diskon = $ribuan * 1000;
+    public function konfirmasiNota(Request $request, $id)
+    {
+        $servis = RekamServis::with(['detailSpareparts', 'detailJasas'])->findOrFail($id);
+        $subtotal = $servis->subtotal();
+        $diskon = $request->diskon ?: 0;
+        $totalBiaya = max(0, $subtotal - $diskon);
 
-    if ($diskon > $subtotal) {
-        $diskon = $subtotal;
+        NotaTransaksi::updateOrCreate(
+            ['rekam_servis_id' => $servis->id],
+            [
+                'no_nota' => 'NOTA-' . date('Ymd') . '-' . sprintf('%04d', $servis->id),
+                'tanggal_cetak' => now(),
+                'metode_cetak' => $request->metode_cetak ?: 'standar',
+                'diskon' => $diskon,
+                'total_biaya' => $totalBiaya,
+                'status_pembayaran' => 'lunas',
+            ]
+        );
+
+        $servis->update(['status' => 'selesai']);
+
+        return back()->with('success', 'Nota dikonfirmasi dan servis telah selesai.');
     }
 
-    $totalBiaya = max(0, $subtotal - $diskon);
-
-    NotaTransaksi::updateOrCreate(
-        ['rekam_servis_id' => $servis->id],
-        [
-            'no_nota' => 'NOTA-' . date('Ymd') . '-' . sprintf('%04d', $servis->id),
-            'tanggal_cetak' => now(),
-            'metode_cetak' => $request->metode_cetak ?: 'standar',
-            'diskon' => $diskon,
-            'total_biaya' => $totalBiaya,
-            'status_pembayaran' => 'belum_lunas',
-        ]
-    );
-
-    $servis->update(['status' => 'selesai']);
-
-    return back()->with('success', 'Nota dikonfirmasi dan tagihan telah diterbitkan.');
-}
     public function riwayatIndex(Request $request)
     {
         $query = $request->get('q', '');
