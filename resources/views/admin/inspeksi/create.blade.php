@@ -1,6 +1,87 @@
 @extends('layouts.admin')
 @section('title', 'Buat Laporan Inspeksi - SIRAKA')
 @section('content')
+
+{{-- Tampilan kartu detail inspeksi khusus HP; format field dan name tetap. --}}
+<style>
+@media (max-width: 639px) {
+  [id^="container-"] > .inspeksi-detail-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+    background: #0e0e0e;
+    border: 1px solid #303030;
+  }
+  [id^="container-"] > .inspeksi-detail-row > div {
+    min-width: 0;
+    grid-column: 1 / -1;
+  }
+  [id^="container-"] > .inspeksi-detail-row input,
+  [id^="container-"] > .inspeksi-detail-row select {
+    display: block; width: 100%; min-width: 0;
+    min-height: 44px; font-size: 14px;
+    padding: 10px; text-overflow: ellipsis;
+  }
+  [id^="container-"] > .inspeksi-detail-row > div:last-child {
+    display: flex; justify-content: flex-end;
+  }
+  [id^="container-"] > .inspeksi-detail-row > div:last-child button {
+    min-height: 42px; min-width: 48px;
+    border: 1px solid #4a202e; border-radius: 10px;
+    background: rgba(244,63,94,.10);
+  }
+  /* Pemeriksaan kaki-kaki: status kiri dan kanan sejajar. */
+  #container-kaki_kaki > .inspeksi-detail-row > div:nth-child(2) {grid-column: 1;}
+  #container-kaki_kaki > .inspeksi-detail-row > div:nth-child(3) {grid-column: 2;}
+  #container-kaki_kaki > .inspeksi-detail-row > div:nth-child(2)::before {content: 'Kiri';}
+  #container-kaki_kaki > .inspeksi-detail-row > div:nth-child(3)::before {content: 'Kanan';}
+  #container-kaki_kaki > .inspeksi-detail-row > div:nth-child(2)::before,
+  #container-kaki_kaki > .inspeksi-detail-row > div:nth-child(3)::before {
+    display:block;color:#aaa;font-size:11px;margin-bottom:5px;
+  }
+  /* Label yang tetap bisa dibaca pada form komponen biasa. */
+  [id^="container-"] > .inspeksi-detail-row > div:first-child::before {
+    content:'Komponen'; display:block; color:#aaa; font-size:11px; margin-bottom:5px;
+  }
+  #container-dokumen > .inspeksi-detail-row > div:first-child::before {content:'Dokumen';}
+  [id^="container-"]:not(#container-kaki_kaki) > .inspeksi-detail-row > div:nth-child(2)::before {
+    content:'Kondisi / Status'; display:block; color:#aaa; font-size:11px; margin-bottom:5px;
+  }
+  [id^="container-"]:not(#container-kaki_kaki) > .inspeksi-detail-row > div:nth-child(3)::before,
+  #container-kaki_kaki > .inspeksi-detail-row > div:nth-child(4)::before {
+    content:'Keterangan / Catatan'; display:block; color:#aaa; font-size:11px; margin-bottom:5px;
+  }
+}
+
+/* Estimasi perbaikan: layout berbeda untuk HP dan desktop. */
+.estimasi-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1.25fr) minmax(0, 1.25fr) 44px;
+    gap: 10px;
+    align-items: end;
+}
+.estimasi-field { min-width: 0; }
+.estimasi-label { display: none; }
+.estimasi-header { display: none; }
+@media (min-width: 1024px) { .estimasi-header { display: grid; } }
+.estimasi-field select,
+.estimasi-field input { width: 100%; min-width: 0; min-height: 42px; }
+@media (max-width: 1023px) {
+    .estimasi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .estimasi-row { padding: 14px; border: 1px solid #333; background: #101010; }
+    .estimasi-row > .estimasi-field:nth-child(-n+3) { grid-column: 1 / -1; }
+    .estimasi-row > .estimasi-field:nth-child(4) { grid-column: 1; }
+    .estimasi-row > .estimasi-field:nth-child(5) { grid-column: 2; }
+    .estimasi-row > .estimasi-hapus { grid-column: 1 / -1; justify-self: end; }
+    .estimasi-label { display: block; margin-bottom: 6px; font-size: 11px; font-weight: 600; color: #a3a3a3; }
+    .estimasi-field select,
+    .estimasi-field input { min-height: 46px; padding: 10px 12px; font-size: 16px; }
+    .estimasi-hapus button { min-height: 42px; padding: 0 14px; border: 1px solid #71313b; border-radius: 10px; background: rgba(244,63,94,.1); }
+}
+</style>
+
 <div class="mb-6">
     <a href="{{ route('admin.inspeksi.index') }}" class="mb-4 inline-flex items-center gap-2 text-xs font-bold text-neutral-500 hover:text-white">
         <i class="fa-solid fa-arrow-left"></i> Kembali
@@ -117,9 +198,9 @@
 
         @foreach($sections as $key => $title)
         <section class="rounded-2xl border border-neutral-800 bg-ink-900 p-5">
-            <div class="mb-3 flex items-center justify-between">
+            <div class="mb-3 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h3 class="text-sm font-extrabold text-brand-400">{{ $title }}</h3>
-                <div class="flex gap-2">
+                <div class="flex w-full flex-wrap items-center gap-3 sm:w-auto">
                     <button type="button" onclick="resetDefault('{{ $key }}')" class="text-[10px] font-bold text-sky-400 hover:text-sky-300">
                         <i class="fa-solid fa-rotate-left"></i> Reset Default
                     </button>
@@ -128,15 +209,15 @@
                     </button>
                 </div>
             </div>
-            <div class="space-y-2 max-h-96 overflow-y-auto" id="container-{{ $key }}"></div>
+            <div class="space-y-2 max-h-96 overflow-y-auto min-w-0" id="container-{{ $key }}"></div>
         </section>
         @endforeach
 
         {{-- Kaki-Kaki (Dengan Label Kiri & Kanan) --}}
         <section class="rounded-2xl border border-neutral-800 bg-ink-900 p-5 lg:col-span-2">
-            <div class="mb-3 flex items-center justify-between">
+            <div class="mb-3 flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <h3 class="text-sm font-extrabold text-brand-400">Kaki-Kaki Depan & Belakang</h3>
-                <div class="flex gap-2">
+                <div class="flex w-full flex-wrap items-center gap-3 sm:w-auto">
                     <button type="button" onclick="resetDefault('kaki_kaki')" class="text-[10px] font-bold text-sky-400 hover:text-sky-300">
                         <i class="fa-solid fa-rotate-left"></i> Reset Default
                     </button>
@@ -146,41 +227,46 @@
                 </div>
             </div>
             {{-- HEADER LABEL KIRI & KANAN --}}
-            <div class="mb-2 grid grid-cols-12 gap-2 px-3 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+            <div class="mb-2 hidden sm:grid grid-cols-12 gap-2 px-3 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
                 <div class="col-span-4">Komponen</div>
                 <div class="col-span-2 text-center">Kiri</div>
                 <div class="col-span-2 text-center">Kanan</div>
                 <div class="col-span-3">Catatan</div>
                 <div class="col-span-1"></div>
             </div>
-            <div class="space-y-2 max-h-96 overflow-y-auto" id="container-kaki_kaki"></div>
+            <div class="space-y-2 max-h-96 overflow-y-auto min-w-0" id="container-kaki_kaki"></div>
         </section>
     </div>
 
-    {{-- 3. ESTIMASI PERBAIKAN --}}
-    {{-- 3. ESTIMASI PERBAIKAN (Tanpa Qty) --}}
-<section class="rounded-2xl border border-neutral-800 bg-ink-900 p-5">
-    <div class="mb-4 flex items-center justify-between">
-        <h3 class="text-sm font-extrabold text-brand-400">Estimasi Perbaikan (Rekomendasi)</h3>
-        <button type="button" onclick="addEstimasi()" class="text-[10px] font-bold text-emerald-400 hover:text-emerald-300">+ Tambah Item</button>
-    </div>
-    {{-- HEADER LABEL ESTIMASI --}}
-    <div class="mb-2 grid grid-cols-12 gap-2 px-3 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
-        <div class="col-span-2">Kategori</div>
-        <div class="col-span-3">Sparepart</div>
-        <div class="col-span-3">Jasa</div>
-        <div class="col-span-2 text-right">Harga Part</div>
-        <div class="col-span-1 text-right">Harga Jasa</div>
-        <div class="col-span-1"></div>
-    </div>
-    <div class="space-y-3" id="container-estimasi"></div>
-    <div class="mt-4 flex justify-end border-t border-neutral-800 pt-4">
-        <div class="text-right">
-            <p class="text-[10px] text-neutral-500">Grand Total Estimasi</p>
-            <p class="text-2xl font-extrabold text-emerald-400" id="grandTotal">Rp 0</p>
+    {{-- 3. ESTIMASI PERBAIKAN (REKOMENDASI) --}}
+    <section class="rounded-2xl border border-neutral-800 bg-ink-900 p-4 sm:p-5">
+        <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <h3 class="min-w-0 flex-1 text-sm font-extrabold text-brand-400">Estimasi Perbaikan (Rekomendasi)</h3>
+            <button type="button" onclick="addEstimasi()"
+                class="shrink-0 rounded-lg border border-emerald-500/30 px-3 py-2 text-xs font-bold text-emerald-400 hover:bg-emerald-500/10">
+                <i class="fa-solid fa-plus mr-1"></i> Tambah Item
+            </button>
         </div>
-    </div>
-</section>
+
+        {{-- Judul kolom hanya untuk desktop. Di HP tiap field memiliki label. --}}
+        <div class="estimasi-grid estimasi-header mb-2 px-3 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+            <div>Kategori</div>
+            <div>Sparepart</div>
+            <div>Jasa</div>
+            <div class="text-right">Harga Part</div>
+            <div class="text-right">Harga Jasa</div>
+            <div></div>
+        </div>
+
+        <div class="space-y-3" id="container-estimasi"></div>
+
+        <div class="mt-4 flex justify-end border-t border-neutral-800 pt-4">
+            <div class="text-right">
+                <p class="text-xs text-neutral-400">Grand Total Estimasi</p>
+                <p class="mt-1 text-2xl font-extrabold text-emerald-400" id="grandTotal">Rp 0</p>
+            </div>
+        </div>
+    </section>
 
     {{-- 4. CATATAN & SARAN --}}
     <section class="rounded-2xl border border-neutral-800 bg-ink-900 p-5">
@@ -326,7 +412,7 @@ function addRow(type, komponenName = '', status = 'Baik', keterangan = '') {
 
     if (type === 'kaki_kaki') {
         html = `
-        <div class="grid grid-cols-12 gap-2 rounded-xl bg-black/20 p-3 items-center">
+        <div class="inspeksi-detail-row grid grid-cols-12 gap-2 rounded-xl bg-black/20 p-3 items-center">
             <div class="col-span-4">
                 <input type="text" name="${type}[${index}][komponen]" value="${komponenName}" placeholder="Komponen" 
                     class="w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">
@@ -360,7 +446,7 @@ function addRow(type, komponenName = '', status = 'Baik', keterangan = '') {
     } else if (type === 'dokumen') {
         // ===== DOKUMEN: Pakai Ya / Tidak / N/A =====
         html = `
-        <div class="grid grid-cols-12 gap-2 rounded-xl bg-black/20 p-3 items-center">
+        <div class="inspeksi-detail-row grid grid-cols-12 gap-2 rounded-xl bg-black/20 p-3 items-center">
             <div class="col-span-4">
                 <input type="text" name="${type}[${index}][dokumen]" value="${komponenName}" placeholder="Dokumen" 
                     class="w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">
@@ -386,7 +472,7 @@ function addRow(type, komponenName = '', status = 'Baik', keterangan = '') {
         // ===== SECTION LAIN: Pakai Baik / Cukup / Buruk / N/A =====
         const label = 'Komponen';
         html = `
-        <div class="grid grid-cols-12 gap-2 rounded-xl bg-black/20 p-3 items-center">
+        <div class="inspeksi-detail-row grid grid-cols-12 gap-2 rounded-xl bg-black/20 p-3 items-center">
             <div class="col-span-4">
                 <input type="text" name="${type}[${index}][komponen]" value="${komponenName}" placeholder="${label}" 
                     class="w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">
@@ -440,28 +526,33 @@ function addEstimasi() {
     jasas.forEach(j => jasaOptions += `<option value="${j.id}" data-harga="${j.harga}" data-nama="${j.nama_jasa}">${j.nama_jasa}</option>`);
 
     const html = `
-    <div class="estimasi-row grid grid-cols-12 gap-2 rounded-xl bg-black/20 p-3 items-end">
-        <div class="col-span-2">
-            <select name="estimasi[${index}][kategori]" class="w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">
+    <div class="estimasi-row estimasi-grid rounded-xl bg-black/20 p-3">
+        <div class="estimasi-field">
+            <label class="estimasi-label">Kategori</label>
+            <select name="estimasi[${index}][kategori]" class="rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">
                 <option value="engine">Engine</option><option value="kaki_kaki">Kaki-Kaki</option>
                 <option value="kelistrikan">Kelistrikan</option><option value="exterior">Exterior</option>
             </select>
         </div>
-        <div class="col-span-3">
-            <select onchange="fillEstimasi(this, 'sp')" class="sp-select w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">${spOptions}</select>
+        <div class="estimasi-field">
+            <label class="estimasi-label">Sparepart</label>
+            <select onchange="fillEstimasi(this, 'sp')" class="sp-select rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">${spOptions}</select>
         </div>
-        <div class="col-span-3">
-            <select onchange="fillEstimasi(this, 'jasa')" class="jasa-select w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">${jasaOptions}</select>
+        <div class="estimasi-field">
+            <label class="estimasi-label">Jasa</label>
+            <select onchange="fillEstimasi(this, 'jasa')" class="jasa-select rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">${jasaOptions}</select>
         </div>
-        <div class="col-span-2">
-            <input type="number" name="estimasi[${index}][harga_part]" value="0" onchange="calcTotal()" class="harga-part w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white text-right">
+        <div class="estimasi-field">
+            <label class="estimasi-label">Harga Part (Rp)</label>
+            <input type="number" name="estimasi[${index}][harga_part]" value="0" onchange="calcTotal()" oninput="calcTotal()" class="harga-part rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-right text-xs text-white">
         </div>
-        <div class="col-span-1">
-            <input type="number" name="estimasi[${index}][harga_jasa]" value="0" onchange="calcTotal()" class="harga-jasa w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white text-right">
+        <div class="estimasi-field">
+            <label class="estimasi-label">Harga Jasa (Rp)</label>
+            <input type="number" name="estimasi[${index}][harga_jasa]" value="0" onchange="calcTotal()" oninput="calcTotal()" class="harga-jasa rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-right text-xs text-white">
         </div>
-        <div class="col-span-1 text-center">
-            <button type="button" onclick="this.closest('.estimasi-row').remove(); calcTotal()" class="text-rose-400 hover:text-rose-300">
-                <i class="fa-solid fa-trash"></i>
+        <div class="estimasi-hapus flex justify-center lg:justify-end">
+            <button type="button" onclick="this.closest('.estimasi-row').remove(); calcTotal()" class="text-rose-400 hover:text-rose-300" aria-label="Hapus item estimasi" title="Hapus item">
+                <i class="fa-solid fa-trash"></i><span class="ml-2 text-xs font-semibold lg:hidden">Hapus item</span>
             </button>
         </div>
         <input type="hidden" name="estimasi[${index}][sparepart_id]" class="sp-id">
