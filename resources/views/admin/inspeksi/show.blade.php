@@ -2,8 +2,20 @@
 @section('title', 'Detail Laporan Inspeksi - ' . $inspeksi->nomor_inspeksi)
 
 @section('content')
+<style>
+@media screen and (max-width: 639px) {
+  #printAreaStandar { overflow-x: auto; }
+  #printAreaStandar table { min-width: 600px; }
+  #printAreaStandar h1 { font-size: 1rem; overflow-wrap: anywhere; }
+}
+@media print {
+  #printAreaStandar .grid-cols-1 { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+  #printAreaStandar .sm\:grid-cols-5 { grid-template-columns: repeat(5,minmax(0,1fr)) !important; }
+  #printAreaStandar table { min-width: 0 !important; }
+}
+</style>
 {{-- Tombol Aksi (Akan hilang saat di-print) --}}
-<div class="mb-6 flex items-center justify-between no-print">
+<div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between no-print">
     <a href="{{ route('admin.inspeksi.index') }}" class="inline-flex items-center gap-2 text-xs font-bold text-neutral-500 hover:text-white">
         <i class="fa-solid fa-arrow-left"></i> Kembali ke Daftar
     </a>
@@ -13,7 +25,7 @@
 </div>
 
 {{-- Area Laporan (Akan di-print) --}}
-<div id="printAreaStandar" class="mx-auto max-w-4xl rounded-xl bg-white p-8 text-black shadow-lg">
+<div id="printAreaStandar" class="mx-auto min-w-0 max-w-4xl rounded-xl bg-white p-3 text-black shadow-lg sm:p-8">
     
     {{-- Header Laporan --}}
     <div class="mb-6 border-b-2 border-black pb-4">
@@ -22,7 +34,7 @@
     </div>
 
     {{-- Info Kendaraan --}}
-    <div class="mb-6 grid grid-cols-2 gap-4 text-xs">
+    <div class="mb-6 grid grid-cols-1 gap-3 text-xs sm:grid-cols-2 sm:gap-4">
         <div>
             <p class="font-bold">Merk/Model/Type:</p>
             <p>{{ $inspeksi->kendaraan->merk }} {{ $inspeksi->kendaraan->tipe_model }}</p>
@@ -58,7 +70,7 @@
     </div>
 
     {{-- Kondisi Umum --}}
-    <div class="mb-6 grid grid-cols-5 gap-2 text-center text-xs">
+    <div class="mb-6 grid grid-cols-2 gap-2 text-center text-xs sm:grid-cols-5">
         @php $kondisi = ['mesin', 'transmisi', 'kaki_kaki', 'eksterior', 'interior']; @endphp
         @foreach($kondisi as $k)
             <div class="border border-gray-300 p-2">
