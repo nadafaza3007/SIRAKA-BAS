@@ -42,6 +42,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        html, body { width: 100%; max-width: 100%; }
+        body { overflow-x: clip; }
+        main { min-width: 0; }
+        main > * { max-width: 100%; min-width: 0; }
+        canvas { max-width: 100%; }
+        input, select, textarea { max-width: 100%; }
+        .overflow-x-auto { -webkit-overflow-scrolling: touch; }
+        @media (max-width: 639px) {
+            table { font-size: 11px; }
+            input:not([type="checkbox"]):not([type="radio"]), select, textarea { font-size: 16px; }
+            main { padding-left: 12px !important; padding-right: 12px !important; }
+            .siraka-mobile-scroll { overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; }
+            .siraka-mobile-scroll > table { min-width: 720px; }
+            .siraka-mobile-action { min-height: 44px; }
+            .siraka-mobile-card { min-width: 0; overflow-wrap: anywhere; }
+            .swal2-popup { width: calc(100vw - 28px) !important; }
+        }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: #141414; }
         ::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 8px; }
@@ -79,7 +96,7 @@
     <div id="sidebarOverlay" onclick="toggleSidebar()" class="fixed inset-0 z-30 bg-black/70 backdrop-blur-sm hidden lg:hidden"></div>
 
     <!-- Sidebar Admin (Desktop: statis | Mobile: drawer) -->
-    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-64 bg-black text-neutral-400 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 flex flex-col justify-between border-r border-neutral-900">
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-[min(85vw,18rem)] lg:w-64 bg-black text-neutral-400 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 flex flex-col justify-between border-r border-neutral-900">
         <div class="overflow-y-auto">
             <!-- Header Brand Bengkel -->
             <div class="h-16 flex items-center gap-3 px-6 bg-black border-b border-neutral-900 sticky top-0">
@@ -158,7 +175,7 @@
     </aside>
 
     <!-- Konten Kanan -->
-    <div class="flex-1 lg:pl-64 flex flex-col min-h-screen">
+    <div class="min-w-0 flex-1 lg:pl-64 flex flex-col min-h-screen">
         <!-- Topbar -->
         <header class="h-16 bg-black/95 backdrop-blur border-b border-neutral-900 flex items-center justify-between px-4 sm:px-6 sticky top-0 z-20">
             <div class="flex items-center gap-3">
@@ -183,18 +200,32 @@
         </header>
 
         <!-- Area Konten Utama -->
-        <main class="flex-1 p-4 sm:p-6 lg:p-8 pb-24 lg:pb-8">
+        <main class="min-w-0 w-full flex-1 p-3 sm:p-6 lg:p-8 pb-24 lg:pb-8">
             @if(session('success'))
-                <div class="mb-5 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold flex items-center gap-2">
-                    <i class="fa-solid fa-circle-check"></i>
-                    <span>{{ session('success') }}</span>
+                <div data-flash="success" role="status"
+                     class="no-print mb-5 flex items-center justify-between gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs font-semibold text-emerald-400">
+                    <div class="flex items-center gap-2.5">
+                        <i class="fa-solid fa-circle-check fa-fw"></i>
+                        <span>{{ session('success') }}</span>
+                    </div>
+                    <button type="button" onclick="this.closest('[data-flash]').remove()"
+                            class="text-emerald-400/70 transition hover:text-white" aria-label="Tutup">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
                 </div>
             @endif
 
             @if(session('error'))
-                <div class="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold flex items-center gap-2">
-                    <i class="fa-solid fa-triangle-exclamation"></i>
-                    <span>{{ session('error') }}</span>
+                <div data-flash="error" role="alert"
+                     class="no-print mb-5 flex items-center justify-between gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3.5 text-xs font-semibold text-rose-400">
+                    <div class="flex items-center gap-2.5">
+                        <i class="fa-solid fa-triangle-exclamation fa-fw"></i>
+                        <span>{{ session('error') }}</span>
+                    </div>
+                    <button type="button" onclick="this.closest('[data-flash]').remove()"
+                            class="text-rose-400/70 transition hover:text-white" aria-label="Tutup">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
                 </div>
             @endif
 
@@ -234,6 +265,110 @@
             document.getElementById('sidebar').classList.toggle('-translate-x-full');
             document.getElementById('sidebarOverlay').classList.toggle('hidden');
         }
+
+        /*
+        |--------------------------------------------------------------
+        | Konfirmasi seragam (menggantikan confirm() bawaan browser)
+        |--------------------------------------------------------------
+        | Pakai: <button data-confirm="Hapus data ini?">  atau
+        |        <form data-confirm="Lanjutkan?">
+        | Opsional: data-confirm-title, data-confirm-ok, data-confirm-danger="1"
+        */
+        (function () {
+            const kataBahaya = /hapus|delete|buang/i;
+
+            function konfirmasi(pesan, d) {
+                if (typeof Swal === 'undefined') {
+                    return Promise.resolve(window.confirm(pesan));
+                }
+
+                const bahaya = d.confirmDanger === '1' || kataBahaya.test(pesan);
+
+                return Swal.fire({
+                    title: d.confirmTitle || (bahaya ? 'Hapus data?' : 'Konfirmasi'),
+                    text: pesan,
+                    icon: bahaya ? 'warning' : 'question',
+                    showCancelButton: true,
+                    confirmButtonText: d.confirmOk || (bahaya ? 'Ya, hapus' : 'Ya, lanjutkan'),
+                    cancelButtonText: 'Batal',
+                    reverseButtons: true,
+                    focusCancel: bahaya,
+                    background: '#141414',
+                    color: '#e5e5e5',
+                    confirmButtonColor: bahaya ? '#e11d48' : '#f97316',
+                    cancelButtonColor: '#2a2a2a',
+                }).then(function (hasil) { return hasil.isConfirmed; });
+            }
+
+            // Ubah pola lama onclick/onsubmit="return confirm('...')" menjadi data-confirm
+            function upgradeKonfirmasiLama() {
+                const pola = /^\s*return\s+confirm\(\s*(['"])([\s\S]*?)\1\s*\)\s*;?\s*$/;
+
+                document
+                    .querySelectorAll('[onclick*="confirm("], [onsubmit*="confirm("]')
+                    .forEach(function (el) {
+                        ['onclick', 'onsubmit'].forEach(function (attr) {
+                            const js = el.getAttribute(attr);
+                            const cocok = js && js.match(pola);
+                            if (!cocok) return;
+                            el.dataset.confirm = cocok[2];
+                            el.removeAttribute(attr);
+                        });
+                    });
+            }
+
+            // Tombol / tautan
+            document.addEventListener('click', function (e) {
+                const el = e.target.closest('[data-confirm]');
+                if (!el || el.tagName === 'FORM') return;
+
+                if (el.dataset.confirmed === '1') {
+                    delete el.dataset.confirmed;
+                    return;
+                }
+
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
+                konfirmasi(el.dataset.confirm, el.dataset).then(function (ok) {
+                    if (!ok) return;
+                    el.dataset.confirmed = '1';
+                    el.click();
+                });
+            }, true);
+
+            // Form
+            document.addEventListener('submit', function (e) {
+                const form = e.target;
+                if (!(form instanceof HTMLFormElement) || !form.dataset.confirm) return;
+
+                if (form.dataset.confirmed === '1') {
+                    delete form.dataset.confirmed;
+                    return;
+                }
+
+                e.preventDefault();
+                e.stopImmediatePropagation();
+
+                const pengirim = e.submitter || undefined;
+
+                konfirmasi(form.dataset.confirm, form.dataset).then(function (ok) {
+                    if (!ok) return;
+                    form.dataset.confirmed = '1';
+                    form.requestSubmit(pengirim);
+                });
+            }, true);
+
+            document.addEventListener('DOMContentLoaded', function () {
+                upgradeKonfirmasiLama();
+
+                // Notifikasi hilang sendiri
+                document.querySelectorAll('[data-flash]').forEach(function (el) {
+                    setTimeout(function () { el.remove(); },
+                        el.dataset.flash === 'error' ? 8000 : 5000);
+                });
+            });
+        })();
     </script>
     @stack('scripts')
 </body>
