@@ -5,18 +5,60 @@ namespace App\Models;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class NotaTransaksi extends Model
 {
     protected $table = 'nota_transaksis';
 
-    // Dipertahankan dari kode utama agar proses admin/anggota
-    // yang sudah berjalan tidak berubah.
     protected $guarded = [];
+
+    protected $casts = [
+        'tanggal_lunas' => 'datetime',
+        'subtotal' => 'decimal:2',
+        'diskon' => 'decimal:2',
+        'total_biaya' => 'decimal:2',
+    ];
+
+    // Satu nota dapat memiliki banyak pembayaran/cicilan.
+    public function pembayaran(): HasMany
+    {
+        return $this->hasMany(
+            PembayaranNota::class,
+            'nota_transaksi_id'
+        );
+    }
+
+    public function getTotalDibayarAttribute(): float
+    {
+        return (float) $this->pembayaran()
+            ->sum('nominal_dialokasikan');
+    }
+
+    public function getSisaTagihanAttribute(): float
+    {
+        return max(
+            0,
+            (float) $this->total_biaya
+                - $this->total_dibayar
+        );
+    }
+
+    public function getStatusPembayaranLabelAttribute(): string
+    {
+        return match ($this->status_pembayaran) {
+            'lunas' => 'LUNAS',
+            'dibayar_sebagian' => 'DIBAYAR SEBAGIAN',
+            default => 'BELUM LUNAS',
+        };
+    }
 
     public function rekamServis(): BelongsTo
     {
-        return $this->belongsTo(RekamServis::class, 'rekam_servis_id');
+        return $this->belongsTo(
+            RekamServis::class,
+            'rekam_servis_id'
+        );
     }
 
     /**
@@ -33,9 +75,6 @@ class NotaTransaksi extends Model
 
     /**
      * Hitung laba dari transaksi ini.
-     *
-     * Dipertahankan dari kode utama agar pemanggilan
-     * pada halaman admin/anggota tidak terganggu.
      */
     public function labaBersih(): float
     {

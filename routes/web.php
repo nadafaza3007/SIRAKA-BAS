@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Schema;
 use App\Http\Controllers\PelangganController;
+use App\Http\Middleware\StaffOnlyMiddleware;
+use App\Http\Controllers\Admin\PembayaranNotaController;
+use App\Http\Controllers\Admin\DashboardController;
 
 /*
 |--------------------------------------------------------------------------
@@ -161,7 +164,7 @@ Route::get('/check-username', function (Request $request) {
         ]);
     }
 
-    if (! preg_match('/^[A-Za-z0-9_-]+$/', $username)) {
+    if (! preg_match('/^[A-Za-z0-9\_-]+$/', $username)) {
         return response()->json([
             'available' => false,
             'message'   => 'Username hanya boleh berisi huruf, angka, underscore, atau tanda hubung.',
@@ -315,65 +318,15 @@ Route::prefix('pelanggan')
 | Admin & Mekanik Routes
 |--------------------------------------------------------------------------
 */
-Route::prefix('admin')->middleware(['auth'])->group(function () {
+Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
     | 1. DASHBOARD UTAMA
     |--------------------------------------------------------------------------
     */
-    Route::get('/dashboard', function () {
-        $totalKonsumen  = Konsumen::count();
-        $totalKendaraan = Kendaraan::count();
-        $servisHariIni  = RekamServis::whereDate('tanggal_servis', now()->toDateString())->count();
-
-        $servisBerjalan = RekamServis::whereIn('status', [
-            'menunggu_pengerjaan',
-            'sedang_dikerjakan',
-            'diproses',
-            'dikerjakan',
-            'proses',
-        ])->count();
-
-        $servisMenunggu = RekamServis::where('status', 'menunggu_pengerjaan')->count();
-
-        /*
-        |--------------------------------------------------------------------------
-        | Total Omzet
-        |--------------------------------------------------------------------------
-        */
-        $totalOmzet = 0;
-        if (Schema::hasTable('nota_transaksis')) {
-            $totalOmzet = NotaTransaksi::where('status_pembayaran', 'lunas')->sum('total_biaya');
-        } elseif (Schema::hasTable('nota_transaksi')) {
-            $totalOmzet = DB::table('nota_transaksi')
-                ->where('status_pembayaran', 'lunas')
-                ->sum('total_biaya');
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Antrean Terbaru
-        |--------------------------------------------------------------------------
-        */
-        $antreanTerbaru = RekamServis::with([
-            'kendaraan',
-            'kendaraan.konsumen',
-        ])
-            ->latest()
-            ->take(5)
-            ->get();
-
-        return view('admin.dashboard', compact(
-            'totalKonsumen',
-            'totalKendaraan',
-            'servisHariIni',
-            'servisBerjalan',
-            'servisMenunggu',
-            'totalOmzet',
-            'antreanTerbaru'
-        ));
-    })->name('admin.dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+    ->name('admin.dashboard');
 
     /*
     |--------------------------------------------------------------------------
@@ -384,6 +337,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
         $servis = RekamServis::with([
             'kendaraan',
             'kendaraan.konsumen',
+            'nota',
         ])
             ->latest()
             ->get();
@@ -407,16 +361,16 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
         $request->validate([
             'konsumen_id'  => ['required', 'exists:konsumens,id'],
             'kendaraan_id' => ['required', 'exists:kendaraans,id'],
-            'km_akhir'     => ['required', 'integer', 'min:0'],
+            'km_masuk'     => ['required', 'integer', 'min:0'],
             'keluhan_awal' => ['required', 'string', 'max:2000'],
         ], [
             'konsumen_id.required'  => 'Konsumen wajib dipilih.',
             'konsumen_id.exists'    => 'Data konsumen tidak ditemukan.',
             'kendaraan_id.required' => 'Plat kendaraan wajib dipilih.',
             'kendaraan_id.exists'   => 'Kendaraan yang dipilih tidak ditemukan.',
-            'km_akhir.required'     => 'Kilometer terkini wajib diisi.',
-            'km_akhir.integer'      => 'Kilometer harus berupa angka.',
-            'km_akhir.min'          => 'Kilometer tidak boleh kurang dari 0.',
+            'km_masuk.required'     => 'Kilometer terkini wajib diisi.',
+            'km_masuk.integer'      => 'Kilometer harus berupa angka.',
+            'km_masuk.min'          => 'Kilometer tidak boleh kurang dari 0.',
             'keluhan_awal.required' => 'Keluhan konsumen wajib diisi.',
         ]);
 
@@ -477,7 +431,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
 
         RekamServis::create([
             'kendaraan_id' => $kendaraan->id,
-            'km_akhir'     => $request->km_akhir,
+            'km_masuk'     => $request->km_masuk,
             'keluhan_awal' => $keluhanInput,
             'diagnosa_awal' => $diagnosaTerpilih,
             'tanggal_servis' => now(),
@@ -492,6 +446,13 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
 
     Route::get('/rekam-servis/{id}/koreksi', function ($id) {
         $servis = RekamServis::with(['kendaraan.konsumen'])->findOrFail($id);
+
+        if ($servis->status === 'selesai'
+            || NotaTransaksi::where('rekam_servis_id', $servis->id)->exists()) {
+            return redirect()->route('admin.rekam-servis.index')
+                ->with('error', 'Servis ini sudah memiliki tagihan dan tidak dapat dikoreksi lagi.');
+        }
+
         return view('admin.rekam-servis.koreksi', compact('servis'));
     })->name('admin.rekam-servis.koreksi-form');
 
@@ -502,6 +463,13 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
         ]);
 
         $servis = RekamServis::findOrFail($id);
+
+        if ($servis->status === 'selesai'
+            || NotaTransaksi::where('rekam_servis_id', $servis->id)->exists()) {
+            return redirect()->route('admin.rekam-servis.index')
+                ->with('error', 'Servis ini sudah memiliki tagihan dan tidak dapat dikoreksi lagi.');
+        }
+
         $servis->update([
             'diagnosa_akhir'  => $request->diagnosa_akhir,
             'tindakan_servis' => $request->tindakan_servis,
@@ -519,7 +487,7 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
             'detailSpareparts.sparepart',
             'detailJasas.jasa',
             'catatanRekomendasis',
-            'nota',
+            'nota.pembayaran.penerima',
         ])->findOrFail($id);
 
         $spareparts = Sparepart::latest()->get();
@@ -529,177 +497,205 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
     })->name('admin.rekam-servis.nota');
 
     Route::post('/rekam-servis/{id}/sparepart', function ($id, Request $request) {
-        $servis = RekamServis::findOrFail($id);
-
-        if ($servis->status === 'selesai') {
-            return $request->expectsJson()
-                ? response()->json(['message' => 'Transaksi sudah selesai dan tidak dapat diubah.'], 422)
-                : back()->with('error', 'Transaksi sudah selesai dan tidak dapat diubah.');
-        }
-
-        $request->validate([
+        $data = $request->validate([
             'sparepart_id' => ['required', 'exists:spareparts,id'],
-            'qty'          => ['required', 'integer', 'min:1', 'max:999'],
+            'qty' => ['required', 'integer', 'min:1', 'max:999'],
         ]);
-
-        $sparepart = Sparepart::findOrFail($request->sparepart_id);
-
-        $detailLama = DB::table('detail_spareparts')
-            ->where('rekam_servis_id', $servis->id)
-            ->where('sparepart_id', $sparepart->id)
-            ->first();
-
-        if ($detailLama) {
-            $qtyBaru = (int) $detailLama->qty + (int) $request->qty;
-            DB::table('detail_spareparts')
-                ->where('id', $detailLama->id)
-                ->update(['qty' => $qtyBaru, 'updated_at' => now()]);
-            $detailId    = $detailLama->id;
-            $hargaSatuan = $detailLama->harga_jual_saat_transaksi;
-        } else {
-            $qtyBaru     = (int) $request->qty;
-            $hargaSatuan = $sparepart->harga_jual;
-            $detailId    = DB::table('detail_spareparts')->insertGetId([
-                'rekam_servis_id'            => $servis->id,
-                'sparepart_id'               => $sparepart->id,
-                'qty'                        => $qtyBaru,
-                'harga_modal_saat_transaksi' => $sparepart->harga_modal ?? 0,
-                'harga_jual_saat_transaksi'  => $hargaSatuan,
-                'created_at'                 => now(),
-                'updated_at'                 => now(),
-            ]);
-        }
-
-        $servis->load(['detailSpareparts.sparepart', 'detailJasas.jasa']);
-        $subtotal = $servis->subtotal();
-
+        $result = DB::transaction(function () use ($id, $data) {
+            $servis = RekamServis::whereKey($id)->lockForUpdate()->firstOrFail();
+            if ($servis->status === 'selesai' || NotaTransaksi::where('rekam_servis_id', $id)->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'sparepart' => 'Tagihan sudah diterbitkan atau servis selesai. Rincian tidak dapat diubah.',
+                ]);
+            }
+            $sparepart = Sparepart::whereKey($data['sparepart_id'])->lockForUpdate()->firstOrFail();
+            $tambahan = (int) $data['qty'];
+            if ((int) $sparepart->stok < $tambahan) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'qty' => 'Stok ' . $sparepart->nama_barang . ' tidak mencukupi. Tersedia ' . $sparepart->stok . '.',
+                ]);
+            }
+            $detailLama = DB::table('detail_spareparts')
+                ->where('rekam_servis_id', $servis->id)
+                ->where('sparepart_id', $sparepart->id)->first();
+            if ($detailLama) {
+                $qtyBaru = (int) $detailLama->qty + $tambahan;
+                if ($qtyBaru > 999) {
+                    throw \Illuminate\Validation\ValidationException::withMessages([
+                        'qty' => 'Jumlah sparepart pada satu baris maksimal 999.',
+                    ]);
+                }
+                DB::table('detail_spareparts')->where('id', $detailLama->id)
+                    ->update(['qty' => $qtyBaru, 'updated_at' => now()]);
+                $detailId = $detailLama->id;
+                $hargaSatuan = (float) $detailLama->harga_jual_saat_transaksi;
+            } else {
+                $qtyBaru = $tambahan;
+                $hargaSatuan = (float) $sparepart->harga_jual;
+                $detailId = DB::table('detail_spareparts')->insertGetId([
+                    'rekam_servis_id' => $servis->id,
+                    'sparepart_id' => $sparepart->id,
+                    'qty' => $qtyBaru,
+                    'harga_modal_saat_transaksi' => $sparepart->harga_modal ?? 0,
+                    'harga_jual_saat_transaksi' => $hargaSatuan,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+            $sparepart->decrement('stok', $tambahan);
+            $servis->load(['detailSpareparts.sparepart', 'detailJasas.jasa']);
+            return [
+                'id' => $detailId,
+                'name' => $sparepart->nama_barang,
+                'qty' => $qtyBaru,
+                'unit_price' => $hargaSatuan,
+                'subtotal' => (float) $servis->subtotal(),
+                'servis_id' => $servis->id,
+            ];
+        }, 3);
         if ($request->expectsJson()) {
             return response()->json([
-                'message'  => 'Sparepart berhasil ditambahkan.',
-                'subtotal' => $subtotal,
-                'detail'   => [
-                    'id'         => $detailId,
-                    'name'       => $sparepart->nama_barang,
-                    'qty'        => $qtyBaru,
-                    'unit_price' => (float) $hargaSatuan,
-                    'subtotal'   => (float) $hargaSatuan * $qtyBaru,
-                    'qty_url'    => route('admin.rekam-servis.sparepart.qty', [$servis->id, $detailId]),
-                    'delete_url' => route('admin.rekam-servis.sparepart.hapus', [$servis->id, $detailId]),
+                'message' => 'Sparepart berhasil ditambahkan.',
+                'subtotal' => $result['subtotal'],
+                'detail' => [
+                    'id' => $result['id'],
+                    'name' => $result['name'],
+                    'qty' => $result['qty'],
+                    'unit_price' => $result['unit_price'],
+                    'subtotal' => $result['unit_price'] * $result['qty'],
+                    'qty_url' => route('admin.rekam-servis.sparepart.qty', [$result['servis_id'], $result['id']]),
+                    'delete_url' => route('admin.rekam-servis.sparepart.hapus', [$result['servis_id'], $result['id']]),
                 ],
             ]);
         }
-
-        return back()->with('success', 'Sparepart berhasil ditambahkan ke nota.');
+        return back()->with('success', 'Sparepart berhasil ditambahkan ke nota dan stok diperbarui.');
     })->name('admin.rekam-servis.sparepart.tambah');
 
     Route::patch('/rekam-servis/{id}/sparepart/{detailId}/qty', function ($id, $detailId, Request $request) {
-        $servis = RekamServis::findOrFail($id);
-
-        if ($servis->status === 'selesai') {
-            return response()->json(['message' => 'Transaksi sudah selesai dan terkunci.'], 422);
-        }
-
-        $request->validate(['qty' => ['required', 'integer', 'min:1', 'max:999']]);
-
-        $detail = DB::table('detail_spareparts')
-            ->where('id', $detailId)
-            ->where('rekam_servis_id', $servis->id)
-            ->first();
-
-        if (! $detail) {
-            return response()->json(['message' => 'Detail sparepart tidak ditemukan.'], 404);
-        }
-
-        DB::table('detail_spareparts')
-            ->where('id', $detailId)
-            ->update(['qty' => (int) $request->qty, 'updated_at' => now()]);
-
-        $servis->load(['detailSpareparts.sparepart', 'detailJasas.jasa']);
-
+        $data = $request->validate(['qty' => ['required', 'integer', 'min:1', 'max:999']]);
+        $result = DB::transaction(function () use ($id, $detailId, $data) {
+            $servis = RekamServis::whereKey($id)->lockForUpdate()->firstOrFail();
+            if ($servis->status === 'selesai' || NotaTransaksi::where('rekam_servis_id', $id)->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'qty' => 'Tagihan sudah diterbitkan atau servis selesai. Rincian tidak dapat diubah.',
+                ]);
+            }
+            $detail = DB::table('detail_spareparts')
+                ->where('rekam_servis_id', $servis->id)->where('id', $detailId)->first();
+            if (! $detail) {
+                abort(404, 'Detail sparepart tidak ditemukan.');
+            }
+            $sparepart = Sparepart::whereKey($detail->sparepart_id)->lockForUpdate()->firstOrFail();
+            $qtyBaru = (int) $data['qty'];
+            $selisih = $qtyBaru - (int) $detail->qty;
+            if ($selisih > 0 && (int) $sparepart->stok < $selisih) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'qty' => 'Stok tidak mencukupi. Tersedia ' . $sparepart->stok . '.',
+                ]);
+            }
+            DB::table('detail_spareparts')->where('id', $detail->id)
+                ->update(['qty' => $qtyBaru, 'updated_at' => now()]);
+            if ($selisih > 0) {
+                $sparepart->decrement('stok', $selisih);
+            } elseif ($selisih < 0) {
+                $sparepart->increment('stok', -$selisih);
+            }
+            $servis->load(['detailSpareparts.sparepart', 'detailJasas.jasa']);
+            return [
+                'qty' => $qtyBaru,
+                'item_subtotal' => (float) $detail->harga_jual_saat_transaksi * $qtyBaru,
+                'subtotal' => (float) $servis->subtotal(),
+            ];
+        }, 3);
         return response()->json([
-            'message'      => 'Jumlah sparepart diperbarui.',
-            'qty'          => (int) $request->qty,
-            'item_subtotal' => (float) $detail->harga_jual_saat_transaksi * (int) $request->qty,
-            'subtotal'     => $servis->subtotal(),
+            'message' => 'Jumlah sparepart diperbarui.',
+            'qty' => $result['qty'],
+            'item_subtotal' => $result['item_subtotal'],
+            'subtotal' => $result['subtotal'],
         ]);
     })->name('admin.rekam-servis.sparepart.qty');
 
     Route::delete('/rekam-servis/{id}/sparepart/{detailId}', function ($id, $detailId, Request $request) {
-        $servis = RekamServis::findOrFail($id);
-
-        if ($servis->status === 'selesai') {
-            return $request->expectsJson()
-                ? response()->json(['message' => 'Transaksi sudah selesai dan terkunci.'], 422)
-                : back()->with('error', 'Transaksi sudah selesai dan terkunci.');
-        }
-
-        DB::table('detail_spareparts')
-            ->where('rekam_servis_id', $servis->id)
-            ->where('id', $detailId)
-            ->delete();
-
-        $servis->load(['detailSpareparts.sparepart', 'detailJasas.jasa']);
-
+        $subtotal = DB::transaction(function () use ($id, $detailId) {
+            $servis = RekamServis::whereKey($id)->lockForUpdate()->firstOrFail();
+            if ($servis->status === 'selesai' || NotaTransaksi::where('rekam_servis_id', $id)->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'sparepart' => 'Tagihan sudah diterbitkan atau servis selesai. Rincian tidak dapat diubah.',
+                ]);
+            }
+            $detail = DB::table('detail_spareparts')
+                ->where('rekam_servis_id', $servis->id)->where('id', $detailId)->first();
+            if (! $detail) {
+                abort(404, 'Detail sparepart tidak ditemukan.');
+            }
+            $sparepart = Sparepart::whereKey($detail->sparepart_id)->lockForUpdate()->firstOrFail();
+            DB::table('detail_spareparts')->where('id', $detail->id)->delete();
+            $sparepart->increment('stok', (int) $detail->qty);
+            $servis->load(['detailSpareparts.sparepart', 'detailJasas.jasa']);
+            return (float) $servis->subtotal();
+        }, 3);
         if ($request->expectsJson()) {
             return response()->json([
-                'message'  => 'Sparepart berhasil dihapus.',
-                'subtotal' => $servis->subtotal(),
+                'message' => 'Sparepart berhasil dihapus.',
+                'subtotal' => $subtotal,
             ]);
         }
-
-        return back()->with('success', 'Sparepart berhasil dihapus dari nota.');
+        return back()->with('success', 'Sparepart berhasil dihapus dan stok dikembalikan.');
     })->name('admin.rekam-servis.sparepart.hapus');
 
     Route::post('/rekam-servis/{id}/jasa', function ($id, Request $request) {
+        abort_unless(in_array(auth()->user()->role, ['admin','anggota'], true), 403);
         $servis = RekamServis::findOrFail($id);
-
-        if ($servis->status === 'selesai') {
+        if (
+                $servis->status === 'selesai' ||
+                NotaTransaksi::where('rekam_servis_id', $servis->id)->exists()
+            ) {
             return $request->expectsJson()
-                ? response()->json(['message' => 'Transaksi sudah selesai dan terkunci.'], 422)
-                : back()->with('error', 'Transaksi sudah selesai dan terkunci.');
+                ? response()->json(['message' => 'Transaksi sudah dikunci.'], 422)
+                : back()->with('error', 'Transaksi sudah dikunci.');
         }
 
-        $request->validate([
-            'jasa_id'        => ['required', 'exists:jasas,id'],
-            'harga_custom'   => ['nullable', 'numeric', 'min:0'],
+        $data = $request->validate([
+            'jasa_id' => ['required', 'exists:jasas,id'],
+            'harga_custom' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
         ]);
-
-        $jasa  = Jasa::findOrFail($request->jasa_id);
-        $harga = $request->filled('harga_custom')
-            ? (float) $request->harga_custom
-            : (float) $jasa->harga;
-
+        $jasa = Jasa::findOrFail($data['jasa_id']);
+        $harga = $request->filled('harga_custom') ? (float) $data['harga_custom'] : (float) $jasa->harga;
+        // Setiap baris jasa adalah satu layanan (tidak memakai kuantitas).
+        $qty = 1;
+        $bruto = $harga;
+        // Potongan harga hanya pada total nota, bukan per-item jasa.
         $detailId = DB::table('detail_jasas')->insertGetId([
-            'rekam_servis_id'    => $servis->id,
-            'jasa_id'            => $jasa->id,
+            'rekam_servis_id' => $servis->id,
+            'jasa_id' => $jasa->id,
+            'qty' => $qty,
             'harga_saat_transaksi' => $harga,
-            'created_at'         => now(),
-            'updated_at'         => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
         ]);
-
         $servis->load(['detailSpareparts.sparepart', 'detailJasas.jasa']);
-
         if ($request->expectsJson()) {
             return response()->json([
-                'message'  => 'Jasa berhasil ditambahkan.',
+                'message' => 'Jasa berhasil ditambahkan.',
                 'subtotal' => $servis->subtotal(),
-                'detail'   => [
-                    'id'         => $detailId,
-                    'name'       => $jasa->nama_jasa,
-                    'unit_price' => $harga,
-                    'subtotal'   => $harga,
+                'detail' => [
+                    'id' => $detailId, 'name' => $jasa->nama_jasa,
+                    'qty' => $qty, 'diskon' => 0,
+                    'unit_price' => $harga, 'subtotal' => $bruto,
                     'delete_url' => route('admin.rekam-servis.jasa.hapus', [$servis->id, $detailId]),
                 ],
             ]);
         }
-
         return back()->with('success', 'Jasa berhasil ditambahkan ke nota.');
     })->name('admin.rekam-servis.jasa.tambah');
 
     Route::delete('/rekam-servis/{id}/jasa/{detailId}', function ($id, $detailId, Request $request) {
         $servis = RekamServis::findOrFail($id);
 
-        if ($servis->status === 'selesai') {
+        if (
+                $servis->status === 'selesai' ||
+                NotaTransaksi::where('rekam_servis_id', $servis->id)->exists()
+            ) {
             return $request->expectsJson()
                 ? response()->json(['message' => 'Transaksi sudah selesai dan terkunci.'], 422)
                 : back()->with('error', 'Transaksi sudah selesai dan terkunci.');
@@ -1167,60 +1163,19 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
         return redirect('/admin/diagnosa')->with('success', 'Aturan diagnosa berhasil dihapus');
     })->name('admin.diagnosa.destroy');
 
-    // 7. Laporan Keuangan
-    Route::get('/laporan', function (Request $request) {
-        if (auth()->user()->role !== 'admin') {
-            return redirect('/admin/dashboard')->with('error', 'Akses dibatasi khusus untuk Administrator.');
-        }
-        $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
-        $endDate   = $request->input('end_date', now()->endOfMonth()->toDateString());
-        $transaksi = collect();
+    // =========================================================
+    // 7. LAPORAN PEMASUKAN BENGKEL
+    // =========================================================
 
-        if (Schema::hasTable('nota_transaksis')) {
-            $transaksi = NotaTransaksi::with(['rekamServis.kendaraan.konsumen'])
-                ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-                ->get();
-        } elseif (Schema::hasTable('nota_transaksi')) {
-            $transaksi = DB::table('nota_transaksi')
-                ->whereBetween('created_at', [$startDate . ' 00:00:00', $endDate . ' 23:59:59'])
-                ->get();
-        }
+    Route::get(
+        '/laporan',
+        [\App\Http\Controllers\Admin\LaporanController::class, 'index']
+    )->name('admin.laporan.index');
 
-        $transaksi = $transaksi->map(function ($item) {
-            if (!isset($item->no_nota)) {
-                $item->no_nota = 'NOTA-' . str_pad($item->id, 4, '0', STR_PAD_LEFT);
-            }
-            if (!isset($item->tanggal_cetak)) {
-                $item->tanggal_cetak = isset($item->created_at) ? date('Y-m-d', strtotime($item->created_at)) : now()->format('Y-m-d');
-            }
-            return $item;
-        });
-
-        $pendapatanKotor     = $transaksi->where('status_pembayaran', 'lunas')->sum('total_biaya');
-        $totalModalSparepart = $pendapatanKotor * 0.3;
-        $labaBersih          = $pendapatanKotor - $totalModalSparepart;
-
-        return view('admin.laporan.index', compact(
-            'startDate',
-            'endDate',
-            'transaksi',
-            'pendapatanKotor',
-            'totalModalSparepart',
-            'labaBersih'
-        ));
-    })->name('admin.laporan.index');
-
-    Route::get('/laporan/cetak-pdf', function () {
-        if (auth()->user()->role !== 'admin') {
-            return redirect('/admin/dashboard')->with('error', 'Akses dibatasi.');
-        }
-        AuditLog::create([
-            'user_id' => auth()->id(),
-            'entitas' => 'Laporan Pemasukan',
-            'aksi'    => 'Cetak / Unduh Laporan Keuangan Periode ' . now()->startOfMonth()->toDateString() . ' s/d ' . now()->endOfMonth()->toDateString(),
-        ]);
-        return response('PDF Generated', 200);
-    })->name('admin.laporan.cetak-pdf');
+    Route::get(
+        '/laporan/cetak-pdf',
+        [\App\Http\Controllers\Admin\LaporanController::class, 'cetakPdf']
+    )->name('admin.laporan.cetak-pdf');
 
     // 8. API Search Kendaraan
     Route::get('/riwayat/search-api', function (Request $request) {
@@ -1248,49 +1203,142 @@ Route::prefix('admin')->middleware(['auth'])->group(function () {
         return redirect("/admin/rekam-servis/{$id}/nota");
     })->name('admin.rekam-servis.rekomendasi');
 
+    // Selesaikan servis dan terbitkan SATU nota dengan status BELUM LUNAS.
+    // Jangan menyimpan pembayaran di sini.
     Route::post('/rekam-servis/{id}/nota/konfirmasi', function ($id, Request $request) {
-        $servis = RekamServis::findOrFail($id);
-        $subtotal = $servis->subtotal();
-        $diskon   = $request->diskon ?? 0;
-        $totalBiaya = max(0, $subtotal - $diskon);
+    abort_unless(
+        auth()->check() &&
+        in_array(auth()->user()->role, ['admin', 'anggota'], true),
+        403
+    );
 
-        if (!$servis->nota) {
-            $lastNota = NotaTransaksi::latest('id')->first();
-            $nextId   = $lastNota ? ($lastNota->id + 1) : 1;
-            $noNota   = 'NOTA-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+    $data = $request->validate([
+        'diskon_persen' => [
+            'required', 'numeric', 'between:0,100', 'decimal:0,2'
+        ],
+    ]);
 
-            NotaTransaksi::create([
-                'rekam_servis_id'   => $servis->id,
-                'no_nota'           => $noNota,
-                'tanggal_cetak'     => now()->toDateString(),
-                'subtotal'          => $subtotal,
-                'diskon'            => $diskon,
-                'total_biaya'       => $totalBiaya,
-                'metode_cetak'      => $request->metode_cetak ?? 'standar',
-                'status_pembayaran' => 'lunas',
-            ]);
-        } else {
-            $servis->nota->update([
-                'subtotal'     => $subtotal,
-                'diskon'       => $diskon,
-                'total_biaya'  => $totalBiaya,
-                'metode_cetak' => $request->metode_cetak ?? 'standar',
+    DB::transaction(function () use ($id, $data) {
+        $servis = RekamServis::whereKey($id)
+            ->lockForUpdate()->firstOrFail();
+
+        if (
+                $servis->status === 'selesai' ||
+                NotaTransaksi::where('rekam_servis_id', $servis->id)->exists()
+            ) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'nota' => 'Servis ini sudah selesai atau tagihannya sudah diterbitkan.',
             ]);
         }
 
-        $servis->update(['status' => 'selesai']);
+        $servis->load(['detailSpareparts', 'detailJasas']);
 
-        return redirect()->route('admin.rekam-servis.index')
-            ->with('success', 'Servis berhasil dikonfirmasi dan diselesaikan! Nota telah tersimpan.');
-    })->name('admin.rekam-servis.nota.konfirmasi');
+        if (
+            $servis->detailSpareparts->isEmpty() &&
+            $servis->detailJasas->isEmpty()
+        ) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'nota' => 'Tambahkan sparepart atau jasa terlebih dahulu.',
+            ]);
+        }
 
-    /*
+        $subtotal = (int) round($servis->subtotal());
+
+        $diskon = (int) round(
+            $subtotal * (float) $data['diskon_persen'] / 100,
+            0,
+            PHP_ROUND_HALF_UP
+        );
+
+        $diskon = min($subtotal, max(0, $diskon));
+
+        NotaTransaksi::create([
+            'rekam_servis_id' => $servis->id,
+            'no_nota' => 'NOTA-' . now()->format('Ymd')
+                . '-RS' . str_pad((string) $servis->id, 6, '0', STR_PAD_LEFT),
+            'tanggal_cetak' => now()->toDateString(),
+            'tanggal_terbit_tagihan' => now(),
+            'subtotal' => $subtotal,
+            'diskon' => $diskon,
+            'total_biaya' => $subtotal - $diskon,
+            'metode_cetak' => 'standar',
+            'status_pembayaran' => 'belum_lunas',
+            'tanggal_lunas' => null,
+            'catatan_nota' => null,
+        ]);
+    }, 3);
+
+    return redirect()
+        ->route('admin.rekam-servis.nota', $id)
+        ->with('success', 'Tagihan servis berhasil diterbitkan.');
+
+})->name('admin.rekam-servis.nota.konfirmasi');
+
+/*
 |--------------------------------------------------------------------------
-| LAPORAN INSPEKSI KENDARAAN
+| PEMBAYARAN NOTA - TIPS OTOMATIS
 |--------------------------------------------------------------------------
 */
 
-/*
+Route::post(
+    '/rekam-servis/{id}/nota/bayar',
+    [PembayaranNotaController::class, 'bayar']
+)->name('admin.rekam-servis.nota.bayar');
+
+    /*
+|--------------------------------------------------------------------------
+| DATA AKHIR & NOTA FINAL
+|--------------------------------------------------------------------------
+*/
+
+Route::post('/rekam-servis/{id}/selesaikan', function ($id, Request $request) {
+    abort_unless(
+        auth()->check() &&
+        in_array(auth()->user()->role, ['admin', 'anggota'], true),
+        403
+    );
+
+    $data = $request->validate([
+        'km_keluar' => ['required', 'integer', 'min:0', 'max:999999999'],
+        'catatan_nota' => ['nullable', 'string', 'max:5000'],
+    ]);
+
+    DB::transaction(function () use ($id, $data) {
+        $servis = RekamServis::whereKey($id)
+            ->lockForUpdate()->firstOrFail();
+
+        $nota = NotaTransaksi::where('rekam_servis_id', $id)
+            ->lockForUpdate()->firstOrFail();
+
+        if ($servis->status === 'selesai' && $servis->km_keluar !== null) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'servis' => 'Data akhir sudah tersimpan dan terkunci.',
+            ]);
+        }
+
+        if ((int) $data['km_keluar'] < (int) $servis->km_masuk) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'km_keluar' => 'KM keluar tidak boleh kurang dari KM masuk.',
+            ]);
+        }
+
+        $servis->update([
+            'km_keluar' => (int) $data['km_keluar'],
+            'status' => 'selesai',
+        ]);
+
+        $nota->update([
+            'catatan_nota' => $data['catatan_nota'] ?? null,
+        ]);
+    }, 3);
+
+    return redirect()
+        ->route('admin.rekam-servis.nota', $id)
+        ->with('success', 'Data akhir pekerjaan berhasil disimpan.');
+
+})->name('admin.rekam-servis.selesaikan');
+
+    /*
 |--------------------------------------------------------------------------
 | LAPORAN INSPEKSI KENDARAAN
 |--------------------------------------------------------------------------

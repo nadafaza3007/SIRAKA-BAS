@@ -11,13 +11,39 @@
         </p>
     </div>
     <a href="{{ route('admin.inspeksi.create') }}"
-       class="flex w-fit items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-brand-500/20 transition hover:bg-brand-600">
+       class="siraka-mobile-action flex w-full items-center justify-center gap-2 rounded-xl sm:w-fit bg-brand-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-brand-500/20 transition hover:bg-brand-600">
         <i class="fa-solid fa-plus"></i>
         <span>Buat Inspeksi Baru</span>
     </a>
 </div>
 
-<div class="overflow-hidden rounded-2xl border border-neutral-800 bg-ink-900 shadow-sm">
+{{-- HP: kartu yang mudah dibaca tanpa menggeser tabel. Tabel desktop tetap utuh. --}}
+<div class="space-y-3 lg:hidden">
+    @forelse($inspeksis as $inspeksi)
+    <article class="siraka-mobile-card rounded-2xl border border-neutral-800 bg-ink-900 p-4 shadow-sm">
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0">
+          <div class="break-words text-sm font-bold text-white">{{ $inspeksi->nomor_inspeksi }}</div>
+          <div class="mt-1 text-xs text-neutral-400">{{ $inspeksi->tanggal_inspeksi->format('d/m/Y') }}</div>
+        </div>
+        <span class="shrink-0 rounded-full bg-neutral-800 px-2 py-1 text-[11px] text-amber-400">★ {{ $inspeksi->rating_score }}/10</span>
+      </div>
+      <div class="mt-3 space-y-1 text-xs">
+        <p class="break-words font-semibold text-white">{{ $inspeksi->konsumen->nama_lengkap }}</p>
+        <p class="text-brand-400">{{ $inspeksi->kendaraan->plat_nomor }}</p>
+        <p class="break-words text-neutral-400">{{ $inspeksi->kendaraan->merk }} {{ $inspeksi->kendaraan->tipe_model }}</p>
+        <p class="pt-1 font-bold text-emerald-400">Rp {{ number_format($inspeksi->total_estimasi, 0, ',', '.') }}</p>
+      </div>
+      <div class="mt-4 flex gap-2">
+        <a href="{{ route('admin.inspeksi.show', $inspeksi->id) }}" class="siraka-mobile-action flex flex-1 items-center justify-center rounded-xl bg-brand-500 px-4 py-2 text-xs font-bold text-white">Lihat Detail</a>
+        <button type="button" onclick="konfirmasiHapus({{ $inspeksi->id }})" class="siraka-mobile-action flex items-center justify-center rounded-xl border border-rose-500/30 px-4 py-2 text-xs text-rose-400" aria-label="Hapus inspeksi">Hapus</button>
+      </div>
+    </article>
+    @empty
+      <div class="rounded-xl border border-neutral-800 bg-ink-900 p-6 text-center text-xs text-neutral-500">Belum ada laporan inspeksi.</div>
+    @endforelse
+</div>
+<div class="hidden overflow-hidden rounded-2xl border border-neutral-800 bg-ink-900 shadow-sm lg:block">
     <div class="overflow-x-auto">
         <table class="w-full min-w-[950px] text-left text-xs text-neutral-400">
             <thead class="border-b border-neutral-800 bg-black/40 font-bold uppercase text-neutral-500">
