@@ -23,6 +23,7 @@
                     'merk' => $kendaraan->merk,
                     'tipe_model' => $kendaraan->tipe_model,
                     'tahun' => $kendaraan->tahun,
+                    'rekomendasi' => $kendaraan->rekomendasiNotaTerbuka->first()?->catatan_nota,
                 ];
             })->values(),
         ];
@@ -30,7 +31,7 @@
 @endphp
 
 
-<div class="max-w-2xl">
+<div class="min-w-0 max-w-2xl">
 
     {{-- =========================================================
         HEADER
@@ -84,7 +85,7 @@
     {{-- =========================================================
         FORM
     ========================================================== --}}
-    <div class="rounded-2xl border border-neutral-800 bg-ink-900 p-5 shadow-sm sm:p-6">
+    <div class="rounded-2xl border border-neutral-800 bg-ink-900 p-3 shadow-sm sm:p-6">
 
         <form
             id="formServis"
@@ -216,6 +217,12 @@
                 </div>
 
 
+                    <div id="rekomendasiServisSebelumnya" class="mt-3 hidden rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+                        <p class="text-xs font-bold text-amber-300">Catatan Rekomendasi dari Servis Sebelumnya</p>
+                        <p id="isiRekomendasiSebelumnya" class="mt-2 whitespace-pre-line text-xs leading-5 text-amber-100"></p>
+                        <p class="mt-2 text-[11px] text-neutral-400">Hanya informasi; tidak menambah keluhan, tindakan, atau biaya secara otomatis.</p>
+                    </div>
+
                 {{-- Informasi / error --}}
                 <p
                     id="platHint"
@@ -270,10 +277,10 @@
             <div>
 
                 <label
-                    for="kmAkhir"
+                    for="kmMasuk"
                     class="mb-1.5 block font-bold text-neutral-300"
                 >
-                    Kilometer Terkini (KM) *
+                    KM Masuk (saat kendaraan diterima) *
                 </label>
 
 
@@ -281,9 +288,9 @@
 
                     <input
                         type="number"
-                        id="kmAkhir"
-                        name="km_akhir"
-                        value="{{ old('km_akhir') }}"
+                        id="kmMasuk"
+                        name="km_masuk"
+                        value="{{ old('km_masuk') }}"
                         min="0"
                         required
                         placeholder="Contoh: 45000"
@@ -475,6 +482,7 @@
         function resetKendaraan() {
 
             kendaraanId.value = '';
+            document.getElementById('rekomendasiServisSebelumnya').classList.add('hidden');
 
             platSearch.value = '';
 
@@ -496,6 +504,10 @@
         function pilihKendaraan(kendaraan) {
 
             kendaraanId.value = kendaraan.id;
+            const panelRekomendasi = document.getElementById('rekomendasiServisSebelumnya');
+            const isiRekomendasi = document.getElementById('isiRekomendasiSebelumnya');
+            isiRekomendasi.textContent = kendaraan.rekomendasi || '';
+            panelRekomendasi.classList.toggle('hidden', !kendaraan.rekomendasi);
 
             platSearch.value = kendaraan.plat_nomor;
 
@@ -798,6 +810,7 @@
                  * pilihan kendaraan sebelumnya dibatalkan.
                  */
                 kendaraanId.value = '';
+                document.getElementById('rekomendasiServisSebelumnya').classList.add('hidden');
 
                 selectedVehicle.classList.add('hidden');
 
