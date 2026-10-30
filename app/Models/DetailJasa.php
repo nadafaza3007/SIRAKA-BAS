@@ -12,6 +12,7 @@ class DetailJasa extends Model
     protected $fillable = [
         'rekam_servis_id',
         'jasa_id',
+        'qty',
         'harga_saat_transaksi',
     ];
 
