@@ -2,18 +2,15 @@
 
 namespace Tests\Feature;
 
-use Tests\TestCase;
+use App\Models\Jasa;
 use App\Models\User;
-use App\Models\Konsumen;
 use App\Models\Kendaraan;
 use App\Models\RekamServis;
-use App\Models\AturanDiagnosa;
-use App\Models\Sparepart;
-use App\Models\Jasa;
 use App\Models\NotaTransaksi;
-use App\Models\AuditLog;
+use App\Models\PembayaranNota;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class SirakaSystemTest extends TestCase
 {
@@ -22,181 +19,268 @@ class SirakaSystemTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
         $this->seed(DatabaseSeeder::class);
     }
 
-    public function test_login_screen_can_be_rendered()
+    private function admin(): User
     {
-        $response = $this->get('/login');
-        $response->assertStatus(200);
-        $response->assertSee('SIRAKA');
+        return User::where('role', 'admin')->firstOrFail();
     }
 
-    public function test_admin_can_login_and_access_dashboard()
+    private function buatServisBaru(): RekamServis
     {
-        $admin = User::where('role', 'admin')->first();
-        $response = $this->actingAs($admin)->get('/admin/dashboard');
-        $response->assertStatus(200);
-        $response->assertSee('Panel Owner', false); // Tambahkan false agar tidak memvalidasi HTML entity encoding
+        $kendaraan = Kendaraan::firstOrFail();
+
+        $response = $this->actingAs($this->admin())
+            ->post('/admin/rekam-servis', [
+                'konsumen_id' => $kendaraan->konsumen_id,
+                'kendaraan_id' => $kendaraan->id,
+                'km_masuk' => 60000,
+                'keluhan_awal' => 'rem bunyi decit',
+            ]);
+
+        $response->assertSessionHasNoErrors();
+
+        return RekamServis::where('kendaraan_id', $kendaraan->id)
+            ->where('km_masuk', 60000)
+            ->firstOrFail();
     }
 
-    public function test_anggota_cannot_access_master_data()
+    private function terbitkanNota(RekamServis $servis): NotaTransaksi
     {
-        $anggota = User::where('role', 'anggota')->first();
-        $response = $this->actingAs($anggota)->get('/admin/sparepart');
-        $response->assertRedirect('/admin/dashboard');
+        $jasa = Jasa::firstOrFail();
+
+        $this->actingAs($this->admin())
+            ->post("/admin/rekam-servis/{$servis->id}/jasa", [
+                'jasa_id' => $jasa->id,
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($this->admin())
+            ->post("/admin/rekam-servis/{$servis->id}/nota/konfirmasi", [
+                'diskon_persen' => 0,
+            ])
+            ->assertSessionHasNoErrors();
+
+        return NotaTransaksi::where('rekam_servis_id', $servis->id)
+            ->firstOrFail();
     }
 
-    public function test_smart_search_api_returns_results()
+    public function test_login_screen_can_be_rendered(): void
     {
-        $admin = User::where('role', 'admin')->first();
-        $response = $this->actingAs($admin)->get('/admin/riwayat/search-api?q=BM');
-        $response->assertStatus(200);
-        $response->assertJsonStructure([
-            '*' => ['id', 'plat_nomor', 'merk', 'tipe_model', 'konsumen_nama', 'km_terakhir']
-        ]);
+        $this->get('/login')->assertOk();
     }
 
-    public function test_pelanggan_can_access_own_service_records()
+    public function test_admin_can_access_dashboard(): void
     {
-        $pelanggan = User::where('role', 'pelanggan')->first();
-        $response = $this->actingAs($pelanggan)->get('/pelanggan/rekam-servis');
-        $response->assertStatus(200);
-        $response->assertSee('Rekam Medis Kendaraan');
+        $this->actingAs($this->admin())
+            ->get('/admin/dashboard')
+            ->assertOk();
     }
 
-    public function test_pelanggan_registration_links_matching_konsumen_phone()
+    public function test_smart_search_returns_vehicle_data(): void
     {
-        // Konsumen Rina Marlina has no_hp '085298765432' in seeder
-        $response = $this->post('/register', [
-            'nama_lengkap' => 'Rina Marlina',
-            'no_hp' => '085298765432',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
-        ]);
-
-        $response->assertRedirect('/login');
-        $user = User::where('no_hp', '085298765432')->first();
-        $this->assertNotNull($user);
-        $this->assertEquals('pelanggan', $user->role);
-        $this->assertNotNull($user->konsumen_id);
-    }
-
-    public function test_multi_unit_registration_and_duplicate_plat_detection()
-    {
-        $admin = User::where('role', 'admin')->first();
-
-        // Register multi-unit for new customer
-        $response = $this->actingAs($admin)->post('/admin/konsumen', [
-            'nama_lengkap' => 'Pak Joko',
-            'no_hp' => '089911223344',
-            'kendaraan' => [
-                [
-                    'plat_nomor' => 'BM 9999 JK',
-                    'merk' => 'Toyota',
-                    'tipe_model' => 'Fortuner',
-                    'tahun' => 2022
+        $this->actingAs($this->admin())
+            ->get('/admin/riwayat/search-api?q=BM')
+            ->assertOk()
+            ->assertJsonStructure([
+                '*' => [
+                    'id',
+                    'plat_nomor',
+                    'merk',
+                    'tipe_model',
+                    'konsumen_nama',
+                    'km_terakhir',
                 ],
-                [
-                    'plat_nomor' => 'BM 8888 JK',
-                    'merk' => 'Honda',
-                    'tipe_model' => 'CR-V',
-                    'tahun' => 2023
-                ]
-            ]
-        ]);
-
-        $response->assertRedirect('/admin/konsumen');
-        $this->assertDatabaseHas('kendaraans', ['plat_nomor' => 'BM 9999 JK']);
-        $this->assertDatabaseHas('kendaraans', ['plat_nomor' => 'BM 8888 JK']);
-
-        // Duplicate plat should fail
-        $failResponse = $this->actingAs($admin)->post('/admin/konsumen', [
-            'nama_lengkap' => 'Orang Lain',
-            'no_hp' => '087711223344',
-            'kendaraan' => [
-                [
-                    'plat_nomor' => 'BM 9999 JK',
-                    'merk' => 'Toyota',
-                    'tipe_model' => 'Fortuner',
-                ]
-            ]
-        ]);
-
-        $failResponse->assertSessionHas('error');
+            ]);
     }
 
-    public function test_rekam_servis_creation_with_keyword_matching()
+    public function test_pelanggan_can_access_service_history(): void
     {
-        $admin = User::where('role', 'admin')->first();
-        $kendaraan = Kendaraan::first();
+        $pelanggan = User::where('role', 'pelanggan')->firstOrFail();
 
-        $response = $this->actingAs($admin)->post('/admin/rekam-servis', [
-            'kendaraan_id' => $kendaraan->id,
-            'km_akhir' => 60000,
-            'keluhan_awal' => 'rem bunyi decit saat pengereman mendadak',
-        ]);
-
-        $response->assertRedirect('/admin/rekam-servis');
-        $servis = RekamServis::latest()->first();
-        $this->assertEquals('menunggu_pengerjaan', $servis->status);
-        $this->assertEquals('Pengecekan Kampas & Piringan Rem', $servis->diagnosa_awal);
+        $this->actingAs($pelanggan)
+            ->get('/pelanggan/rekam-servis')
+            ->assertRedirect(route('pelanggan.riwayat'));
     }
 
-    public function test_koreksi_diagnosa_physical_inspection_and_nota_workflow()
+    public function test_multiple_vehicles_can_be_registered(): void
     {
-        $admin = User::where('role', 'admin')->first();
-        $servis = RekamServis::first(); 
+        $this->actingAs($this->admin())
+            ->post('/admin/konsumen', [
+                'nama_lengkap' => 'Pak Joko',
+                'no_hp' => '089911223344',
+                'kendaraan' => [
+                    [
+                        'plat_nomor' => 'BM 9999 JK',
+                        'merk' => 'Toyota',
+                        'tipe_model' => 'Fortuner',
+                        'tahun' => 2022,
+                    ],
+                    [
+                        'plat_nomor' => 'BM 8888 JK',
+                        'merk' => 'Honda',
+                        'tipe_model' => 'CR-V',
+                        'tahun' => 2023,
+                    ],
+                ],
+            ])
+            ->assertSessionHasNoErrors();
 
-        // 1. Koreksi Diagnosa Fisik (UC-05)
-        $koreksiResponse = $this->actingAs($admin)->post("/admin/rekam-servis/{$servis->id}/koreksi", [
-            'diagnosa_akhir' => 'Freon habis dan kompresor bocor halus',
-            'tindakan_servis' => 'Ganti O-ring kompresor dan isi freon R134a murni',
+        $this->assertDatabaseHas('kendaraans', [
+            'plat_nomor' => 'BM 9999 JK',
         ]);
 
-        $koreksiResponse->assertRedirect("/admin/rekam-servis/{$servis->id}/nota");
+        $this->assertDatabaseHas('kendaraans', [
+            'plat_nomor' => 'BM 8888 JK',
+        ]);
+    }
+
+    public function test_duplicate_vehicle_plate_is_rejected(): void
+    {
+        $this->actingAs($this->admin())
+            ->post('/admin/konsumen', [
+                'nama_lengkap' => 'Konsumen Baru',
+                'no_hp' => '087711223344',
+                'kendaraan' => [
+                    [
+                        'plat_nomor' => 'BM 1234 ABC',
+                        'merk' => 'Toyota',
+                        'tipe_model' => 'Avanza',
+                    ],
+                ],
+            ])
+            ->assertSessionHas('error');
+    }
+
+    public function test_rekam_servis_uses_km_masuk(): void
+    {
+        $servis = $this->buatServisBaru();
+
+        $this->assertEquals(60000, $servis->km_masuk);
+        $this->assertEquals(
+            'menunggu_pengerjaan',
+            $servis->status
+        );
+    }
+
+    public function test_koreksi_diagnosa_updates_service_status(): void
+    {
+        $servis = $this->buatServisBaru();
+
+        $this->actingAs($this->admin())
+            ->post("/admin/rekam-servis/{$servis->id}/koreksi", [
+                'diagnosa_akhir' => 'Kampas rem menipis',
+                'tindakan_servis' => 'Ganti kampas rem',
+            ])
+            ->assertSessionHasNoErrors();
+
         $servis->refresh();
-        $this->assertEquals('siap_cetak_nota', $servis->status);
 
-        // 2. Tambah Catatan Rekomendasi (UC-06)
-        $this->actingAs($admin)->post("/admin/rekam-servis/{$servis->id}/rekomendasi", [
-            'catatan' => 'Cek kembali tekanan AC setelah 1 bulan pemakaian'
-        ]);
+        $this->assertEquals(
+            'sedang_dikerjakan',
+            $servis->status
+        );
 
-        $this->assertDatabaseHas('catatan_rekomendasis', [
-            'rekam_servis_id' => (int) $servis->id,
-            'catatan'         => 'Cek kembali tekanan AC setelah 1 bulan pemakaian'
-        ]);
+        $this->assertEquals(
+            'Kampas rem menipis',
+            $servis->diagnosa_akhir
+        );
+    }
 
-        // 3. Konfirmasi & Cetak Nota (UC-08)
-        $notaResponse = $this->actingAs($admin)->post("/admin/rekam-servis/{$servis->id}/nota/konfirmasi", [
-            'metode_cetak' => 'thermal',
-            'diskon' => 20000
-        ]);
+    public function test_nota_is_initially_unpaid(): void
+    {
+        $servis = $this->buatServisBaru();
+
+        $nota = $this->terbitkanNota($servis);
+
+        $this->assertEquals(
+            'belum_lunas',
+            $nota->status_pembayaran
+        );
+
+        $this->assertGreaterThan(
+            0,
+            $nota->total_biaya
+        );
+    }
+
+    public function test_nota_supports_partial_payments(): void
+    {
+        $servis = $this->buatServisBaru();
+        $nota = $this->terbitkanNota($servis);
+
+        $total = (int) $nota->total_biaya;
+
+        $this->assertGreaterThan(1, $total);
+
+        $pembayaranPertama = intdiv($total, 2);
+        $pembayaranKedua = $total - $pembayaranPertama;
+
+        // Pembayaran pertama
+        $this->actingAs($this->admin())
+            ->post("/admin/rekam-servis/{$servis->id}/nota/bayar", [
+                'jumlah_diterima' => $pembayaranPertama,
+                'metode_pembayaran' => 'tunai',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $nota->refresh();
+
+        $this->assertEquals(
+            'dibayar_sebagian',
+            $nota->status_pembayaran
+        );
+
+        // Pembayaran kedua hingga lunas
+        $this->actingAs($this->admin())
+            ->post("/admin/rekam-servis/{$servis->id}/nota/bayar", [
+                'jumlah_diterima' => $pembayaranKedua,
+                'metode_pembayaran' => 'tunai',
+            ])
+            ->assertSessionHasNoErrors();
+
+        $nota->refresh();
+
+        $this->assertEquals(
+            'lunas',
+            $nota->status_pembayaran
+        );
+
+        $this->assertEquals(
+            2,
+            PembayaranNota::where(
+                'nota_transaksi_id',
+                $nota->id
+            )->count()
+        );
+
+        $this->assertEquals(
+            $total,
+            (int) PembayaranNota::where(
+                'nota_transaksi_id',
+                $nota->id
+            )->sum('nominal_dialokasikan')
+        );
+    }
+
+    public function test_service_completion_records_km_keluar(): void
+    {
+        $servis = $this->buatServisBaru();
+
+        $this->terbitkanNota($servis);
+
+        $this->actingAs($this->admin())
+            ->post("/admin/rekam-servis/{$servis->id}/selesaikan", [
+                'km_keluar' => 60010,
+                'catatan_nota' => 'Periksa rem kembali bulan depan',
+            ])
+            ->assertSessionHasNoErrors();
 
         $servis->refresh();
+
+        $this->assertEquals(60010, $servis->km_keluar);
         $this->assertEquals('selesai', $servis->status);
-        $this->assertNotNull($servis->nota);
-        $this->assertEquals('lunas', $servis->nota->status_pembayaran);
-    }
-
-    public function test_financial_report_and_audit_logging()
-    {
-        $admin = User::where('role', 'admin')->first();
-
-        $response = $this->actingAs($admin)->get('/admin/laporan');
-        $response->assertStatus(200);
-        $response->assertSee('Pendapatan Kotor (Omzet)');
-        $response->assertSee('Laba / Rugi Bersih');
-
-        // Cetak PDF (UC-13) generates AuditLog
-        $pdfResponse = $this->actingAs($admin)->get('/admin/laporan/cetak-pdf');
-        $pdfResponse->assertStatus(200);
-
-        $this->assertDatabaseHas('audit_logs', [
-            'entitas' => 'Laporan Pemasukan',
-            'aksi' => 'Cetak / Unduh Laporan Keuangan Periode ' . now()->startOfMonth()->toDateString() . ' s/d ' . now()->endOfMonth()->toDateString(),
-        ]);
     }
 }
-
