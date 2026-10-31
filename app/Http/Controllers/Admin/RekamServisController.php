@@ -5,236 +5,186 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\RekamServis;
 use App\Models\Kendaraan;
+use App\Models\Konsumen;
+use App\Models\NotaTransaksi;
+use App\Models\AturanDiagnosa;
 use App\Models\Sparepart;
 use App\Models\Jasa;
-use App\Models\AturanDiagnosa;
-use App\Models\CatatanRekomendasi;
-use App\Models\NotaTransaksi;
-use App\Models\DetailNotaSparepart;
-use App\Models\DetailNotaJasa;
 use Illuminate\Http\Request;
 
+/**
+ * Tahap 7: proses inti Rekam Servis dipindahkan dari closure routes/web.php.
+ * Proses mutasi transaksi nota, sparepart, jasa, pembayaran, dan penyelesaian
+ * tetap berada pada implementasi aktif sebelumnya untuk tahap berikutnya.
+ */
 class RekamServisController extends Controller
 {
     public function index()
     {
-        $servis = RekamServis::with(['kendaraan.konsumen'])->latest()->get();
+        $servis = RekamServis::with([
+            'kendaraan',
+            'kendaraan.konsumen',
+            'nota',
+        ])
+            ->latest()
+            ->get();
+
         return view('admin.rekam-servis.index', compact('servis'));
     }
 
     public function create()
     {
-        $kendaraans = Kendaraan::with('konsumen')->get();
-        return view('admin.rekam-servis.create', compact('kendaraans'));
+        $konsumens = Konsumen::with([
+            'kendaraans' => function ($query) {
+                $query->with('rekomendasiNotaTerbuka')->orderBy('plat_nomor');
+            },
+        ])
+            ->orderBy('nama_lengkap')
+            ->get();
+
+        return view('admin.rekam-servis.create', compact('konsumens'));
     }
 
     public function store(Request $request)
     {
         $request->validate([
-            'kendaraan_id' => 'required|exists:kendaraans,id',
-            'km_akhir' => 'required|numeric',
-            'keluhan_awal' => 'required|string',
+            'konsumen_id'  => ['required', 'exists:konsumens,id'],
+            'kendaraan_id' => ['required', 'exists:kendaraans,id'],
+            'km_masuk'     => ['required', 'integer', 'min:0'],
+            'keluhan_awal' => ['required', 'string', 'max:2000'],
+        ], [
+            'konsumen_id.required'  => 'Konsumen wajib dipilih.',
+            'konsumen_id.exists'    => 'Data konsumen tidak ditemukan.',
+            'kendaraan_id.required' => 'Plat kendaraan wajib dipilih.',
+            'kendaraan_id.exists'   => 'Kendaraan yang dipilih tidak ditemukan.',
+            'km_masuk.required'     => 'Kilometer terkini wajib diisi.',
+            'km_masuk.integer'      => 'Kilometer harus berupa angka.',
+            'km_masuk.min'          => 'Kilometer tidak boleh kurang dari 0.',
+            'keluhan_awal.required' => 'Keluhan konsumen wajib diisi.',
         ]);
 
-        // Pencocokan otomatis kata kunci diagnosa awal
-        $diagnosaAwal = 'Pengecekan Umum';
-        $aturanList = AturanDiagnosa::all();
-        foreach ($aturanList as $aturan) {
-            if (stripos($request->keluhan_awal, $aturan->kata_kunci) !== false) {
-                $diagnosaAwal = $aturan->hasil_diagnosa;
+        $kendaraan = Kendaraan::where('id', $request->kendaraan_id)
+            ->where('konsumen_id', $request->konsumen_id)
+            ->first();
+
+        if (! $kendaraan) {
+            return back()
+                ->withInput()
+                ->withErrors([
+                    'kendaraan_id' => 'Kendaraan tersebut tidak terdaftar atas nama konsumen yang dipilih.',
+                ]);
+        }
+
+        $keluhanInput = trim($request->keluhan_awal);
+
+        $semuaAturan     = AturanDiagnosa::all();
+        $diagnosaTerpilih = 'Pengecekan Umum';
+        $skorTertinggi   = 0;
+
+        $hitungKemiripan = function ($teks1, $teks2) {
+            $stopWords = ['dan', 'atau', 'di', 'ke', 'dari', 'yang', 'untuk', 'pada', 'dengan', 'ada', 'ini', 'itu', 'saat', 'ketika'];
+            $bersihkan = function ($str) use ($stopWords) {
+                $str       = strtolower(preg_replace('/[^a-zA-Z0-9\s]/', '', $str));
+                $kataArray = preg_split('/\s+/', trim($str));
+                return array_values(array_diff($kataArray, $stopWords, ['']));
+            };
+            $kata1 = array_unique($bersihkan($teks1));
+            $kata2 = array_unique($bersihkan($teks2));
+            if (empty($kata1) || empty($kata2)) {
+                return 0;
+            }
+            $irisan    = array_intersect($kata1, $kata2);
+            $gabungan  = array_unique(array_merge($kata1, $kata2));
+            if (count($gabungan) === 0) {
+                return 0;
+            }
+            return count($irisan) / count($gabungan);
+        };
+
+        foreach ($semuaAturan as $aturan) {
+            if (stripos($keluhanInput, $aturan->kata_kunci) !== false) {
+                $skorTertinggi    = 1.0;
+                $diagnosaTerpilih = $aturan->diagnosa_terkait ?? $aturan->hasil_diagnosa;
                 break;
+            }
+            $skor = $hitungKemiripan($keluhanInput, $aturan->kata_kunci);
+            if ($skor > $skorTertinggi) {
+                $skorTertinggi    = $skor;
+                $diagnosaTerpilih = $aturan->diagnosa_terkait ?? $aturan->hasil_diagnosa;
             }
         }
 
+        if ($skorTertinggi < 0.15) {
+            $diagnosaTerpilih = 'Pengecekan Umum';
+        }
+
         RekamServis::create([
-            'kendaraan_id' => $request->kendaraan_id,
-            'km_akhir' => $request->km_akhir,
-            'keluhan_awal' => $request->keluhan_awal,
-            'diagnosa_awal' => $diagnosaAwal,
+            'kendaraan_id' => $kendaraan->id,
+            'km_masuk'     => $request->km_masuk,
+            'keluhan_awal' => $keluhanInput,
+            'diagnosa_awal' => $diagnosaTerpilih,
             'tanggal_servis' => now(),
-            'status' => 'menunggu_pengerjaan',
-            'user_id' => auth()->id(),
+            'status'       => 'menunggu_pengerjaan',
+            'user_id'      => auth()->id(),
         ]);
 
-        return redirect()->route('admin.rekam-servis.index')->with('success', 'Rekam servis berhasil dicatat.');
+        return redirect()
+            ->route('admin.rekam-servis.index')
+            ->with('success', 'Rekam servis ' . $kendaraan->plat_nomor . ' berhasil dibuat dengan deteksi diagnosa otomatis.');
     }
 
     public function formKoreksi($id)
     {
         $servis = RekamServis::with(['kendaraan.konsumen'])->findOrFail($id);
+
+        if ($servis->status === 'selesai'
+            || NotaTransaksi::where('rekam_servis_id', $servis->id)->exists()) {
+            return redirect()->route('admin.rekam-servis.index')
+                ->with('error', 'Servis ini sudah memiliki tagihan dan tidak dapat dikoreksi lagi.');
+        }
+
         return view('admin.rekam-servis.koreksi', compact('servis'));
     }
 
     public function simpanKoreksi(Request $request, $id)
     {
         $request->validate([
-            'diagnosa_akhir' => 'required|string',
-            'tindakan_servis' => 'required|string',
+            'diagnosa_akhir'  => ['required', 'string', 'max:2000'],
+            'tindakan_servis' => ['required', 'string', 'max:5000'],
         ]);
 
         $servis = RekamServis::findOrFail($id);
+
+        if ($servis->status === 'selesai'
+            || NotaTransaksi::where('rekam_servis_id', $servis->id)->exists()) {
+            return redirect()->route('admin.rekam-servis.index')
+                ->with('error', 'Servis ini sudah memiliki tagihan dan tidak dapat dikoreksi lagi.');
+        }
+
         $servis->update([
-            'diagnosa_akhir' => $request->diagnosa_akhir,
+            'diagnosa_akhir'  => $request->diagnosa_akhir,
             'tindakan_servis' => $request->tindakan_servis,
-            'status' => 'siap_cetak_nota',
+            'status'          => 'sedang_dikerjakan',
         ]);
 
-        return redirect()->route('admin.rekam-servis.nota', $servis->id);
+        return redirect()
+            ->route('admin.rekam-servis.index')
+            ->with('success', 'Koreksi diagnosa dan tindakan berhasil disimpan.');
     }
 
-    public function cetakNota($id)
+    public function nota($id)
     {
-        $servis = RekamServis::with(['kendaraan.konsumen', 'detailSpareparts.sparepart', 'detailJasas.jasa', 'catatanRekomendasis', 'nota'])->findOrFail($id);
-        $spareparts = Sparepart::where('stok', '>', 0)->get();
-        $jasas = Jasa::all();
+        $servis = RekamServis::with([
+            'kendaraan.konsumen',
+            'detailSpareparts.sparepart',
+            'detailJasas.jasa',
+            'catatanRekomendasis',
+            'nota.pembayaran.penerima',
+        ])->findOrFail($id);
+
+        $spareparts = Sparepart::latest()->get();
+        $jasas      = Jasa::latest()->get();
 
         return view('admin.rekam-servis.nota', compact('servis', 'spareparts', 'jasas'));
-    }
-
-    public function tambahSparepart(Request $request, $id)
-    {
-        $request->validate([
-            'sparepart_id' => 'required|exists:spareparts,id',
-            'qty' => 'required|integer|min:1',
-        ]);
-
-        $sp = Sparepart::findOrFail($request->sparepart_id);
-        
-        DetailNotaSparepart::create([
-            'rekam_servis_id' => $id,
-            'sparepart_id' => $sp->id,
-            'qty' => $request->qty,
-            'harga_modal_saat_transaksi' => $sp->harga_modal,
-            'harga_jual_saat_transaksi' => $sp->harga_jual,
-        ]);
-
-        $sp->decrement('stok', $request->qty);
-
-        return back()->with('success', 'Suku cadang berhasil ditambahkan.');
-    }
-
-    public function hapusSparepart($id, $detailId)
-    {
-        $detail = DetailNotaSparepart::where('rekam_servis_id', $id)->findOrFail($detailId);
-        if ($detail->sparepart) {
-            $detail->sparepart->increment('stok', $detail->qty);
-        }
-        $detail->delete();
-
-        return back()->with('success', 'Suku cadang dihapus.');
-    }
-
-    public function tambahJasa(Request $request, $id)
-    {
-        $request->validate([
-            'jasa_id' => 'required|exists:jasas,id',
-        ]);
-
-        $jasa = Jasa::findOrFail($request->jasa_id);
-        $harga = $request->harga_custom ?: $jasa->harga;
-
-        DetailNotaJasa::create([
-            'rekam_servis_id' => $id,
-            'jasa_id' => $jasa->id,
-            'harga_saat_transaksi' => $harga,
-        ]);
-
-        return back()->with('success', 'Jasa berhasil ditambahkan.');
-    }
-
-    public function hapusJasa($id, $detailId)
-    {
-        DetailNotaJasa::where('rekam_servis_id', $id)->where('id', $detailId)->delete();
-        return back()->with('success', 'Jasa dihapus.');
-    }
-
-    public function tambahRekomendasi(Request $request, $id)
-    {
-        $request->validate(['catatan' => 'required|string']);
-
-        CatatanRekomendasi::create([
-            'rekam_servis_id' => $id,
-            'catatan' => $request->catatan,
-            'status_konfirmasi' => 'belum',
-        ]);
-
-        return back()->with('success', 'Rekomendasi ditambahkan.');
-    }
-
-    public function konfirmasiNota(Request $request, $id)
-    {
-        $servis = RekamServis::with(['detailSpareparts', 'detailJasas'])->findOrFail($id);
-        $subtotal = $servis->subtotal();
-        $diskon = $request->diskon ?: 0;
-        $totalBiaya = max(0, $subtotal - $diskon);
-
-        NotaTransaksi::updateOrCreate(
-            ['rekam_servis_id' => $servis->id],
-            [
-                'no_nota' => 'NOTA-' . date('Ymd') . '-' . sprintf('%04d', $servis->id),
-                'tanggal_cetak' => now(),
-                'metode_cetak' => $request->metode_cetak ?: 'standar',
-                'diskon' => $diskon,
-                'total_biaya' => $totalBiaya,
-                'status_pembayaran' => 'lunas',
-            ]
-        );
-
-        $servis->update(['status' => 'selesai']);
-
-        return back()->with('success', 'Nota dikonfirmasi dan servis telah selesai.');
-    }
-
-    public function riwayatIndex(Request $request)
-    {
-        $query = $request->get('q', '');
-        $selectedKendaraanId = $request->get('kendaraan_id');
-
-        $kendaraans = collect();
-        if (!empty($query)) {
-            $kendaraans = Kendaraan::with(['konsumen', 'rekamServis.catatanRekomendasis'])
-                ->where('plat_nomor', 'LIKE', "%{$query}%")
-                ->orWhereHas('konsumen', function ($q) use ($query) {
-                    $q->where('nama_lengkap', 'LIKE', "%{$query}%");
-                })->get();
-        }
-
-        $selectedKendaraan = null;
-        if ($selectedKendaraanId) {
-            $selectedKendaraan = Kendaraan::with(['konsumen', 'rekamServis' => function ($q) {
-                $q->latest();
-            }, 'rekamServis.detailSpareparts.sparepart', 'rekamServis.detailJasas.jasa', 'rekamServis.catatanRekomendasis', 'rekamServis.nota', 'rekamServis.user'])->find($selectedKendaraanId);
-        } elseif ($kendaraans->count() === 1) {
-            $selectedKendaraan = $kendaraans->first();
-        }
-
-        return view('admin.riwayat.index', compact('query', 'kendaraans', 'selectedKendaraan'));
-    }
-
-    public function searchApi(Request $request)
-    {
-        $q = $request->get('q', '');
-        if (strlen($q) < 2) return response()->json([]);
-
-        $kendaraans = Kendaraan::with(['konsumen', 'rekamServis'])
-            ->where('plat_nomor', 'LIKE', "%{$q}%")
-            ->orWhereHas('konsumen', function ($query) use ($q) {
-                $query->where('nama_lengkap', 'LIKE', "%{$q}%");
-            })->take(5)->get();
-
-        $results = $kendaraans->map(function ($k) {
-            $lastServis = $k->rekamServis->sortByDesc('tanggal_servis')->first();
-            return [
-                'id' => $k->id,
-                'plat_nomor' => $k->plat_nomor,
-                'merk' => $k->merk,
-                'tipe_model' => $k->tipe_model,
-                'konsumen_nama' => $k->konsumen->nama_lengkap ?? '-',
-                'km_terakhir' => $lastServis ? $lastServis->km_akhir : 0,
-                'total_servis' => $k->rekamServis->count(),
-            ];
-        });
-
-        return response()->json($results);
     }
 }

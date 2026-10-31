@@ -15,11 +15,17 @@
         </p>
     </div>
 
+    <div class="flex w-full flex-wrap gap-2 sm:w-auto">
+    <a href="{{ route('admin.rekam-servis.rekap-nota.index') }}"
+       class="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-emerald-600/50 bg-emerald-600/10 px-4 py-2.5 text-xs font-bold text-emerald-300 hover:bg-emerald-600/20 sm:w-auto">
+        <i class="fa-solid fa-file-excel"></i><span>Rekap Nota</span>
+    </a>
     <a href="{{ route('admin.rekam-servis.create') }}"
        class="siraka-mobile-action inline-flex w-full items-center justify-center sm:w-fit gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-brand-500/20 transition hover:bg-brand-600">
         <i class="fa-solid fa-plus fa-fw"></i>
         <span>Input Servis Baru</span>
     </a>
+    </div>
 </div>
 
 {{-- TABEL: geser horizontal khusus layar sempit, tanpa mengubah logika aksi. --}}
