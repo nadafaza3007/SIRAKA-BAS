@@ -16,6 +16,16 @@ class Sparepart extends Model
     // yang sudah berjalan tidak berubah.
     protected $guarded = [];
 
+    public function isBarangStok(): bool
+    {
+        return ($this->jenis_ketersediaan ?? 'stok') === 'stok';
+    }
+
+    public function isBarangPo(): bool
+    {
+        return $this->jenis_ketersediaan === 'po';
+    }
+
     public function detailSpareparts(): HasMany
     {
         return $this->hasMany(

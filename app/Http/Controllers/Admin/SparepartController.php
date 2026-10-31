@@ -8,28 +8,52 @@ use Illuminate\Http\Request;
 
 class SparepartController extends Controller
 {
+    private function hanyaAdmin(): void
+    {
+        abort_unless(auth()->check() && auth()->user()->role === 'admin', 403);
+    }
+
     public function index()
     {
+        if (auth()->user()->role !== 'admin') {
+            return redirect('/admin/dashboard')->with('error', 'Akses dibatasi khusus untuk Administrator.');
+        }
+
         $spareparts = Sparepart::latest()->get();
         return view('admin.sparepart.index', compact('spareparts'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
-            'nama_barang' => 'required',
-            'harga_modal' => 'required|numeric',
-            'harga_jual' => 'required|numeric',
-            'stok' => 'required|integer',
+        if (auth()->user()->role !== 'admin') {
+            return redirect('/admin/dashboard')->with('error', 'Akses dibatasi.');
+        }
+
+        $data = $request->validate([
+            'nama_barang' => ['required', 'string', 'max:255'],
+            'kode_barang' => ['nullable', 'string', 'max:255'],
+            'nama_toko' => ['nullable', 'string', 'max:255'],
+            'jenis_ketersediaan' => ['required', 'in:stok,po'],
+            'stok' => ['required_if:jenis_ketersediaan,stok', 'nullable', 'integer', 'min:0'],
+            'harga_modal' => ['required', 'numeric', 'min:0'],
+            'harga_jual' => ['required', 'numeric', 'min:0'],
         ]);
 
-        Sparepart::create($request->all());
-        return back()->with('success', 'Sparepart baru berhasil ditambahkan!');
+        $data['stok'] = $data['jenis_ketersediaan'] === 'po' ? null : (int) $data['stok'];
+        Sparepart::create($data);
+
+        return redirect('/admin/sparepart')->with('success', 'Sparepart berhasil ditambahkan');
     }
 
     public function destroy($id)
     {
-        Sparepart::findOrFail($id)->delete();
-        return back()->with('success', 'Sparepart berhasil dihapus.');
+        if (auth()->user()->role !== 'admin') {
+            return redirect('/admin/dashboard')->with('error', 'Akses dibatasi.');
+        }
+
+        $sparepart = Sparepart::findOrFail($id);
+        $sparepart->delete();
+
+        return redirect('/admin/sparepart')->with('success', 'Sparepart berhasil dihapus');
     }
 }
