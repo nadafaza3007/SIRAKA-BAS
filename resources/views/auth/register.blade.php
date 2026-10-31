@@ -282,7 +282,7 @@
                                     autocomplete="username"
                                     spellcheck="false"
                                     autocapitalize="none"
-                                    placeholder="Contoh: budi123"
+                                    placeholder="Masukkan Username"
                                     @class([
                                         'w-full rounded-xl border bg-ink-800 py-3.5 pl-11 pr-12 text-sm text-white outline-none transition placeholder:text-slate-600 focus:ring-2',
 
@@ -325,10 +325,7 @@
                                 @else
 
                                     <span class="text-slate-500">
-
-                                        Username digunakan sebagai alternatif
-                                        selain nomor HP saat masuk ke sistem.
-
+                                        Gunakan 3–30 karakter berupa huruf, angka, atau underscore (_).
                                     </span>
 
                                 @enderror
@@ -369,7 +366,9 @@
                                     required
                                     inputmode="tel"
                                     autocomplete="tel"
-                                    placeholder="Contoh: 081234567890"
+                                    placeholder="Masukkan Nomor HP"
+                                    maxlength="14"
+                                    aria-describedby="phoneHelp phoneStatus"
                                     @class([
                                         'w-full rounded-xl border bg-ink-800 py-3.5 pl-11 pr-4 text-sm text-white outline-none transition placeholder:text-slate-600 focus:ring-2',
 
@@ -384,7 +383,7 @@
                             </div>
 
 
-                            <p class="mt-1.5 text-xs leading-5 text-slate-500">
+                            <p id="phoneHelp" class="mt-1.5 text-xs leading-5 text-slate-500">
 
                                 Gunakan nomor HP yang sama dengan data
                                 pelanggan di bengkel agar kendaraan dapat
@@ -392,6 +391,8 @@
 
                             </p>
 
+
+                            <p id="phoneStatus" class="mt-1.5 hidden text-xs text-rose-400" role="alert" aria-live="polite"></p>
 
                             @error('no_hp')
 
@@ -433,7 +434,7 @@
                                     name="password"
                                     required
                                     autocomplete="new-password"
-                                    placeholder="Minimal 6 karakter"
+                                    placeholder="Minimal 8 karakter"
                                     @class([
                                         'w-full rounded-xl border bg-ink-800 py-3.5 pl-11 pr-12 text-sm text-white outline-none transition placeholder:text-slate-600 focus:ring-2',
 
@@ -659,9 +660,7 @@
 
                     <p class="mt-5 max-w-md text-sm leading-7 text-slate-400">
 
-                        Gunakan nomor HP yang sama dengan data pelanggan di Baba 
-                        Auto Service agar kendaraan dan riwayat servis Anda dapat 
-                        terhubung otomatis.
+                        Gunakan nomor HP Indonesia yang aktif dan valid.
 
                     </p>
 
@@ -838,6 +837,11 @@
                 document.getElementById(
                     'registerForm'
                 );
+
+            const phoneInput = document.getElementById('no_hp');
+            const phoneStatus = document.getElementById('phoneStatus');
+            const passwordInput = document.getElementById('passwordInput');
+            const passwordConfirm = document.getElementById('passwordConfirmationInput');
 
             const usernameInput =
                 document.getElementById(
@@ -1056,8 +1060,7 @@
 
                 usernameStatus.innerHTML = `
                     <span class="text-slate-500">
-                        Username digunakan sebagai alternatif
-                        selain nomor HP saat masuk ke sistem.
+                        Gunakan 3–30 karakter berupa huruf, angka, atau underscore (_).
                     </span>
                 `;
 
@@ -1276,14 +1279,14 @@
 
 
                 if (
-                    username.length > 50
+                    username.length > 30
                 ) {
 
                     return {
                         valid: false,
 
                         message:
-                            'Username maksimal 50 karakter.',
+                            'Username maksimal 30 karakter.',
                     };
                 }
 
@@ -1618,6 +1621,28 @@
 
 
 
+            // Nomor HP: validasi format lokal saja, tidak mengecek keberadaan akun secara real-time.
+            // Backend tetap menjadi sumber kebenaran ketika tombol Daftar ditekan.
+            function validatePhone(showMessage = true) {
+                const nomor = phoneInput.value.trim();
+                const valid = /^(?:08[0-9]{8,11}|(?:\+?62)8[0-9]{8,11})$/.test(nomor);
+                if (showMessage) {
+                    phoneStatus.classList.toggle('hidden', valid || nomor === '');
+                    phoneStatus.textContent = valid || nomor === '' ? ''
+                        : 'Masukkan nomor HP Indonesia yang valid.';
+                    phoneInput.setAttribute('aria-invalid', String(!valid && nomor !== ''));
+                }
+                return valid;
+            }
+            if (passwordInput) passwordInput.addEventListener('input', () => passwordInput.setCustomValidity(''));
+            if (passwordConfirm) passwordConfirm.addEventListener('input', () => passwordConfirm.setCustomValidity(''));
+            if (phoneInput && phoneStatus) {
+                phoneInput.addEventListener('blur', () => validatePhone(true));
+                phoneInput.addEventListener('input', () => {
+                    if (!phoneStatus.classList.contains('hidden')) validatePhone(true);
+                });
+            }
+
             /*
             |--------------------------------------------------------------------------
             | VALIDASI SEBELUM SUBMIT
@@ -1661,6 +1686,30 @@
                         return;
                     }
 
+
+                    if (!validatePhone(true)) {
+                        event.preventDefault();
+                        phoneInput.focus();
+                        return;
+                    }
+
+                    if (passwordInput.value.length < 8) {
+                        event.preventDefault();
+                        passwordInput.setCustomValidity('Kata sandi minimal 8 karakter.');
+                        passwordInput.reportValidity();
+                        passwordInput.focus();
+                        return;
+                    }
+                    passwordInput.setCustomValidity('');
+
+                    if (passwordInput.value !== passwordConfirm.value) {
+                        event.preventDefault();
+                        passwordConfirm.setCustomValidity('Konfirmasi kata sandi tidak cocok.');
+                        passwordConfirm.reportValidity();
+                        passwordConfirm.focus();
+                        return;
+                    }
+                    passwordConfirm.setCustomValidity('');
 
                     /*
                      * Jangan submit jika username secara
