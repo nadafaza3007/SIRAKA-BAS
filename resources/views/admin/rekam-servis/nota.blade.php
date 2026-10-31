@@ -5,6 +5,15 @@
 @section('content')
 @php
     $nota = $servis->nota;
+    $rekomendasiLama = \App\Models\NotaTransaksi::query()
+        ->join('rekam_servis as riwayat_lama', 'riwayat_lama.id', '=', 'nota_transaksis.rekam_servis_id')
+        ->where('riwayat_lama.kendaraan_id', $servis->kendaraan_id)
+        ->where('riwayat_lama.id', '<>', $servis->id)
+        ->where('nota_transaksis.status_rekomendasi', 'belum')
+        ->whereRaw("TRIM(COALESCE(nota_transaksis.catatan_nota, '')) <> ''")
+        ->orderByDesc('riwayat_lama.tanggal_servis')
+        ->orderByDesc('riwayat_lama.id')
+        ->get(['nota_transaksis.id', 'nota_transaksis.catatan_nota', 'riwayat_lama.tanggal_servis']);
     $pembayaran = $nota ? $nota->pembayaran : collect();
     $totalDibayar = (int) round($pembayaran->sum('nominal_dialokasikan'));
     $sisaTagihan = max(0, (int) round($nota?->total_biaya ?? 0) - $totalDibayar);
@@ -51,6 +60,25 @@
     $subJasa = $servis->detailJasas->sum(fn($i) => $barisJasa($i));
     $adaBiaya = $servis->detailSpareparts->isNotEmpty()
         || $servis->detailJasas->isNotEmpty();
+
+    // Link WhatsApp saja: tidak mengirim PDF dan tidak mengubah transaksi.
+    $konsumenWa = $servis->kendaraan?->konsumen;
+    $nomorAsliWa = trim((string) ($konsumenWa?->no_hp ?? ''));
+    $nomorBersihWa = preg_replace('/[\s().-]+/', '', $nomorAsliWa);
+    $nomorBersihWa = preg_replace('/^\+/', '', $nomorBersihWa);
+    if (str_starts_with($nomorBersihWa, '0')) {
+        $nomorBersihWa = '62' . substr($nomorBersihWa, 1);
+    } elseif (str_starts_with($nomorBersihWa, '8')) {
+        $nomorBersihWa = '62' . $nomorBersihWa;
+    }
+    $nomorWaValid = preg_match('/^628[0-9]{7,12}$/', $nomorBersihWa) === 1;
+    $pesanWa = 'Halo ' . ($konsumenWa?->nama_lengkap ?? 'Pelanggan')
+        . ', berikut informasi ' . ($nota ? 'nota' : 'estimasi')
+        . ' servis kendaraan ' . $servis->kendaraan->plat_nomor
+        . ' (' . $nomor . '). Silakan lihat rincian resmi melalui SIRAKA atau hubungi bengkel.';
+    $tautanWa = $nomorWaValid
+        ? 'https://wa.me/' . $nomorBersihWa . '?text=' . rawurlencode($pesanWa)
+        : null;
 @endphp
 
 <div class="mx-auto min-w-0 max-w-5xl space-y-5">
@@ -83,13 +111,13 @@
         </div>
 
         <div class="flex flex-wrap gap-2 [&>button]:flex-1 sm:[&>button]:flex-none">
-            <a href="https://wa.me/{{ preg_replace('/^0/', '62', $servis->kendaraan->konsumen->no_hp) }}?text={{ urlencode('Halo ' . $servis->kendaraan->konsumen->nama_lengkap . ', berikut nota servis kendaraan Anda: ' . $servis->kendaraan->plat_nomor) }}" 
-                target="_blank"
-                class="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-xs font-bold text-white hover:bg-green-700">
-                <i class="fa-brands fa-whatsapp"></i>
-                Kirim Nota via WhatsApp
-            </a>
-
+            @if($tautanWa)
+                <a href="{{ $tautanWa }}" target="_blank" rel="noopener noreferrer"
+                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-4 py-3 text-xs font-bold text-white hover:bg-green-700">
+                    <i class="fa-brands fa-whatsapp"></i>
+                    Hubungi Pelanggan via WhatsApp
+                </a>
+            @endif
             <button type="button" onclick="cetakSiraka('thermal')"
                 class="rounded-xl border border-neutral-700 bg-neutral-800 px-4 py-3 text-xs font-bold text-white hover:bg-neutral-700">
                 <i class="fa-solid fa-receipt mr-1"></i>
@@ -248,246 +276,7 @@
         @endif
 
         {{-- DOKUMEN ESTIMASI / TAGIHAN / NOTA --}}
-        <article id="printArea"
-            class="rounded-2xl border border-neutral-300 bg-white p-6 text-neutral-800 sm:p-10
-                   {{ $notaAkhir ? 'nota-lunas' : '' }}">
-
-            {{-- KOP: logo + nama bengkel (memakai <div>, bukan <header>, agar tidak
-                 ikut disembunyikan oleh CSS layout admin saat cetak) --}}
-            <div class="nota-kop">
-                <img src="{{ asset('images/logo_bengkel.jpe') }}"
-                    alt="Logo Baba Auto Service" class="nota-logo"
-                    onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                <div class="nota-logo-cadangan" style="display:none" aria-hidden="true">BAS</div>
-
-                <div class="nota-kop-teks">
-                    <h2 class="nota-nama">BABA AUTO SERVICE</h2>
-                    <p class="nota-tagline">SIRAKA &bull; SISTEM INFORMASI PERAWATAN KENDARAAN</p>
-                    <p class="nota-alamat">Jl. Soebrantas No. 88, Panam, Pekanbaru</p>
-                </div>
-            </div>
-
-            {{-- JUDUL + NOMOR/TANGGAL --}}
-            <div class="nota-judul">
-                <h3 class="nota-judul-teks">{{ $judul }}</h3>
-                <div class="nota-meta">
-                    <div class="nota-meta-sel">
-                        <span>NO. DOKUMEN</span>
-                        <strong>{{ $nomor }}</strong>
-                    </div>
-                    <div class="nota-meta-sel">
-                        <span>TANGGAL</span>
-                        <strong>{{ \Carbon\Carbon::parse($servis->tanggal_servis)->format('d/m/Y') }}</strong>
-                    </div>
-                </div>
-            </div>
-
-            {{-- PELANGGAN & KENDARAAN --}}
-            <div class="nota-info">
-                <dl class="kv-blok">
-                    <div class="kv"><dt>Nama</dt><dd><strong>{{ $servis->kendaraan->konsumen->nama_lengkap }}</strong></dd></div>
-                    <div class="kv"><dt>Telepon</dt><dd>{{ $servis->kendaraan->konsumen->no_hp ?: '-' }}</dd></div>
-                    <div class="kv"><dt>Diagnosis</dt><dd>{{ $servis->diagnosa_akhir ?? $servis->diagnosa_awal ?? '-' }}</dd></div>
-                    @if($servis->tindakan_servis)
-                        <div class="kv"><dt>Tindakan</dt><dd>{{ $servis->tindakan_servis }}</dd></div>
-                    @endif
-                </dl>
-
-                <dl class="kv-blok">
-                    <div class="kv"><dt>Plat Nomor</dt><dd><strong>{{ $servis->kendaraan->plat_nomor }}</strong></dd></div>
-                    <div class="kv"><dt>Merk / Tipe</dt><dd>{{ $servis->kendaraan->merk }} {{ $servis->kendaraan->tipe_model }}</dd></div>
-                    <div class="kv"><dt>KM Masuk</dt><dd>{{ number_format($servis->km_masuk ?? 0, 0, ',', '.') }} KM</dd></div>
-                    @if($servis->km_keluar !== null)
-                        <div class="kv"><dt>KM Keluar</dt><dd>{{ number_format($servis->km_keluar, 0, ',', '.') }} KM</dd></div>
-                    @endif
-                </dl>
-            </div>
-
-            {{-- BIAYA SUKU CADANG --}}
-            @if($servis->detailSpareparts->isNotEmpty())
-                <section class="nota-seksi">
-                    <h4 class="nota-seksi-judul">Biaya Suku Cadang</h4>
-                    <div class="nota-table-wrap">
-                        <table class="nota-table">
-                            <thead>
-                                <tr>
-                                    <th class="col-no">No</th>
-                                    <th>Deskripsi</th>
-                                    <th class="text-center">Qty</th>
-                                    <th class="text-right">Harga</th>
-                                    <th class="text-right">Total</th>
-                                    @if($bolehEdit)
-                                        <th class="no-print text-right">Aksi</th>
-                                    @endif
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($servis->detailSpareparts as $item)
-                                    <tr>
-                                        <td class="col-no">{{ $loop->iteration }}</td>
-                                        <td class="col-desk">
-                                            {{ $item->sparepart->nama_barang ?? 'Sparepart' }}
-                                        </td>
-                                        <td class="text-center" data-label="Qty">{{ $item->qty }}</td>
-                                        <td class="text-right" data-label="Harga">
-                                            {{ $rp($item->harga_jual_saat_transaksi) }}
-                                        </td>
-                                        <td class="text-right font-bold" data-label="Jumlah">
-                                            {{ $rp($item->harga_jual_saat_transaksi * $item->qty) }}
-                                        </td>
-                                        @if($bolehEdit)
-                                            <td class="no-print text-right">
-                                                <form method="POST"
-                                                    action="{{ route('admin.rekam-servis.sparepart.hapus', [$servis->id, $item->id]) }}">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit"
-                                                        data-confirm="Hapus sparepart ini dari rincian?"
-                                                        class="font-bold text-rose-600">Hapus</button>
-                                                </form>
-                                            </td>
-                                        @endif
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="4" class="ttl-label">Jumlah total</td>
-                                    <td class="text-right">{{ $rp($subSparepart) }}</td>
-                                    @if($bolehEdit)<td class="no-print"></td>@endif
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </section>
-            @endif
-
-            {{-- BIAYA JASA SERVIS --}}
-            @if($servis->detailJasas->isNotEmpty())
-                <section class="nota-seksi">
-                    <h4 class="nota-seksi-judul">Biaya Jasa Servis</h4>
-                    <div class="nota-table-wrap">
-                        <table class="nota-table">
-                            <thead>
-                                <tr>
-                                    <th class="col-no">No</th>
-                                    <th>Deskripsi</th>
-                                    <th class="text-right">Total</th>
-                                    @if($bolehEdit)
-                                        <th class="no-print text-right">Aksi</th>
-                                    @endif
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @foreach($servis->detailJasas as $item)
-                                    @php
-                                        $qtyJasa = (int) ($item->qty ?? 1);
-                                        $diskonJasa = (float) ($item->diskon ?? 0);
-                                    @endphp
-                                    <tr>
-                                        <td class="col-no">{{ $loop->iteration }}</td>
-                                        <td class="col-desk">
-                                            {{ $item->jasa->nama_jasa ?? 'Jasa Servis' }}
-                                            @if($qtyJasa > 1 || $diskonJasa > 0)
-                                                <div class="nota-ket-kecil">
-                                                    {{ $qtyJasa }} &times; {{ $rp($item->harga_saat_transaksi) }}@if($diskonJasa > 0), diskon {{ $rp($diskonJasa) }}@endif
-                                                </div>
-                                            @endif
-                                        </td>
-                                        <td class="text-right font-bold" data-label="Jumlah">
-                                            {{ $rp($barisJasa($item)) }}
-                                        </td>
-                                        @if($bolehEdit)
-                                            <td class="no-print text-right">
-                                                <form method="POST"
-                                                    action="{{ route('admin.rekam-servis.jasa.hapus', [$servis->id, $item->id]) }}">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit"
-                                                        data-confirm="Hapus jasa ini dari rincian?"
-                                                        class="font-bold text-rose-600">Hapus</button>
-                                                </form>
-                                            </td>
-                                        @endif
-                                    </tr>
-                                @endforeach
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="2" class="ttl-label">Jumlah total</td>
-                                    <td class="text-right">{{ $rp($subJasa) }}</td>
-                                    @if($bolehEdit)<td class="no-print"></td>@endif
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </section>
-            @endif
-
-            @unless($adaBiaya)
-                <p class="nota-kosong">Belum ada biaya servis.</p>
-            @endunless
-
-            {{-- METODE PEMBAYARAN (kiri) + TOTAL (kanan) --}}
-            <div class="nota-bottom">
-                <div class="nota-bottom-kiri">
-                    <h4 class="nota-seksi-judul">Pembayaran</h4>
-                    @if($pembayaran->isNotEmpty())
-                        @foreach($pembayaran as $bayar)
-                            <p><strong>{{ strtoupper($bayar->metode_pembayaran) }}</strong> — {{ $rp($bayar->nominal_dialokasikan) }}</p>
-                            <p class="nota-abu">{{ $bayar->tanggal_bayar?->format('d/m/Y H:i') ?? '-' }}</p>
-                        @endforeach
-                    @elseif($nota)
-                        <p class="nota-abu">Belum ada pembayaran (Bayar Nanti).</p>
-                    @else
-                        <p class="nota-abu">Estimasi biaya, belum menjadi tagihan.</p>
-                    @endif
-
-                    @if($nota?->catatan_nota)
-                        <h4 class="nota-seksi-judul nota-jarak">Catatan Pemeriksaan Lanjutan</h4>
-                        <p class="whitespace-pre-line">{{ $nota->catatan_nota }}</p>
-                    @endif
-
-                    @foreach($servis->catatanRekomendasis as $catatan)
-                        <p class="nota-jarak">{{ $catatan->catatan }}</p>
-                    @endforeach
-
-                </div>
-
-                <div class="nota-total-box">
-                    <div class="tot"><span>SUB TOTAL</span><strong>{{ $rp($subtotal) }}</strong></div>
-                    <div class="tot"><span>DISKON</span><strong id="labelDiskon">- {{ $rp($diskon) }}</strong></div>
-                    <div class="tot tot-utama"><span>TOTAL TAGIHAN</span><strong id="labelTotal">{{ $rp($total) }}</strong></div>
-
-                    @if($nota)
-                        <div class="tot"><span>TOTAL DIBAYAR</span><strong>{{ $rp($totalDibayar) }}</strong></div>
-                        <div class="tot"><span>SISA TAGIHAN</span><strong>{{ $rp($sisaTagihan) }}</strong></div>
-                        @if($totalTips > 0)
-                            <div class="tot"><span>TIPS</span><strong>{{ $rp($totalTips) }}</strong></div>
-                        @endif
-                        @if($totalKembalian > 0)
-                            <div class="tot"><span>KEMBALIAN</span><strong>{{ $rp($totalKembalian) }}</strong></div>
-                        @endif
-                    @endif
-
-                    <div class="tot tot-catatan"><span>CATATAN</span><strong>{{ $statusDok }}</strong></div>
-                </div>
-            </div>
-
-            {{-- TANDA TANGAN --}}
-            <div class="nota-ttd">
-                <div class="ttd-kolom">
-                    <p>Pelanggan</p>
-                    <div class="ttd-ruang"></div>
-                    <p class="ttd-nama">( {{ $servis->kendaraan->konsumen->nama_lengkap }} )</p>
-                </div>
-                <div class="ttd-kolom ttd-kanan">
-                    <p>Hormat kami,</p>
-                    <div class="ttd-ruang"></div>
-                    <p class="ttd-nama">( Baba Auto Service )</p>
-                </div>
-            </div>
-        </article>
+        @include('partials.nota-resmi')
 
         @if(!$nota)
             <section class="no-print rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
@@ -508,41 +297,28 @@
                     </p>
 
                     <div class="max-w-xs">
-    <label class="mb-2 block text-xs text-neutral-300">
-        Diskon Total (Rp)
-    </label>
-
-    <div class="flex items-center gap-2">
-        {{-- Input untuk ribuan (bisa diedit) --}}
-        <input 
-            type="number" 
-            id="diskonRibuan" 
-            min="0" 
-            value="0"
-            class="w-32 rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white text-right"
-            placeholder="0"
-        >
-        
-        {{-- Label ",000" (tidak bisa diedit) --}}
-        <div class="flex-1 rounded-xl border border-neutral-700 bg-neutral-800/50 p-3 text-sm text-neutral-400">
-            ,000
-        </div>
-    </div>
-
-    {{-- Tampilan hasil akhir --}}
-    <div class="mt-2 text-xs text-neutral-400">
-        Total: <strong id="diskonTotal" class="text-white">Rp 0</strong>
-    </div>
-
-    <div class="mt-3 flex gap-2">
-        @foreach([5, 10, 15, 20] as $cepat)
-            <button type="button" data-diskon-ribuan="{{ $cepat }}"
-                class="rounded-lg border border-neutral-700 px-3 py-2 text-xs text-white hover:bg-neutral-700 transition">
-                Rp {{ number_format($cepat * 1000, 0, ',', '.') }}
-            </button>
-        @endforeach
-    </div>
-</div>
+                        <label for="diskonRibuan" class="mb-2 block text-xs text-neutral-300">
+                            Diskon Total (Rp)
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" name="diskon_ribuan" id="diskonRibuan"
+                                value="{{ old('diskon_ribuan', 0) }}" min="0" max="999999999" step="1" required
+                                class="w-32 min-w-0 rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-right text-sm text-white"
+                                placeholder="0">
+                            <div class="flex-1 rounded-xl border border-neutral-700 bg-neutral-800/50 p-3 text-sm text-neutral-400" aria-hidden="true">,000</div>
+                        </div>
+                        <p class="mt-2 text-xs text-neutral-400">
+                            Total: <strong id="diskonTotal" class="text-white">Rp 0</strong>
+                        </p>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            @foreach([5, 10, 15, 20] as $cepat)
+                                <button type="button" data-diskon-ribuan="{{ $cepat }}"
+                                    class="rounded-lg border border-neutral-700 px-3 py-2 text-xs text-white transition hover:bg-neutral-700">
+                                    Rp {{ number_format($cepat * 1000, 0, ',', '.') }}
+                                </button>
+                            @endforeach
+                        </div>
+                    </div>
 
                     <button type="submit"
                         @disabled($servis->detailSpareparts->isEmpty() && $servis->detailJasas->isEmpty())
@@ -653,6 +429,22 @@
                 <p class="text-xs text-neutral-400">KM Masuk: {{ number_format($servis->km_masuk ?? 0, 0, ',', '.') }} KM</p>
                 <label class="block text-xs text-neutral-300">Catatan Rekomendasi (opsional)</label>
                 <textarea name="catatan_nota" rows="3" maxlength="5000" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-white">{{ old('catatan_nota', $nota->catatan_nota ?? '') }}</textarea>
+                @if($rekomendasiLama->isNotEmpty())
+                    <div class="rounded-xl border border-amber-500/30 bg-amber-500/5 p-4">
+                        <p class="text-sm font-bold text-amber-300">Rekomendasi dari Servis Sebelumnya</p>
+                        <p class="mt-1 text-xs text-neutral-400">Centang hanya jika pekerjaan terkait benar-benar telah ditangani pada servis ini. Bila satu catatan berisi beberapa tindakan, centang setelah semuanya ditangani.</p>
+                        @foreach($rekomendasiLama as $rekomendasi)
+                            <label class="mt-3 flex cursor-pointer items-start gap-3 rounded-lg border border-neutral-700 p-3">
+                                <input type="checkbox" name="rekomendasi_selesai[]" value="{{ $rekomendasi->id }}" @checked(in_array($rekomendasi->id, old('rekomendasi_selesai', []))) class="mt-1 rounded border-neutral-500">
+                                <span class="text-xs text-neutral-200">
+                                    <span class="block font-bold text-amber-200">{{ \Carbon\Carbon::parse($rekomendasi->tanggal_servis)->format('d/m/Y') }}</span>
+                                    <span class="mt-1 block whitespace-pre-line">{{ $rekomendasi->catatan_nota }}</span>
+                                    <span class="mt-1 block text-neutral-400">Sudah ditangani dalam pekerjaan servis saat ini</span>
+                                </span>
+                            </label>
+                        @endforeach
+                    </div>
+                @endif
                 <button type="submit" class="w-full rounded-xl bg-sky-600 p-3 text-sm font-bold text-white">Simpan Data Akhir Pekerjaan</button>
             </form>
         @elseif($pekerjaanSelesai)
@@ -660,6 +452,15 @@
                 <p><strong>Data Akhir Tersimpan</strong></p>
                 <p class="mt-2">KM Keluar: {{ number_format($servis->km_keluar, 0, ',', '.') }} KM</p>
                 <p class="mt-2">Catatan: {{ $nota?->catatan_nota ?: 'Tidak ada catatan tambahan.' }}</p>
+                @if($nota && trim((string) $nota->catatan_nota) !== '')
+                    <div class="mt-3 rounded-xl border border-neutral-700 p-3">
+                        <p class="text-xs text-neutral-400">Tindak lanjut rekomendasi:</p>
+                        <p class="mt-1 text-sm font-semibold {{ $nota->status_rekomendasi === 'sudah' ? 'text-emerald-400' : 'text-amber-400' }}">
+                            {{ $nota->status_rekomendasi === 'sudah' ? 'Sudah ditangani' : ($nota->status_rekomendasi === 'belum' ? 'Belum ditangani' : 'Belum diklasifikasikan') }}
+                        </p>
+
+                    </div>
+                @endif
             </div>
         @else
             <p class="mt-4 text-sm text-amber-400">Terbitkan tagihan terlebih dahulu.</p>
@@ -1033,7 +834,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function tampilkan(no) {
         aktif = Math.max(1, Math.min(maxTahap, no));
-        panels.forEach(el => el.classList.toggle('hidden', Number(el.dataset.panel) !== aktif));
+        panels.forEach(el => el.classList.toggle(
+            'hidden', Number(el.dataset.panel) !== aktif
+        ));
         document.querySelectorAll('[data-tahap]').forEach(btn => {
             const selected = Number(btn.dataset.tahap) === aktif;
             btn.classList.toggle('opacity-60', !selected);
@@ -1042,7 +845,9 @@ document.addEventListener('DOMContentLoaded', function () {
         kembali.disabled = aktif === 1;
         lanjut.disabled = aktif === maxTahap;
         const info = document.getElementById('infoNavigasi');
-        info.textContent = aktif < maxTahap ? 'Anda sedang melihat tahap sebelumnya.' : 'Tahap transaksi saat ini.';
+        info.textContent = aktif < maxTahap
+            ? 'Anda sedang melihat tahap sebelumnya.'
+            : 'Tahap transaksi saat ini.';
 
         const deskripsi = document.getElementById('deskripsiTahap');
         const teks = {
@@ -1063,59 +868,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const rp = n => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
 
-//  LOGIKA DISKON DENGAN INPUT TERPISAH
-// ==========================================================
-const inputRibuan = document.getElementById('diskonRibuan');
-const labelTotal = document.getElementById('diskonTotal');
-const labelDiskonNota = document.getElementById('labelDiskon');
-const labelTotalNota = document.getElementById('labelTotal');
-
-function hitungDiskon() {
-    if (!inputRibuan) return;
-
-    // Ambil nilai ribuan
-    const ribuan = parseInt(inputRibuan.value) || 0;
-    
-    // Hitung total (ribuan * 1000)
-    const totalDiskon = ribuan * 1000;
-    
-    // Pastikan diskon tidak lebih besar dari subtotal
-    const diskonAman = Math.min(totalDiskon, subtotal);
-
-    // Update tampilan
-    if (labelTotal) {
-        labelTotal.textContent = 'Rp ' + diskonAman.toLocaleString('id-ID');
+    // Tampilan diskon nominal ribuan, mengikuti form dan batas backend.
+    const inputDiskon = document.getElementById('diskonRibuan');
+    function hitungDiskon() {
+        if (!inputDiskon) return;
+        const nilai = Number(inputDiskon.value);
+        const ribuan = Number.isSafeInteger(nilai) && nilai >= 0 ? Math.min(nilai, 999999999) : 0;
+        const diskon = Math.min(subtotal, ribuan * 1000);
+        const labelHasil = document.getElementById('diskonTotal');
+        if (labelHasil) labelHasil.textContent = rp(diskon);
+        const labelDiskonNota = document.getElementById('labelDiskon');
+        const labelTotalNota = document.getElementById('labelTotal');
+        if (labelDiskonNota) labelDiskonNota.textContent = '- ' + rp(diskon);
+        if (labelTotalNota) labelTotalNota.textContent = rp(subtotal - diskon);
     }
-    
-    // Update tampilan di nota (jika ada)
-    if (labelDiskonNota) {
-        labelDiskonNota.textContent = '- Rp ' + diskonAman.toLocaleString('id-ID');
-    }
-    if (labelTotalNota) {
-        labelTotalNota.textContent = 'Rp ' + (subtotal - diskonAman).toLocaleString('id-ID');
-    }
-}
-
-if (inputRibuan) {
-    // Event saat mengetik
-    inputRibuan.addEventListener('input', function() {
-        // Pastikan tidak negatif
-        if (this.value < 0) this.value = 0;
-        hitungDiskon();
-    });
-
-    // Event untuk tombol cepat (Rp 5.000, Rp 10.000, dll)
+    inputDiskon?.addEventListener('input', hitungDiskon);
     document.querySelectorAll('[data-diskon-ribuan]').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const ribuan = parseInt(this.getAttribute('data-diskon-ribuan'));
-            inputRibuan.value = ribuan;
+        btn.addEventListener('click', () => {
+            if (!inputDiskon) return;
+            inputDiskon.value = btn.dataset.diskonRibuan;
             hitungDiskon();
         });
     });
-
-    // Jalankan sekali saat halaman dimuat
     hitungDiskon();
-}
 
     // Perhitungan pembayaran
     const form = document.getElementById('formPembayaran');
@@ -1163,6 +938,7 @@ if (inputRibuan) {
     });
 });
 
+
 function cetakSiraka(format) {
     const panelDokumen = document.querySelector('[data-panel="1"]');
     if (!panelDokumen) return;
@@ -1173,6 +949,7 @@ function cetakSiraka(format) {
     const thermal = format === 'thermal';
     document.body.classList.toggle('print-thermal', thermal);
 
+    // Ukuran kertas khusus thermal (rol 72mm, tinggi mengikuti isi)
     let styleHalaman = null;
     if (thermal) {
         styleHalaman = document.createElement('style');
@@ -1192,5 +969,6 @@ function cetakSiraka(format) {
     window.addEventListener('afterprint', pulihkan, {once:true});
     window.print();
 }
+
 </script>
 @endsection
