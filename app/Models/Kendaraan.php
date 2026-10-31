@@ -12,28 +12,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Kendaraan extends Model
 {
-    /**
-     * Kendaraan dianggap perlu servis bila servis terakhir
-     * sudah lebih dari 6 bulan.
-     */
     public const BATAS_BULAN_SERVIS = 6;
 
     protected $table = 'kendaraans';
-
-    /**
-     * Dipertahankan dari kode utama agar proses
-     * admin/anggota yang sudah ada tidak berubah.
-     */
     protected $guarded = [];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Casts
-    |--------------------------------------------------------------------------
-    |
-    | Field baru: cc, transmisi, jenis_bahan_bakar
-    |
-    */
     protected $casts = [
         'cc'                 => 'integer',
         'transmisi'          => 'string',
@@ -41,11 +24,6 @@ class Kendaraan extends Model
         'tahun'              => 'integer',
     ];
 
-    /*
-    |--------------------------------------------------------------------------
-    | Relasi
-    |--------------------------------------------------------------------------
-    */
     public function konsumen(): BelongsTo
     {
         return $this->belongsTo(Konsumen::class, 'konsumen_id');
@@ -56,9 +34,6 @@ class Kendaraan extends Model
         return $this->hasMany(RekamServis::class, 'kendaraan_id');
     }
 
-    /**
-     * Mengambil servis terakhir kendaraan.
-     */
     public function servisTerakhir(): HasOne
     {
         return $this->hasOne(RekamServis::class, 'kendaraan_id')
@@ -68,10 +43,6 @@ class Kendaraan extends Model
             ]);
     }
 
-    /**
-     * Semua catatan rekomendasi yang dimiliki kendaraan
-     * melalui rekam servis.
-     */
     public function catatanRekomendasis(): HasManyThrough
     {
         return $this->hasManyThrough(
@@ -84,7 +55,6 @@ class Kendaraan extends Model
         );
     }
 
-    /** Rekomendasi nota yang belum ditangani, lintas kunjungan servis. */
     public function rekomendasiNotaTerbuka(): HasManyThrough
     {
         return $this->hasManyThrough(
@@ -100,15 +70,6 @@ class Kendaraan extends Model
          ->orderByDesc('nota_transaksis.id');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Scope
-    |--------------------------------------------------------------------------
-    */
-    /**
-     * Memuat data yang diperlukan untuk menentukan
-     * status kendaraan pada sisi pelanggan.
-     */
     public function scopeDenganStatus(Builder $query): Builder
     {
         return $query
@@ -116,15 +77,6 @@ class Kendaraan extends Model
             ->withCount('rekamServis');
     }
 
-    /*
-    |--------------------------------------------------------------------------
-    | Accessor
-    |--------------------------------------------------------------------------
-    */
-    /**
-     * Contoh:
-     * Toyota Avanza Veloz
-     */
     public function getNamaAttribute(): string
     {
         return trim(
@@ -132,21 +84,12 @@ class Kendaraan extends Model
         );
     }
 
-    /**
-     * Contoh:
-     * Toyota Avanza Veloz 2021
-     */
     public function getNamaLengkapAttribute(): string
     {
         return $this->nama
             . ($this->tahun ? ' ' . $this->tahun : '');
     }
 
-    /**
-     * Label transmisi untuk ditampilkan ke user.
-     * 
-     * Contoh penggunaan: $kendaraan->transmisi_label
-     */
     public function getTransmisiLabelAttribute(): string
     {
         return match ($this->transmisi) {
@@ -157,11 +100,6 @@ class Kendaraan extends Model
         };
     }
 
-    /**
-     * Label bahan bakar untuk ditampilkan ke user.
-     * 
-     * Contoh penggunaan: $kendaraan->bahan_bakar_label
-     */
     public function getBahanBakarLabelAttribute(): string
     {
         return match ($this->jenis_bahan_bakar) {
@@ -172,23 +110,19 @@ class Kendaraan extends Model
     }
 
     /**
-     * Format CC dengan suffix "cc".
-     * 
-     * Contoh penggunaan: $kendaraan->cc_format
-     * Output: "1500 cc" atau "-"
+     * ✅ Format CC dengan koma (Liter)
+     * Contoh: 2200 → "2,2 L"
      */
     public function getCcFormatAttribute(): string
-    {
-        return $this->cc ? $this->cc . ' cc' : '-';
+{
+    if (!$this->cc) {
+        return '-';
     }
 
-    /**
-     * Status:
-     * baik
-     * perlu_servis
-     * dikerjakan
-     * belum_servis
-     */
+    // Format desimal dengan koma + suffix L
+    return number_format($this->cc, 1, ',', '') . ' L';
+}
+
     public function getStatusServisAttribute(): string
     {
         $terakhir = $this->servisTerakhir;
@@ -197,18 +131,10 @@ class Kendaraan extends Model
             return 'belum_servis';
         }
 
-        /**
-         * Selama servis terakhir belum selesai,
-         * kendaraan dianggap masih dalam proses.
-         */
         if ($terakhir->status !== 'selesai') {
             return 'dikerjakan';
         }
 
-        /**
-         * Cek apakah servis terakhir sudah lebih
-         * dari batas servis berkala.
-         */
         $tanggalServis = Carbon::parse(
             $terakhir->tanggal_servis
         );
@@ -224,9 +150,6 @@ class Kendaraan extends Model
         return 'baik';
     }
 
-    /**
-     * Label status untuk ditampilkan ke pelanggan.
-     */
     public function getStatusLabelAttribute(): string
     {
         return match ($this->status_servis) {
@@ -237,9 +160,6 @@ class Kendaraan extends Model
         };
     }
 
-    /**
-     * Tone untuk kebutuhan tampilan badge.
-     */
     public function getStatusToneAttribute(): string
     {
         return match ($this->status_servis) {
@@ -250,9 +170,6 @@ class Kendaraan extends Model
         };
     }
 
-    /**
-     * Alasan kendaraan membutuhkan perhatian.
-     */
     public function getAlasanPerhatianAttribute(): ?string
     {
         $terakhir = $this->servisTerakhir;
