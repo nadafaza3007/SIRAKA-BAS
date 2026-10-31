@@ -4,145 +4,263 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\Konsumen;
-use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
     public function showLogin()
     {
-        if (Auth::check()) {
-            return $this->redirectByRole(Auth::user());
-        }
-        return view('auth.login');
+    return view('auth.login');
     }
 
     public function login(Request $request)
     {
-        $request->validate([
-            'username' => 'required|string',
-            'password' => 'required|string',
-        ], [
-            'username.required' => 'Username atau Nomor HP wajib diisi.',
-            'password.required' => 'Password wajib diisi.',
-        ]);
+    /*
+    |--------------------------------------------------------------------------
+    | Validasi
+    |--------------------------------------------------------------------------
+    */
+    $request->validate([
+        'no_hp' => [
+            'required',
+            'string',
+        ],
+        'password' => [
+            'required',
+            'string',
+        ],
+    ], [
+        'no_hp.required'    => 'Username atau nomor HP wajib diisi.',
+        'password.required' => 'Kata sandi wajib diisi.',
+    ]);
 
-        $loginInput = trim($request->username);
-        $user = User::where('username', $loginInput)
-            ->orWhere('no_hp', $loginInput)
-            ->first();
+    /*
+    |--------------------------------------------------------------------------
+    | Ambil input
+    |--------------------------------------------------------------------------
+    |
+    | Field form tetap bernama no_hp, tetapi nilainya boleh:
+    |
+    | - username
+    | - nomor HP
+    |
+    */
+    $loginInput = trim($request->input('no_hp'));
+    $password   = $request->input('password');
+    $remember   = $request->boolean('remember');
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return back()->withInput()->withErrors([
-                'login' => 'Username atau password salah.',
-            ]);
-        }
+    /*
+    |--------------------------------------------------------------------------
+    | Percobaan 1: login menggunakan nomor HP
+    |--------------------------------------------------------------------------
+    */
+    $berhasil = Auth::attempt(
+        [
+            'no_hp'    => $loginInput,
+            'password' => $password,
+        ],
+        $remember
+    );
 
-        if ($user->status !== 'aktif') {
-            return back()->withInput()->withErrors([
-                'login' => 'Akun Anda dinonaktifkan, silakan hubungi bengkel/Admin.',
-            ]);
-        }
+    /*
+    |--------------------------------------------------------------------------
+    | Percobaan 2: login menggunakan username
+    |--------------------------------------------------------------------------
+    */
+    if (! $berhasil) {
+        $berhasil = Auth::attempt(
+            [
+                'username' => strtolower($loginInput),
+                'password' => $password,
+            ],
+            $remember
+        );
+    }
 
-        Auth::login($user, $request->boolean('remember'));
+    /*
+    |--------------------------------------------------------------------------
+    | Login berhasil
+    |--------------------------------------------------------------------------
+    */
+    if ($berhasil) {
         $request->session()->regenerate();
+        return $this->redirectByRole();
+    }
 
-        AuditLog::catat($user->name, 'Autentikasi', 'Login ke sistem (' . strtoupper($user->role) . ')', null, null, $user->id);
-
-        return $this->redirectByRole($user);
+    /*
+    |--------------------------------------------------------------------------
+    | Login gagal
+    |--------------------------------------------------------------------------
+    */
+    return back()
+        ->withInput($request->only('no_hp'))
+        ->withErrors([
+            'no_hp' => 'Username / Nomor HP atau kata sandi salah.',
+        ]);
     }
 
     public function showRegister()
     {
-        if (Auth::check()) {
-            return $this->redirectByRole(Auth::user());
-        }
-        return view('auth.register');
+    return view('auth.register');
+    }
+
+    public function checkUsername(Request $request)
+    {
+    $username = strtolower(trim((string) $request->query('username')));
+
+    if ($username === '') {
+        return response()->json([
+            'available' => false,
+            'message'   => 'Username wajib diisi.',
+        ]);
+    }
+
+    if (strlen($username) < 3) {
+        return response()->json([
+            'available' => false,
+            'message'   => 'Username minimal 3 karakter.',
+        ]);
+    }
+
+    if (strlen($username) > 30) {
+        return response()->json([
+            'available' => false,
+            'message'   => 'Username maksimal 30 karakter.',
+        ]);
+    }
+
+        if (! preg_match('/^[a-z0-9_]+$/', $username)) {
+        return response()->json([
+            'available' => false,
+            'message' => 'Username hanya boleh berisi huruf, angka, dan underscore (_).',
+        ]);
+    }
+
+    $usernameSudahAda = User::whereRaw('LOWER(username) = ?', [$username])->exists();
+
+    if ($usernameSudahAda) {
+        return response()->json([
+            'available' => false,
+            'message'   => 'Username sudah digunakan.',
+        ]);
+    }
+
+    return response()->json([
+        'available' => true,
+        'message'   => 'Username tersedia.',
+    ]);
     }
 
     public function register(Request $request)
     {
-        $request->validate([
-            'nama_lengkap' => 'required|string|max:255',
-            'no_hp' => 'required|string|min:9|max:20|unique:users,no_hp',
-            'password' => 'required|string|min:6|confirmed',
-        ], [
-            'nama_lengkap.required' => 'Nama lengkap wajib diisi.',
-            'no_hp.required' => 'Nomor HP/WhatsApp wajib diisi.',
-            'no_hp.unique' => 'Nomor HP sudah terdaftar. Silakan login atau gunakan fitur lupa password.',
-            'password.required' => 'Password wajib diisi.',
-            'password.min' => 'Password minimal harus 6 karakter.',
-            'password.confirmed' => 'Konfirmasi password tidak cocok.',
+    /*
+    |--------------------------------------------------------------------------
+    | Validasi
+    |--------------------------------------------------------------------------
+    */
+    $request->validate([
+        'nama_lengkap' => [
+            'required',
+            'string',
+            'max:255',
+        ],
+        'username' => [
+            'required',
+            'string',
+            'min:3',
+            'max:30',
+            'alpha_dash',
+            'unique:users,username',
+        ],
+        'no_hp' => [
+            'required',
+            'string',
+            'regex:/^(?:08[0-9]{8,11}|(?:\+?62)8[0-9]{8,11})$/',
+        ],
+        'password' => [
+            'required',
+            'string',
+            'min:8',
+            'confirmed',
+        ],
+    ], [
+        'nama_lengkap.required' => 'Nama lengkap wajib diisi.',
+        'username.required'     => 'Username wajib diisi.',
+        'username.min'          => 'Username minimal 3 karakter.',
+        'username.max'          => 'Username maksimal 30 karakter.',
+        'username.max'          => 'Username maksimal 30 karakter.',
+        'username.alpha_dash'   => 'Username hanya boleh berisi huruf, angka, tanda hubung, dan underscore.',
+        'username.unique'       => 'Username sudah digunakan. Silakan gunakan username lain.',
+        'no_hp.required'        => 'Nomor HP wajib diisi.',
+        'no_hp.regex'           => 'Masukkan nomor HP yang valid.',
+        'no_hp.unique'          => 'Nomor HP sudah terdaftar. Silakan masuk menggunakan akun tersebut.',
+        'password.required'     => 'Kata sandi wajib diisi.',
+        'password.min'          => 'Kata sandi minimal 8 karakter.',
+        'password.confirmed'    => 'Konfirmasi kata sandi tidak cocok.',
+    ]);
+
+    // Simpan nomor telepon dalam format lokal yang konsisten (08...).
+    // Pemeriksaan keunikan dilakukan setelah normalisasi agar 08..., 628..., dan +628...
+    // tidak dapat digunakan untuk membuat beberapa akun bagi nomor yang sama.
+    $nomorInput = trim((string) $request->input('no_hp'));
+    $nomorNormal = str_starts_with($nomorInput, '+62')
+        ? '0' . substr($nomorInput, 3)
+        : (str_starts_with($nomorInput, '62') ? '0' . substr($nomorInput, 2) : $nomorInput);
+    $nomorInternasional = '62' . substr($nomorNormal, 1);
+
+    if (User::whereIn('no_hp', [$nomorNormal, $nomorInternasional, '+' . $nomorInternasional])->exists()) {
+        throw \Illuminate\Validation\ValidationException::withMessages([
+            'no_hp' => 'Nomor HP sudah terdaftar. Silakan masuk menggunakan akun tersebut.',
         ]);
+    }
 
-        $noHp = preg_replace('/[^0-9]/', '', $request->no_hp);
-        if (str_starts_with($noHp, '62')) {
-            $noHp = '0' . substr($noHp, 2);
-        }
+    // Pencocokan Master Konsumen mengikuti perilaku lama; hanya menyamakan variasi format.
+    // Catatan keamanan: verifikasi kepemilikan nomor tetap dibutuhkan sebelum
+    // mengizinkan akses ke riwayat dan kendaraan pelanggan (di luar cakupan patch ini).
+    $konsumen = Konsumen::whereIn('no_hp', [$nomorNormal, $nomorInternasional, '+' . $nomorInternasional])->first();
 
-        // Cek apakah No HP sudah ada di data Konsumen bengkel
-        $konsumen = Konsumen::where('no_hp', $noHp)
-            ->orWhere('no_hp', $request->no_hp)
-            ->first();
+    /*
+    |--------------------------------------------------------------------------
+    | Simpan akun baru
+    |--------------------------------------------------------------------------
+    */
+    User::create([
+        'name'        => trim($request->nama_lengkap),
+        'username'    => strtolower(trim($request->username)),
+        'no_hp'       => $nomorNormal,
+        'role'        => 'pelanggan',
+        'konsumen_id' => $konsumen ? $konsumen->id : null,
+        'password'    => bcrypt($request->password),
+    ]);
 
-        if (!$konsumen) {
-            // Jika belum ada di master konsumen, buat data konsumen baru
-            $konsumen = Konsumen::create([
-                'nama_lengkap' => $request->nama_lengkap,
-                'no_hp' => $request->no_hp,
-                'status' => 'aktif',
-            ]);
-        }
-
-        // Buat username unik jika tidak ditentukan
-        $baseUsername = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', explode(' ', $request->nama_lengkap)[0]));
-        $username = $baseUsername;
-        $counter = 1;
-        while (User::where('username', $username)->exists()) {
-            $username = $baseUsername . $counter;
-            $counter++;
-        }
-
-        $user = User::create([
-            'name' => $request->nama_lengkap,
-            'username' => $username,
-            'no_hp' => $request->no_hp,
-            'password' => Hash::make($request->password),
-            'role' => 'pelanggan',
-            'status' => 'aktif',
-            'konsumen_id' => $konsumen->id,
-        ]);
-
-        AuditLog::catat($user->name, 'Registrasi Akun', 'Pendaftaran akun pelanggan baru', null, [
-            'username' => $username,
-            'no_hp' => $request->no_hp,
-            'konsumen_id' => $konsumen->id
-        ], $user->id);
-
-        return redirect()->route('login')->with('success', 'Registrasi berhasil! Gunakan Username "' . $username . '" atau Nomor HP untuk masuk.');
+    /*
+    |--------------------------------------------------------------------------
+    | Kembali ke login
+    |--------------------------------------------------------------------------
+    */
+    return redirect()
+        ->route('login')
+        ->with(
+            'success',
+            'Pendaftaran akun berhasil! Silakan masuk menggunakan username atau nomor HP dan kata sandi Anda.'
+        );
     }
 
     public function logout(Request $request)
     {
-        if (Auth::check()) {
-            AuditLog::catat(Auth::user()->name, 'Autentikasi', 'Logout dari sistem', null, null, Auth::id());
-        }
-
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return redirect()->route('login')->with('success', 'Anda telah berhasil keluar.');
+    Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+    return redirect('/login');
     }
 
-    private function redirectByRole($user)
+    private function redirectByRole()
     {
-        if ($user->isPelanggan()) {
-            return redirect()->route('pelanggan.rekam-servis');
+        $role = auth()->user()->role;
+        if ($role === 'pelanggan') {
+            return redirect()->route('pelanggan.dashboard');
         }
-        return redirect()->route('admin.dashboard');
+        return redirect('/admin/dashboard');
     }
 }
-

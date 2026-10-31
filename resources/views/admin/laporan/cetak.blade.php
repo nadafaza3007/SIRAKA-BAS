@@ -161,6 +161,7 @@
                     <tr>
                         <th style="width: 4%;">No.</th>
                         <th>Nama Sparepart</th>
+                        <th>Jenis</th>
                         <th class="num">Jumlah Terjual</th>
                         <th class="num">Jumlah Tagihan</th>
                         <th class="num">Omzet</th>
@@ -173,6 +174,7 @@
                         <tr>
                             <td>{{ $i + 1 }}</td>
                             <td>{{ $sp->nama_barang }} @if($sp->kode_barang)<span class="muted">({{ $sp->kode_barang }})</span>@endif</td>
+                            <td>{{ $sp->jenis_label }}</td>
                             <td class="num">{{ $sp->unit_terjual }}</td>
                             <td class="num">{{ $sp->frekuensi }}</td>
                             <td class="num">{{ $rp($sp->omzet) }}</td>
@@ -180,11 +182,11 @@
                             <td class="num">{{ $rp($sp->laba_kotor) }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" style="text-align: center;">Tidak ada penjualan sparepart pada periode ini.</td></tr>
+                        <tr><td colspan="8" style="text-align: center;">Tidak ada penjualan sparepart pada periode ini.</td></tr>
                     @endforelse
                     @if($sparepartTerlaris->isNotEmpty())
                         <tr class="total">
-                            <td colspan="2">Total 10 teratas</td>
+                            <td colspan="3">Total 10 teratas</td>
                             <td class="num">{{ $sumTop->unit }}</td>
                             <td></td>
                             <td class="num">{{ $rp($sumTop->omzet) }}</td>
@@ -192,7 +194,7 @@
                             <td class="num">{{ $rp($sumTop->laba) }}</td>
                         </tr>
                         <tr class="total">
-                            <td colspan="2">Seluruh sparepart periode ini</td>
+                            <td colspan="3">Seluruh sparepart periode ini</td>
                             <td class="num">{{ $ringkasanSparepart->unit_terjual }}</td>
                             <td></td>
                             <td class="num">{{ $rp($ringkasanSparepart->omzet) }}</td>

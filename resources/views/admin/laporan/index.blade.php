@@ -433,7 +433,7 @@
 
             <h2 class="text-sm font-bold text-white">D. Analisis Penjualan Sparepart — 10 Terlaris</h2>
 
-            <p class="mt-1 text-xs text-neutral-500">Berdasarkan sparepart dalam tagihan yang diterbitkan pada periode laporan, terlepas dari status pembayarannya.</p>
+            <p class="mt-1 text-xs text-neutral-500">Berdasarkan sparepart dalam tagihan yang diterbitkan pada periode laporan, terlepas dari status pembayarannya. Jenis Stok/Pre-Order mengikuti kategori Master Sparepart saat laporan dibuat.</p>
 
         </div>
 
@@ -511,17 +511,17 @@
 
         <div class="overflow-x-auto"><table class="w-full min-w-[800px] text-xs">
 
-            <thead class="bg-neutral-900 text-neutral-400"><tr><th class="px-3 py-3 text-left">No.</th><th class="px-3 py-3 text-left">Nama Sparepart</th><th class="px-3 py-3 text-right">Jumlah terjual</th><th class="px-3 py-3 text-right">Jumlah tagihan</th><th class="px-3 py-3 text-right">Nilai penjualan</th><th class="px-3 py-3 text-right">Modal</th><th class="px-3 py-3 text-right">Laba kotor</th></tr></thead>
+            <thead class="bg-neutral-900 text-neutral-400"><tr><th class="px-3 py-3 text-left">No.</th><th class="px-3 py-3 text-left">Nama Sparepart</th><th class="px-3 py-3 text-left">Jenis</th><th class="px-3 py-3 text-right">Jumlah terjual</th><th class="px-3 py-3 text-right">Jumlah tagihan</th><th class="px-3 py-3 text-right">Nilai penjualan</th><th class="px-3 py-3 text-right">Modal</th><th class="px-3 py-3 text-right">Laba kotor</th></tr></thead>
 
             <tbody class="divide-y divide-neutral-800 text-neutral-200">
 
                 @forelse($sparepartTerlaris as $i => $sp)
 
-                    <tr><td class="px-3 py-3">{{ $i + 1 }}</td><td class="px-3 py-3 font-medium">{{ $sp->nama_barang }} @if($sp->kode_barang)<span class="block font-normal text-neutral-500">{{ $sp->kode_barang }}</span>@endif</td><td class="px-3 py-3 text-right">{{ number_format($sp->unit_terjual,0,',','.') }}</td><td class="px-3 py-3 text-right">{{ $sp->frekuensi }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sp->omzet) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sp->modal) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sp->laba_kotor) }}</td></tr>
+                    <tr><td class="px-3 py-3">{{ $i + 1 }}</td><td class="px-3 py-3 font-medium">{{ $sp->nama_barang }} @if($sp->kode_barang)<span class="block font-normal text-neutral-500">{{ $sp->kode_barang }}</span>@endif</td><td class="px-3 py-3">{{ $sp->jenis_label }}</td><td class="px-3 py-3 text-right">{{ number_format($sp->unit_terjual,0,',','.') }}</td><td class="px-3 py-3 text-right">{{ $sp->frekuensi }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sp->omzet) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sp->modal) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sp->laba_kotor) }}</td></tr>
 
                 @empty
 
-                    <tr><td colspan="7" class="px-4 py-8 text-center text-neutral-500">Belum ada penjualan sparepart pada periode ini.</td></tr>
+                    <tr><td colspan="8" class="px-4 py-8 text-center text-neutral-500">Belum ada penjualan sparepart pada periode ini.</td></tr>
 
                 @endforelse
 
@@ -529,9 +529,9 @@
 
             @if($sparepartTerlaris->isNotEmpty())
 
-            <tfoot class="bg-neutral-800/40 text-white"><tr class="font-semibold"><td colspan="2" class="px-3 py-3">10 teratas saja</td><td class="px-3 py-3 text-right">{{ number_format($sumTop->unit,0,',','.') }}</td><td></td><td class="px-3 py-3 text-right">{{ $rupiah($sumTop->omzet) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sumTop->modal) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sumTop->laba) }}</td></tr>
+            <tfoot class="bg-neutral-800/40 text-white"><tr class="font-semibold"><td colspan="3" class="px-3 py-3">10 teratas</td><td class="px-3 py-3 text-right">{{ number_format($sumTop->unit,0,',','.') }}</td><td></td><td class="px-3 py-3 text-right">{{ $rupiah($sumTop->omzet) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sumTop->modal) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sumTop->laba) }}</td></tr>
 
-            <tr><td colspan="2" class="px-3 py-3">Seluruh sparepart periode ini</td><td class="px-3 py-3 text-right">{{ number_format($ringkasanSparepart->unit_terjual,0,',','.') }}</td><td></td><td class="px-3 py-3 text-right">{{ $rupiah($ringkasanSparepart->omzet) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($ringkasanSparepart->modal) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($ringkasanSparepart->laba_kotor) }}</td></tr></tfoot>
+            <tr><td colspan="3" class="px-3 py-3">Seluruh sparepart periode ini</td><td class="px-3 py-3 text-right">{{ number_format($ringkasanSparepart->unit_terjual,0,',','.') }}</td><td></td><td class="px-3 py-3 text-right">{{ $rupiah($ringkasanSparepart->omzet) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($ringkasanSparepart->modal) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($ringkasanSparepart->laba_kotor) }}</td></tr></tfoot>
 
             @endif
 
@@ -547,7 +547,7 @@
 
         @if($sparepartBelumLunas->isNotEmpty())
 
-        <div class="overflow-x-auto border-t border-neutral-800"><table class="w-full min-w-[430px] text-xs"><thead class="bg-neutral-900 text-neutral-400"><tr><th class="px-4 py-2 text-left">Sparepart</th><th class="px-4 py-2 text-right">Jumlah terpakai</th><th class="px-4 py-2 text-right">Nilai tercatat</th></tr></thead><tbody class="divide-y divide-neutral-800 text-neutral-200">@foreach($sparepartBelumLunas as $sp)<tr><td class="px-4 py-2">{{ $sp->nama_barang }}</td><td class="px-4 py-2 text-right">{{ $sp->unit }}</td><td class="px-4 py-2 text-right">{{ $rupiah($sp->nilai) }}</td></tr>@endforeach</tbody></table></div>
+        <div class="overflow-x-auto border-t border-neutral-800"><table class="w-full min-w-[430px] text-xs"><thead class="bg-neutral-900 text-neutral-400"><tr><th class="px-4 py-2 text-left">Sparepart</th><th class="px-4 py-2 text-left">Jenis</th><th class="px-4 py-2 text-right">Jumlah terpakai</th><th class="px-4 py-2 text-right">Nilai tercatat</th></tr></thead><tbody class="divide-y divide-neutral-800 text-neutral-200">@foreach($sparepartBelumLunas as $sp)<tr><td class="px-4 py-2">{{ $sp->nama_barang }}</td><td class="px-4 py-2">{{ $sp->jenis_label }}</td><td class="px-4 py-2 text-right">{{ $sp->unit }}</td><td class="px-4 py-2 text-right">{{ $rupiah($sp->nilai) }}</td></tr>@endforeach</tbody></table></div>
 
         @endif
 
