@@ -3,6 +3,7 @@
 
 @section('content')
 <style>
+
 @media screen and (max-width: 768px) {
     #printAreaStandar {
         padding: 10px !important;
@@ -24,6 +25,7 @@
         font-size: 11px !important;
     }
 
+    /* Kondisi Umum - 3 kolom di HP */
     #printAreaStandar .sm\:grid-cols-5 {
         grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
         gap: 4px !important;
@@ -34,6 +36,7 @@
         font-size: 10px !important;
     }
 
+    /* Semua tabel */
     #printAreaStandar table {
         font-size: 10px !important;
         width: 100% !important;
@@ -96,20 +99,37 @@
     }
 }
 
+/* Print tetap normal */
 @media print {
-    #printAreaStandar .grid-cols-1 { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
-    #printAreaStandar .sm\:grid-cols-5 { grid-template-columns: repeat(5,minmax(0,1fr)) !important; }
-    #printAreaStandar table { min-width: 0 !important; }
+    #printAreaStandar .grid-cols-1 {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    }
+
+    #printAreaStandar .sm\:grid-cols-5 {
+        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    }
+
+    #printAreaStandar table {
+        min-width: 0 !important;
+    }
 }
 </style>
 
 @php
     $noHp = preg_replace('/[^0-9]/', '', $inspeksi->konsumen->no_hp ?? '');
-    if (str_starts_with($noHp, '0')) $noHp = '62' . substr($noHp, 1);
-    elseif (str_starts_with($noHp, '8')) $noHp = '62' . $noHp;
+
+    if (str_starts_with($noHp, '0')) {
+        $noHp = '62' . substr($noHp, 1);
+    } elseif (str_starts_with($noHp, '8')) {
+        $noHp = '62' . $noHp;
+    }
+
     $namaKonsumen = $inspeksi->konsumen->nama_lengkap ?? 'Pelanggan';
     $platInfo = $inspeksi->kendaraan ? ($inspeksi->kendaraan->plat_nomor ?? '') : '';
-    $waLink = 'https://wa.me/' . $noHp . '?text=' . urlencode("Halo {$namaKonsumen}, berikut kami sampaikan laporan inspeksi kendaraan {$platInfo}.");
+
+    $waLink = 'https://wa.me/' . $noHp . '?text=' . urlencode(
+        "Halo {$namaKonsumen}, berikut kami sampaikan laporan inspeksi kendaraan {$platInfo}."
+    );
 @endphp
 
 {{-- Tombol Aksi --}}

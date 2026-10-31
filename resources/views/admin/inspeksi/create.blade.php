@@ -577,12 +577,12 @@ function addEstimasi() {
             <label class="estimasi-label">Kategori</label>
             <select name="estimasi[${index}][kategori]" class="kategori-select rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white" onchange="toggleEstimasiFields(this)">
                 <option value="">-- Pilih Kategori --</option>
-                <option value="engine">Mesin</option>
+                <option value="mesin">Mesin</option>
                 <option value="kaki_kaki">Kaki-Kaki</option>
                 <option value="kelistrikan">Kelistrikan</option>
                 <option value="interior">Interior</option>
                 <option value="exterior">Exterior</option>
-            </select>
+        </select>
         </div>
         <div class="estimasi-field">
             <label class="estimasi-label">Sparepart</label>
@@ -623,6 +623,7 @@ function toggleEstimasiFields(select) {
     const namaItem = row.querySelector('.nama-item');
 
     if (select.value === "") {
+        // Jika kategori dikosongkan, disable dan reset field lainnya
         spSelect.disabled = true;
         jasaSelect.disabled = true;
         spSelect.value = "";
@@ -631,9 +632,11 @@ function toggleEstimasiFields(select) {
         hargaJasa.value = 0;
         namaItem.value = "";
     } else {
+        // Jika kategori dipilih, enable field sparepart dan jasa
         spSelect.disabled = false;
         jasaSelect.disabled = false;
     }
+
     calcTotal();
 }
 
@@ -643,7 +646,7 @@ function fillEstimasi(select, type) {
     const namaInput = row.querySelector('.nama-item');
 
     if (type === 'sp') {
-        if(option.value) {
+        if (option.value) {
             namaInput.value = option.dataset.nama;
             row.querySelector('.harga-part').value = option.dataset.harga;
         } else {
@@ -651,14 +654,19 @@ function fillEstimasi(select, type) {
             row.querySelector('.harga-part').value = 0;
         }
     } else {
-        if(option.value) {
+        if (option.value) {
+            // Gabungkan nama sparepart dan jasa jika keduanya dipilih
             const currentNama = namaInput.value;
-            namaInput.value = currentNama ? currentNama + ' + ' + option.dataset.nama : option.dataset.nama;
+            namaInput.value = currentNama
+                ? currentNama + ' + ' + option.dataset.nama
+                : option.dataset.nama;
+
             row.querySelector('.harga-jasa').value = option.dataset.harga;
         } else {
             row.querySelector('.harga-jasa').value = 0;
         }
     }
+
     calcTotal();
 }
 
