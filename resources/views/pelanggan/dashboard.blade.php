@@ -135,7 +135,7 @@
                 />
 
                 <p class="text-sm">
-                    Perlu servis
+                    Perlu perhatian
                 </p>
 
             </div>
@@ -153,8 +153,8 @@
             <p class="mt-1 text-sm text-slate-400">
 
                 {{ $jumlahPerluServis > 0
-                    ? 'Kendaraan perlu dijadwalkan servis'
-                    : 'Semua kendaraan terpantau baik'
+                    ? 'Kendaraan memerlukan servis berkala'
+                    : 'Tidak ada pengingat servis berkala.'
                 }}
 
             </p>
@@ -168,6 +168,31 @@
     {{-- =========================================================
         KONTEN UTAMA
     ========================================================== --}}
+    {{-- Rekomendasi aktif, tidak termasuk indikator servis berkala. --}}
+    <section class="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+                <h2 class="text-lg font-bold text-slate-900">Catatan Rekomendasi Bengkel</h2>
+                <p class="mt-1 text-sm text-slate-500">Berikut beberapa saran perawatan atau perbaikan dari kunjungan servis sebelumnya.</p>
+            </div>
+            <a href="{{ route('pelanggan.riwayat') }}" class="text-sm font-semibold text-orange-600 hover:text-orange-700">Lihat Riwayat Servis →</a>
+        </div>
+        <div class="mt-4 space-y-3">
+            @forelse(($rekomendasiTerbaru ?? collect()) as $r)
+                <article class="rounded-xl border border-amber-100 bg-amber-50 p-4">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                        <p class="text-sm font-bold text-slate-800">{{ $r->merk }} {{ $r->tipe_model }} · {{ $r->plat_nomor }}</p>
+                        <span class="text-xs text-slate-500">{{ \Carbon\Carbon::parse($r->tanggal_servis)->format('d/m/Y') }}</span>
+                    </div>
+                    <p class="mt-2 whitespace-pre-line text-sm text-slate-700">{{ $r->catatan_nota }}</p>
+                    <a href="{{ route('pelanggan.detail-servis', $r->servis_id) }}" class="mt-2 inline-block text-xs font-semibold text-orange-700">Lihat detail servis →</a>
+                </article>
+            @empty
+                <p class="text-sm text-slate-500">Tidak ada rekomendasi yang masih terbuka.</p>
+            @endforelse
+        </div>
+    </section>
+
     <div class="mt-10 grid gap-10 lg:grid-cols-5">
 
 
@@ -185,7 +210,7 @@
                     </h2>
 
                     <p class="mt-1 text-sm text-slate-500">
-                        Kendaraan yang perlu servis atau sedang dalam pengerjaan.
+                        Kendaraan dengan pengingat servis berkala atau sedang dikerjakan.
                     </p>
 
                 </div>
@@ -295,11 +320,11 @@
                         <div>
 
                             <p class="font-semibold text-slate-900">
-                                Semua kendaraan terpantau baik
+                                Tidak ada pengingat servis berkala.
                             </p>
 
                             <p class="mt-1 text-sm leading-6 text-slate-500">
-                                Tidak ada kendaraan yang perlu servis atau sedang
+                                Tidak ada kendaraan dengan pengingat servis berkala yang sedang
                                 dikerjakan saat ini.
                             </p>
 

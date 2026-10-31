@@ -187,84 +187,87 @@
     {{-- TAHAP 1: ESTIMASI --}}
     <div data-panel="1" class="space-y-4">
 
-                @if($bolehEdit)
+        @if($bolehEdit)
             <div class="no-print grid grid-cols-1 gap-4 md:grid-cols-2">
 
-                {{-- FORM SUKU CADANG --}}
                 <section class="rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
                     <h2 class="mb-4 text-sm font-black text-white">
                         <i class="fa-solid fa-boxes-stacked mr-2 text-orange-400"></i>
                         Suku Cadang
                     </h2>
 
-                    <form method="POST" action="{{ route('admin.rekam-servis.sparepart.tambah', $servis->id) }}" class="space-y-3">
+                    <form method="POST"
+                        action="{{ route('admin.rekam-servis.sparepart.tambah', $servis->id) }}"
+                        class="space-y-3">
                         @csrf
 
-                        <label class="block text-xs font-bold text-neutral-300">Pilih Sparepart</label>
-                        <select name="sparepart_id" id="selectSparepart" required class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white">
+                        <label class="block text-xs font-bold text-neutral-300">
+                            Pilih Sparepart
+                        </label>
+                        <select name="sparepart_id" required
+                            class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white">
                             <option value="">Pilih sparepart</option>
                             @foreach($spareparts as $sp)
                                 <option value="{{ $sp->id }}" data-harga="{{ $sp->harga_jual }}">
                                     {{ $sp->nama_barang }} — {{ $rp($sp->harga_jual) }} (Stok {{ $sp->stok }})
-                                </option>
+                                <option value="{{ $sp->id }}">
                             @endforeach
                         </select>
 
-                        <div class="grid grid-cols-3 gap-3">
-                            <div>
-                                <label class="block text-xs text-neutral-300">Jumlah</label>
-                                <input type="number" name="qty" id="qtySP" min="1" value="1" required class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-center text-sm text-white">
+                        <div class="flex items-end gap-3">
+                            <div class="w-24">
+                                <label class="mb-2 block text-xs text-neutral-300">
+                                    Jumlah
+                                </label>
+                                <input type="number" name="qty" min="1" value="1"
+                                    required
+                                    class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-center text-sm text-white">
                             </div>
-                            <div>
-                                <label class="block text-xs text-neutral-300">Diskon (%)</label>
-                                <input type="text" name="diskon_persen" id="diskonPersenSP" min="0" max="100" step="0.01" value="0" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white">
-                            </div>
-                            <div>
-                                <label class="block text-xs text-neutral-300">Diskon (Rp)</label>
-                                <input type="text" name="diskon_nominal" id="diskonNominalSP" value="0" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white">
-                            </div>
+                            <button type="submit"
+                                class="flex-1 rounded-xl bg-orange-500 p-3 text-sm font-bold text-white">
+                                Tambah Sparepart
+                            </button>
                         </div>
-
-                        <button type="submit" class="w-full rounded-xl bg-orange-500 p-3 text-sm font-bold text-white">Tambah Sparepart</button>
                     </form>
                 </section>
 
-                {{-- FORM JASA SERVIS --}}
                 <section class="rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
                     <h2 class="mb-4 text-sm font-black text-white">
                         <i class="fa-solid fa-screwdriver-wrench mr-2 text-sky-400"></i>
                         Jasa Servis
                     </h2>
 
-                    <form method="POST" action="{{ route('admin.rekam-servis.jasa.tambah', $servis->id) }}" class="space-y-3">
+                    <form method="POST"
+                        action="{{ route('admin.rekam-servis.jasa.tambah', $servis->id) }}"
+                        class="space-y-3">
                         @csrf
 
-                        <label class="block text-xs font-bold text-neutral-300">Pilih Jasa</label>
-                        <select name="jasa_id" id="selectJasa" required class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white">
+                        <label class="block text-xs font-bold text-neutral-300">
+                            Pilih Jasa
+                        </label>
+                        <select name="jasa_id" required
+                            class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white">
                             <option value="">Pilih jasa servis</option>
                             @foreach($jasas as $jasa)
-                                <option value="{{ $jasa->id }}" data-harga="{{ $jasa->harga }}">
-                                    {{ $jasa->nama_jasa }} — {{ $rp($jasa->harga) }}
+                                <option value="{{ $jasa->id }}">
+                                    {{ $jasa->nama_jasa }} —
+                                    {{ $rp($jasa->harga) }}
                                 </option>
                             @endforeach
                         </select>
 
-                        <div class="grid grid-cols-3 gap-3">
-                            <div>
-                                <label class="block text-xs text-neutral-300">Tarif Khusus</label>
-                                <input type="number" name="harga_custom" min="0" step="1" placeholder="Kosongkan jika standar" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white">
-                            </div>
-                            <div>
-                                <label class="block text-xs text-neutral-300">Diskon (%)</label>
-                                <input type="text" name="diskon_persen" id="diskonPersenJasa" min="0" max="100" step="0.01" value="0" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white">
-                            </div>
-                            <div>
-                                <label class="block text-xs text-neutral-300">Diskon (Rp)</label>
-                                <input type="text" name="diskon_nominal" id="diskonNominalJasa" value="0" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white">
-                            </div>
+                        <label class="block text-xs font-bold text-neutral-300">
+                            Tarif Khusus (opsional)
+                        </label>
+                        <div class="flex gap-3">
+                            <input type="number" name="harga_custom" min="0"
+                                step="1" placeholder="Tarif master"
+                                class="min-w-0 flex-1 rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white">
+                            <button type="submit"
+                                class="rounded-xl bg-sky-600 px-4 py-3 text-sm font-bold text-white">
+                                Tambah Jasa
+                            </button>
                         </div>
-
-                        <button type="submit" class="w-full rounded-xl bg-sky-600 p-3 text-sm font-bold text-white">Tambah Jasa</button>
                     </form>
                 </section>
             </div>
@@ -274,67 +277,54 @@
         @include('partials.nota-resmi')
 
         @if(!$nota)
-    <section class="no-print rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
-        <form method="POST"
-            action="{{ route('admin.rekam-servis.nota.konfirmasi', $servis->id) }}"
-            class="space-y-4"
-            data-confirm="Pastikan biaya sudah benar. Setelah diterbitkan, tagihan akan dikunci."
-            data-confirm-title="Terbitkan tagihan?"
-            data-confirm-ok="Ya, terbitkan">
-            @csrf
+            <section class="no-print rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+                <form method="POST"
+                    action="{{ route('admin.rekam-servis.nota.konfirmasi', $servis->id) }}"
+                    class="space-y-4"
+                    data-confirm="Pastikan biaya sudah benar. Setelah diterbitkan, tagihan akan dikunci."
+                    data-confirm-title="Terbitkan tagihan?"
+                    data-confirm-ok="Ya, terbitkan">
+                    @csrf
 
-            <h3 class="text-sm font-black text-white">Konfirmasi Estimasi Biaya</h3>
-            <p class="text-xs text-neutral-400">Periksa kembali semua biaya. Tagihan akan diterbitkan setelah estimasi dikonfirmasi.</p>
+                    <h3 class="text-sm font-black text-white">
+                        Konfirmasi Estimasi Biaya
+                    </h3>
+                    <p class="text-xs text-neutral-400">
+                        Periksa kembali semua biaya. Tagihan akan diterbitkan
+                        setelah estimasi dikonfirmasi.
+                    </p>
 
-            <div class="max-w-md">
-                <label class="mb-2 block text-xs font-bold text-neutral-300">Diskon Total Tagihan</label>
-                
-                {{-- 2 Kolom Sinkron: Persen dan Nominal --}}
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="mb-1 block text-[10px] text-neutral-400">Persen (%)</label>
-                        <input type="text" name="diskon_persen_total" id="diskonPersenTotal"
-                            value="{{ old('diskon_persen_total', 0) }}" min="0" max="100" step="0.01"
-                            class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white"
-                            placeholder="0">
+                    <div class="max-w-xs">
+                        <label for="diskonRibuan" class="mb-2 block text-xs text-neutral-300">
+                            Diskon Total (Rp)
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <input type="number" name="diskon_ribuan" id="diskonRibuan"
+                                value="{{ old('diskon_ribuan', 0) }}" min="0" max="999999999" step="1" required
+                                class="w-32 min-w-0 rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-right text-sm text-white"
+                                placeholder="0">
+                            <div class="flex-1 rounded-xl border border-neutral-700 bg-neutral-800/50 p-3 text-sm text-neutral-400" aria-hidden="true">,000</div>
+                        </div>
+                        <p class="mt-2 text-xs text-neutral-400">
+                            Total: <strong id="diskonTotal" class="text-white">Rp 0</strong>
+                        </p>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            @foreach([5, 10, 15, 20] as $cepat)
+                                <button type="button" data-diskon-ribuan="{{ $cepat }}"
+                                    class="rounded-lg border border-neutral-700 px-3 py-2 text-xs text-white transition hover:bg-neutral-700">
+                                    Rp {{ number_format($cepat * 1000, 0, ',', '.') }}
+                                </button>
+                            @endforeach
+                        </div>
                     </div>
-                    <div>
-                        <label class="mb-1 block text-[10px] text-neutral-400">Nominal (Rp)</label>
-                        <input type="text" name="diskon_nominal_total" id="diskonNominalTotal"
-                            value="{{ old('diskon_nominal_total', '0') }}"
-                            class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white"
-                            placeholder="0">
-                    </div>
-                </div>
-                
-                <p class="mt-3 text-xs text-neutral-400">
-                    Total Tagihan Akhir: <strong id="diskonTotalDisplay" class="text-white text-base">{{ $rp($subtotal) }}</strong>
-                </p>
-                
-                <div class="mt-3 flex flex-wrap gap-2">
-                    <span class="text-[10px] text-neutral-500 self-center mr-1">Cepat:</span>
-                    @foreach([5, 10, 15, 20] as $cepat)
-                        <button type="button" data-diskon-persen="{{ $cepat }}"
-                            class="rounded-lg border border-neutral-700 px-3 py-2 text-xs text-white transition hover:bg-neutral-700">
-                            {{ $cepat }}%
-                        </button>
-                    @endforeach
-                    @foreach([5000, 10000, 15000, 20000] as $cepat)
-                        <button type="button" data-diskon-nominal="{{ $cepat }}"
-                            class="rounded-lg border border-neutral-700 px-3 py-2 text-xs text-white transition hover:bg-neutral-700">
-                            Rp {{ number_format($cepat, 0, ',', '.') }}
-                        </button>
-                    @endforeach
-                </div>
-            </div>
 
-            <button type="submit"
-                @disabled($servis->detailSpareparts->isEmpty() && $servis->detailJasas->isEmpty())
-                class="w-full rounded-xl bg-orange-500 p-3 text-sm font-bold text-white disabled:opacity-50">
-                Terbitkan Tagihan Servis
-            </button>
-        </form>
-    </section>
+                    <button type="submit"
+                        @disabled($servis->detailSpareparts->isEmpty() && $servis->detailJasas->isEmpty())
+                        class="w-full rounded-xl bg-orange-500 p-3 text-sm font-bold text-white disabled:opacity-50">
+                        Terbitkan Tagihan Servis
+                    </button>
+                </form>
+            </section>
 
         @else
             <div class="no-print flex flex-wrap items-center gap-3 rounded-xl border border-neutral-800 bg-neutral-900 px-4 py-3">
@@ -842,13 +832,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function tampilkan(no) {
         aktif = Math.max(1, Math.min(maxTahap, no));
-        panels.forEach(el => el.classList.toggle('hidden', Number(el.dataset.panel) !== aktif));
+        panels.forEach(el => el.classList.toggle(
+            'hidden', Number(el.dataset.panel) !== aktif
+        ));
         document.querySelectorAll('[data-tahap]').forEach(btn => {
             const selected = Number(btn.dataset.tahap) === aktif;
             btn.classList.toggle('opacity-60', !selected);
+            btn.setAttribute('aria-current', selected ? 'step' : 'false');
         });
         kembali.disabled = aktif === 1;
         lanjut.disabled = aktif === maxTahap;
+        const info = document.getElementById('infoNavigasi');
+        info.textContent = aktif < maxTahap
+            ? 'Anda sedang melihat tahap sebelumnya.'
+            : 'Tahap transaksi saat ini.';
+
+        const deskripsi = document.getElementById('deskripsiTahap');
+        const teks = {
+            1: @json('Periksa estimasi atau tagihan servis. Rincian yang telah dikonfirmasi bersifat hanya-baca.'),
+            2: @json('Pembayaran awal atau cicilan berikutnya. Bisa juga bayar nanti.'),
+            3: @json('Data akhir pekerjaan: KM keluar dan catatan rekomendasi.'),
+            4: @json('Penyelesaian pekerjaan dan pelunasan tagihan.'),
+        };
+        if (deskripsi) deskripsi.textContent = teks[aktif];
     }
 
     kembali.addEventListener('click', () => tampilkan(aktif - 1));
@@ -859,178 +865,32 @@ document.addEventListener('DOMContentLoaded', function () {
     tampilkan(aktif);
 
     const rp = n => 'Rp ' + Math.round(Number(n) || 0).toLocaleString('id-ID');
-    const fmt = (angka) => angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
-    // ✅ FORMAT PERSEN YANG LEBIH NATURAL
-    // 10 → "10", 10.5 → "10,5", 10.25 → "10,25"
-    function fmtPersen(p) {
-        if (p === 0) return '0';
-        // Cek apakah bulat
-        if (Number.isInteger(p)) return p.toString();
-        // Cek 1 desimal
-        const satuDesimal = parseFloat(p.toFixed(1));
-        if (satuDesimal === p) return satuDesimal.toString().replace('.', ',');
-        // 2 desimal
-        return p.toFixed(2).replace('.', ',');
+    // Tampilan diskon nominal ribuan, mengikuti form dan batas backend.
+    const inputDiskon = document.getElementById('diskonRibuan');
+    function hitungDiskon() {
+        if (!inputDiskon) return;
+        const nilai = Number(inputDiskon.value);
+        const ribuan = Number.isSafeInteger(nilai) && nilai >= 0 ? Math.min(nilai, 999999999) : 0;
+        const diskon = Math.min(subtotal, ribuan * 1000);
+        const labelHasil = document.getElementById('diskonTotal');
+        if (labelHasil) labelHasil.textContent = rp(diskon);
+        const labelDiskonNota = document.getElementById('labelDiskon');
+        const labelTotalNota = document.getElementById('labelTotal');
+        if (labelDiskonNota) labelDiskonNota.textContent = '- ' + rp(diskon);
+        if (labelTotalNota) labelTotalNota.textContent = rp(subtotal - diskon);
     }
-
-    // ==========================================================
-    // 1. DISKON TOTAL
-    // ==========================================================
-    const pctTotal = document.getElementById('diskonPersenTotal');
-    const nomTotal = document.getElementById('diskonNominalTotal');
-    const lblTotal = document.getElementById('diskonTotalDisplay');
-    const lblDiskon = document.getElementById('labelDiskon');
-    const lblNota = document.getElementById('labelTotal');
-
-    function updateTotal(nominal) {
-        const aman = Math.min(nominal, subtotal);
-        if (lblTotal) lblTotal.textContent = rp(subtotal - aman);
-        if (lblDiskon) lblDiskon.textContent = '- ' + rp(aman);
-        if (lblNota) lblNota.textContent = rp(subtotal - aman);
-    }
-
-    if (pctTotal) {
-        pctTotal.addEventListener('input', function() {
-            const p = parseFloat(this.value.replace(',', '.')) || 0;
-            const n = Math.round(subtotal * p / 100);
-            if (nomTotal) nomTotal.value = n > 0 ? fmt(n) : '';
-            updateTotal(n);
-        });
-    }
-
-    if (nomTotal) {
-        nomTotal.addEventListener('input', function(e) {
-            let v = e.target.value.replace(/[^0-9]/g, '');
-            e.target.value = v ? fmt(v) : '';
-            const n = parseInt(v) || 0;
-            const p = subtotal > 0 ? (n / subtotal * 100) : 0;
-            if (pctTotal) pctTotal.value = fmtPersen(p);
-            updateTotal(n);
-        });
-    }
-
-    document.querySelectorAll('[data-diskon-persen]').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const p = parseFloat(this.dataset.diskonPersen);
-            const n = Math.round(subtotal * p / 100);
-            if (pctTotal) pctTotal.value = fmtPersen(p);
-            if (nomTotal) nomTotal.value = fmt(n);
-            updateTotal(n);
+    inputDiskon?.addEventListener('input', hitungDiskon);
+    document.querySelectorAll('[data-diskon-ribuan]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            if (!inputDiskon) return;
+            inputDiskon.value = btn.dataset.diskonRibuan;
+            hitungDiskon();
         });
     });
+    hitungDiskon();
 
-    document.querySelectorAll('[data-diskon-nominal]').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const n = parseInt(this.dataset.diskonNominal);
-            const p = subtotal > 0 ? (n / subtotal * 100) : 0;
-            if (nomTotal) nomTotal.value = fmt(n);
-            if (pctTotal) pctTotal.value = fmtPersen(p);
-            updateTotal(n);
-        });
-    });
-
-    // ==========================================================
-    // 2. DISKON SPAREPART
-    // ==========================================================
-    const selSP = document.getElementById('selectSparepart');
-    const qtySP = document.getElementById('qtySP');
-    const pctSP = document.getElementById('diskonPersenSP');
-    const nomSP = document.getElementById('diskonNominalSP');
-    let hargaSP = 0;
-
-    if (selSP) {
-        selSP.addEventListener('change', function() {
-            const opt = this.options[this.selectedIndex];
-            hargaSP = parseFloat(opt.dataset.harga) || 0;
-        });
-    }
-
-    function hitungSP() {
-        const qty = parseInt(qtySP?.value) || 1;
-        return hargaSP * qty;
-    }
-
-    if (pctSP) {
-        pctSP.addEventListener('input', function() {
-            const p = parseFloat(this.value.replace(',', '.')) || 0;
-            const n = Math.round(hitungSP() * p / 100);
-            if (nomSP) nomSP.value = n > 0 ? fmt(n) : '';
-        });
-    }
-
-    if (nomSP) {
-        nomSP.addEventListener('input', function(e) {
-            let v = e.target.value.replace(/[^0-9]/g, '');
-            e.target.value = v ? fmt(v) : '';
-            const n = parseInt(v) || 0;
-            const sub = hitungSP();
-            const p = sub > 0 ? (n / sub * 100) : 0;
-            if (pctSP) pctSP.value = fmtPersen(p);
-        });
-    }
-
-    // ==========================================================
-    // 3. DISKON JASA
-    // ==========================================================
-    const selJasa = document.getElementById('selectJasa');
-    const tarifKhusus = document.querySelector('input[name="harga_custom"]');
-    const pctJasa = document.getElementById('diskonPersenJasa');
-    const nomJasa = document.getElementById('diskonNominalJasa');
-    let hargaJasa = 0;
-    let lastField = null;
-
-    if (selJasa) {
-        selJasa.addEventListener('change', function() {
-            const opt = this.options[this.selectedIndex];
-            const master = parseFloat(opt.dataset.harga) || 0;
-            const custom = tarifKhusus ? (parseFloat(tarifKhusus.value) || 0) : 0;
-            hargaJasa = custom > 0 ? custom : master;
-        });
-    }
-
-    if (tarifKhusus) {
-        tarifKhusus.addEventListener('input', function() {
-            const custom = parseFloat(this.value) || 0;
-            const master = selJasa?.options[selJasa.selectedIndex]?.dataset.harga ? 
-                parseFloat(selJasa.options[selJasa.selectedIndex].dataset.harga) : 0;
-            hargaJasa = custom > 0 ? custom : master;
-
-            if (lastField === 'persen' && pctJasa && nomJasa) {
-                const p = parseFloat(pctJasa.value.replace(',', '.')) || 0;
-                const n = Math.round(hargaJasa * p / 100);
-                nomJasa.value = n > 0 ? fmt(n) : '';
-            } else if (lastField === 'nominal' && nomJasa && pctJasa) {
-                const n = parseInt(nomJasa.value.replace(/\./g, '')) || 0;
-                const p = hargaJasa > 0 ? (n / hargaJasa * 100) : 0;
-                pctJasa.value = fmtPersen(p);
-            }
-        });
-    }
-
-    if (pctJasa) {
-        pctJasa.addEventListener('input', function() {
-            lastField = 'persen';
-            const p = parseFloat(this.value.replace(',', '.')) || 0;
-            const n = Math.round(hargaJasa * p / 100);
-            if (nomJasa) nomJasa.value = n > 0 ? fmt(n) : '';
-        });
-    }
-
-    if (nomJasa) {
-        nomJasa.addEventListener('input', function(e) {
-            lastField = 'nominal';
-            let v = e.target.value.replace(/[^0-9]/g, '');
-            e.target.value = v ? fmt(v) : '';
-            const n = parseInt(v) || 0;
-            const p = hargaJasa > 0 ? (n / hargaJasa * 100) : 0;
-            if (pctJasa) pctJasa.value = fmtPersen(p);
-        });
-    }
-
-    // ==========================================================
-    // 4. PEMBAYARAN
-    // ==========================================================
+    // Perhitungan pembayaran
     const form = document.getElementById('formPembayaran');
     const metode = document.getElementById('metodePembayaran');
     const uang = document.getElementById('uangDiterima');
@@ -1055,40 +915,58 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('previewTips').textContent = rp(tips);
         document.getElementById('previewPemasukan').textContent = rp(dialokasikan + tips);
         document.getElementById('btnBayar').disabled = !valid;
+        document.getElementById('pesanBayar').textContent = !valid
+            ? 'Masukkan nominal valid; pembayaran non-tunai tidak boleh melebihi sisa.'
+            : dialokasikan < sisa ? 'Pembayaran sebagian, sisa setelah ini: ' + rp(sisa - dialokasikan)
+            : 'Pembayaran ini melunasi tagihan.';
     }
 
-    if (metode) metode.addEventListener('change', hitungBayar);
-    if (uang) uang.addEventListener('input', hitungBayar);
-    if (form) {
-        form.querySelectorAll('[name="pilihan_kelebihan"]').forEach(r => r.addEventListener('change', hitungBayar));
+    metode?.addEventListener('change', hitungBayar);
+    uang?.addEventListener('input', hitungBayar);
+    form?.querySelectorAll('[name="pilihan_kelebihan"]').forEach(radio => {
+        radio.addEventListener('change', hitungBayar);
+    });
+    hitungBayar();
+
+    form?.addEventListener('submit', function (event) {
         hitungBayar();
-    }
+        if (document.getElementById('btnBayar').disabled) {
+            event.preventDefault();
+        }
+    });
 });
 
+
 function cetakSiraka(format) {
-    const panel = document.querySelector('[data-panel="1"]');
-    if (!panel) return;
-    const hidden = panel.classList.contains('hidden');
-    panel.classList.remove('hidden');
+    const panelDokumen = document.querySelector('[data-panel="1"]');
+    if (!panelDokumen) return;
+
+    const sebelumnyaTersembunyi = panelDokumen.classList.contains('hidden');
+    panelDokumen.classList.remove('hidden');
+
     const thermal = format === 'thermal';
     document.body.classList.toggle('print-thermal', thermal);
-    let style = null;
+
+    // Ukuran kertas khusus thermal (rol 72mm, tinggi mengikuti isi)
+    let styleHalaman = null;
     if (thermal) {
-        style = document.createElement('style');
-        style.textContent = '@page { size: 72mm auto; margin: 3mm; }';
-        document.head.appendChild(style);
+        styleHalaman = document.createElement('style');
+        styleHalaman.textContent = '@page { size: 72mm auto; margin: 3mm; }';
+        document.head.appendChild(styleHalaman);
     }
-    let done = false;
-    const restore = () => {
-        if (done) return;
-        done = true;
+
+    let sudahDipulihkan = false;
+    const pulihkan = () => {
+        if (sudahDipulihkan) return;
+        sudahDipulihkan = true;
         document.body.classList.remove('print-thermal');
-        style?.remove();
-        if (hidden) panel.classList.add('hidden');
-        window.removeEventListener('afterprint', restore);
+        styleHalaman?.remove();
+        if (sebelumnyaTersembunyi) panelDokumen.classList.add('hidden');
+        window.removeEventListener('afterprint', pulihkan);
     };
-    window.addEventListener('afterprint', restore, {once:true});
+    window.addEventListener('afterprint', pulihkan, {once:true});
     window.print();
 }
+
 </script>
 @endsection

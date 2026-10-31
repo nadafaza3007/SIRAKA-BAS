@@ -7,6 +7,12 @@
 @php
     $input = 'w-full rounded-xl border border-neutral-700 bg-neutral-800/60 px-3 py-2.5 text-xs text-white placeholder-neutral-500 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30';
     $label = 'mb-1.5 block text-xs font-semibold text-neutral-300';
+
+    // ✅ Helper: konversi cc ke Liter dengan koma
+    $ccToLiter = function($cc) {
+        if (!$cc) return '';
+        return number_format($cc / 1000, 1, ',', '');
+    };
 @endphp
 
 {{-- HEADER --}}
@@ -49,7 +55,7 @@
     ========================================================== --}}
     <div class="space-y-6 xl:col-span-2">
 
-        {{-- IDENTITAS + KENDARAAN TERDAFTAR (satu form, satu tombol simpan) --}}
+        {{-- IDENTITAS + KENDARAAN TERDAFTAR --}}
         <section class="rounded-2xl border border-neutral-800 bg-ink-900 shadow-sm">
 
             <div class="flex items-center gap-3 border-b border-neutral-800 px-5 py-4">
@@ -145,13 +151,16 @@
                                                class="{{ $input }}">
                                     </div>
 
+                                    {{-- ✅ PERUBAHAN: CC dengan format Liter (2,2) --}}
                                     <div class="col-span-1">
-                                        <label class="{{ $label }}">CC mesin</label>
-                                        <input type="number" name="kendaraan[{{ $kendaraan->id }}][cc]"
-                                               value="{{ old($p . 'cc', $kendaraan->cc) }}"
-                                               min="300" max="10000" placeholder="1500"
-                                               class="{{ $input }}">
-                                    </div>
+    <label class="{{ $label }}">CC mesin (Liter)</label>
+    <input type="text" 
+           name="kendaraan[{{ $kendaraan->id }}][cc]"
+           value="{{ old($p . 'cc', $kendaraan->cc ? number_format($kendaraan->cc, 1, ',', '') : '') }}"
+           placeholder="Contoh: 2,2"
+           class="{{ $input }}">
+    <p class="mt-1 text-[10px] text-neutral-500">Dalam Liter, pakai koma (contoh: 1,5 / 2,0 / 2,4)</p>
+</div>
 
                                     <div class="col-span-1 sm:col-span-2">
                                         <label class="{{ $label }}">Transmisi</label>
@@ -276,6 +285,26 @@
             </dl>
         </div>
 
+        <section class="rounded-2xl border border-neutral-800 bg-ink-900 p-5">
+            <h3 class="text-sm font-extrabold text-white">Rekomendasi Terakhir per Kendaraan</h3>
+            <p class="mt-1 text-xs text-neutral-400">Catatan rekomendasi yang belum ditangani.</p>
+            <div class="mt-4 space-y-3">
+                @forelse($konsumen->kendaraans as $kendaraan)
+                    @php $catatan = $kendaraan->rekomendasiNotaTerbuka->first(); @endphp
+                    <div class="rounded-xl border border-neutral-700 p-3">
+                        <p class="text-xs font-bold text-white">{{ $kendaraan->plat_nomor }} · {{ $kendaraan->merk }} {{ $kendaraan->tipe_model }}</p>
+                        @if($catatan)
+                            <p class="mt-2 whitespace-pre-line text-xs text-amber-200">{{ $catatan->catatan_nota }}</p>
+                        @else
+                            <p class="mt-2 text-xs text-neutral-500">Tidak ada rekomendasi aktif.</p>
+                        @endif
+                    </div>
+                @empty
+                    <p class="text-xs text-neutral-500">Belum ada kendaraan.</p>
+                @endforelse
+            </div>
+        </section>
+
         <div class="flex items-start gap-3 rounded-2xl border border-sky-500/20 bg-sky-500/5 p-4">
             <i class="fa-solid fa-circle-info fa-fw mt-0.5 text-sky-400"></i>
             <p class="text-[11px] leading-5 text-sky-300/80">
@@ -347,8 +376,8 @@ function kendaraanCard(i) {
                 `<input type="number" name="${n('tahun')}" min="1900" max="${TAHUN_MAKS}"
                     placeholder="${TAHUN_MAKS - 1}" class="${INPUT}">`,
                 'col-span-1')}
-            ${field('CC mesin',
-                `<input type="number" name="${n('cc')}" min="300" max="10000" placeholder="1500" class="${INPUT}">`,
+            ${field('CC mesin (Liter)',
+                `<input type="text" name="${n('cc')}" placeholder="Contoh: 2,2" class="${INPUT}">`,
                 'col-span-1')}
             ${field('Transmisi',
                 `<select name="${n('transmisi')}" class="${INPUT}">

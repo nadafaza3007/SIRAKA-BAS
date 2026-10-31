@@ -81,8 +81,15 @@
                                     <div class="inline-flex items-center gap-2 rounded-lg border border-neutral-700 bg-neutral-800 px-2.5 py-1.5 text-[11px] leading-none">
                                         <span class="font-extrabold uppercase tracking-wide text-brand-400">{{ $k->plat_nomor }}</span>
                                         <span class="text-neutral-300">{{ $k->merk }} {{ $k->tipe_model }}</span>
+                                        
+                                        {{-- ✅ Tampilkan Tahun jika ada --}}
                                         @if($k->tahun)
                                             <span class="text-neutral-500">{{ $k->tahun }}</span>
+                                        @endif
+
+                                        {{-- ✅ Tampilkan CC format 2,2 L --}}
+                                        @if($k->cc)
+                                            <span class="text-neutral-500">• {{ $k->cc_format }}</span>
                                         @endif
                                     </div>
                                 @empty
@@ -290,9 +297,9 @@ function kendaraanCard(i) {
             ${field('Tahun',
                 `<input type="number" name="${n('tahun')}" data-f="tahun" min="1900" max="${TAHUN_MAKS}" class="${INPUT}">`,
                 'col-span-1')}
-            ${field('CC mesin',
-                `<input type="number" name="${n('cc')}" data-f="cc" min="300" max="10000" class="${INPUT}">`,
-                'col-span-1')}
+            ${field('CC (Liter)',
+    `<input type="text" name="${n('cc')}" data-f="cc" placeholder="Ex: 2,2" class="${INPUT}">`,
+    'col-span-1')}
             ${field('Transmisi',
                 `<select name="${n('transmisi')}" data-f="transmisi" class="${INPUT}">
                     <option value="">Pilih</option>
