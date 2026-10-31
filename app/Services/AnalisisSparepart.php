@@ -38,7 +38,7 @@ class AnalisisSparepart
         // Faktor potongan nota (total_biaya / subtotal); 1 bila tanpa potongan.
         $faktor = 'COALESCE(n.total_biaya / NULLIF(n.subtotal, 0), 1)';
 
-        $dasar = fn() => DB::table('detail_spareparts as d')
+        $dasar = fn () => DB::table('detail_spareparts as d')
             ->join(
                 'nota_transaksis as n',
                 'n.rekam_servis_id',
@@ -62,6 +62,7 @@ class AnalisisSparepart
                 d.sparepart_id,
                 MAX(s.nama_barang) as nama_barang,
                 MAX(s.kode_barang) as kode_barang,
+                MAX(s.jenis_ketersediaan) as jenis_ketersediaan,
                 SUM(d.qty) as unit_terjual,
                 COUNT(DISTINCT n.id) as frekuensi,
                 SUM(d.qty * d.harga_jual_saat_transaksi * {$faktor}) as omzet,
@@ -73,12 +74,13 @@ class AnalisisSparepart
             ->limit($limit)
             ->get()
             ->map(function ($r) {
-                $r->nama_barang = $r->nama_barang ?: 'Sparepart #' . $r->sparepart_id . ' (data dihapus)';
+                $r->nama_barang = $r->nama_barang?: 'Sparepart #' . $r->sparepart_id . ' (data dihapus)';
+                $r->jenis_label = $r->jenis_ketersediaan === 'po' ? 'Pre-Order' : ($r->jenis_ketersediaan === 'stok' ? 'Stok' : 'Tidak diketahui');
                 $r->unit_terjual = (int) $r->unit_terjual;
-                $r->frekuensi = (int) $r->frekuensi;
-                $r->omzet = round((float) $r->omzet);
-                $r->modal = round((float) $r->modal);
-                $r->laba_kotor = $r->omzet - $r->modal;
+                $r->frekuensi    = (int) $r->frekuensi;
+                $r->omzet        = round((float) $r->omzet);
+                $r->modal        = round((float) $r->modal);
+                $r->laba_kotor   = $r->omzet - $r->modal;
                 return $r;
             });
 
@@ -90,8 +92,8 @@ class AnalisisSparepart
 
         $total = (object) [
             'unit_terjual' => (int) $t->unit_terjual,
-            'omzet' => round((float) $t->omzet),
-            'modal' => round((float) $t->modal),
+            'omzet'        => round((float) $t->omzet),
+            'modal'        => round((float) $t->modal),
         ];
         $total->laba_kotor = $total->omzet - $total->modal;
 
@@ -108,7 +110,7 @@ class AnalisisSparepart
     {
         [$awal, $akhir] = $this->rentang($mulai, $selesai);
 
-        $dasar = fn() => DB::table('detail_spareparts as d')
+        $dasar = fn () => DB::table('detail_spareparts as d')
             ->join('rekam_servis as rs', 'rs.id', '=', 'd.rekam_servis_id')
             ->leftJoin('nota_transaksis as n', 'n.rekam_servis_id', '=', 'rs.id')
             ->leftJoin('spareparts as s', 's.id', '=', 'd.sparepart_id')
@@ -122,6 +124,7 @@ class AnalisisSparepart
             ->selectRaw('
                 d.sparepart_id,
                 MAX(s.nama_barang) as nama_barang,
+                MAX(s.jenis_ketersediaan) as jenis_ketersediaan,
                 SUM(d.qty) as unit,
                 COUNT(DISTINCT rs.id) as jumlah_servis,
                 SUM(d.qty * d.harga_jual_saat_transaksi) as nilai
@@ -131,12 +134,13 @@ class AnalisisSparepart
             ->limit($limit)
             ->get()
             ->map(function ($r) {
+                
+            $r->nama_barang = $r->nama_barang?: 'Sparepart #' . $r->sparepart_id . ' (data dihapus)';
+                $r->jenis_label = $r->jenis_ketersediaan === 'po' ? 'Pre-Order' : ($r->jenis_ketersediaan === 'stok' ? 'Stok' : 'Tidak diketahui');
 
-                $r->nama_barang = $r->nama_barang ?: 'Sparepart #' . $r->sparepart_id . ' (data dihapus)';
-
-                $r->unit = (int) $r->unit;
+                $r->unit          = (int) $r->unit;
                 $r->jumlah_servis = (int) $r->jumlah_servis;
-                $r->nilai = round((float) $r->nilai);
+                $r->nilai         = round((float) $r->nilai);
                 return $r;
             });
 
@@ -149,9 +153,9 @@ class AnalisisSparepart
         return [
             'items' => $items,
             'total' => (object) [
-                'unit' => (int) $t->unit,
+                'unit'          => (int) $t->unit,
                 'jumlah_servis' => (int) $t->jumlah_servis,
-                'nilai' => round((float) $t->nilai),
+                'nilai'         => round((float) $t->nilai),
             ],
         ];
     }
@@ -165,11 +169,11 @@ class AnalisisSparepart
     ): ?string {
         $top = $items->first();
 
-        if (!$top) {
+        if (! $top) {
             return null;
         }
 
-        $rupiah = fn($nilai) => 'Rp ' .
+        $rupiah = fn ($nilai) => 'Rp ' .
             number_format($nilai, 0, ',', '.');
 
         $kalimat = "{$top->nama_barang} merupakan sparepart "
@@ -192,7 +196,7 @@ class AnalisisSparepart
             $kalimat .= " Perhatian: laba kotor negatif. "
                 . "Periksa kembali harga jual dan harga modal.";
         } else {
-            $kalimat .= " Periksa ketersediaan stok "
+            $kalimat .= " Periksa ketersediaan atau kebutuhan "
                 . "dan kebutuhan pengadaan barang ini.";
         }
 
