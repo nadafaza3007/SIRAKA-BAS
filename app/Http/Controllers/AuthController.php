@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Models\Konsumen;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rules\Password;
+use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
@@ -130,10 +132,10 @@ class AuthController extends Controller
         ]);
     }
 
-        if (! preg_match('/^[a-z0-9_]+$/', $username)) {
+    if (! preg_match('/^[a-z0-9_]+$/', $username)) {
         return response()->json([
             'available' => false,
-            'message' => 'Username hanya boleh berisi huruf, angka, dan underscore (_).',
+            'message'   => 'Username hanya boleh berisi huruf, angka, dan underscore (_).',
         ]);
     }
 
@@ -170,7 +172,7 @@ class AuthController extends Controller
             'string',
             'min:3',
             'max:30',
-            'alpha_dash',
+            'regex:/^[a-zA-Z0-9_]+$/',
             'unique:users,username',
         ],
         'no_hp' => [
@@ -181,50 +183,45 @@ class AuthController extends Controller
         'password' => [
             'required',
             'string',
-            'min:8',
             'confirmed',
+            Password::min(12)->max(128)->uncompromised(),
         ],
     ], [
         'nama_lengkap.required' => 'Nama lengkap wajib diisi.',
         'username.required'     => 'Username wajib diisi.',
         'username.min'          => 'Username minimal 3 karakter.',
         'username.max'          => 'Username maksimal 30 karakter.',
-        'username.max'          => 'Username maksimal 30 karakter.',
-        'username.alpha_dash'   => 'Username hanya boleh berisi huruf, angka, tanda hubung, dan underscore.',
+        'username.regex'        => 'Username hanya boleh berisi huruf, angka, dan underscore (_).',
         'username.unique'       => 'Username sudah digunakan. Silakan gunakan username lain.',
         'no_hp.required'        => 'Nomor HP wajib diisi.',
-        'no_hp.regex'           => 'Masukkan nomor HP yang valid.',
+        'no_hp.regex'           => 'Masukkan nomor HP Indonesia yang valid.',
         'no_hp.unique'          => 'Nomor HP sudah terdaftar. Silakan masuk menggunakan akun tersebut.',
         'password.required'     => 'Kata sandi wajib diisi.',
-        'password.min'          => 'Kata sandi minimal 8 karakter.',
+        'password.min'          => 'Kata sandi minimal 12 karakter.',
+        'password.max'          => 'Kata sandi maksimal 128 karakter.',
+        'password.uncompromised' => 'Kata sandi ini tidak aman karena pernah ditemukan dalam kebocoran data. Gunakan kata sandi lain.',
         'password.confirmed'    => 'Konfirmasi kata sandi tidak cocok.',
     ]);
 
-    // Simpan nomor telepon dalam format lokal yang konsisten (08...).
-    // Pemeriksaan keunikan dilakukan setelah normalisasi agar 08..., 628..., dan +628...
-    // tidak dapat digunakan untuk membuat beberapa akun bagi nomor yang sama.
+    // Normalisasi 08..., 628..., dan +628... menjadi format 08...
     $nomorInput = trim((string) $request->input('no_hp'));
     $nomorNormal = str_starts_with($nomorInput, '+62')
         ? '0' . substr($nomorInput, 3)
         : (str_starts_with($nomorInput, '62') ? '0' . substr($nomorInput, 2) : $nomorInput);
     $nomorInternasional = '62' . substr($nomorNormal, 1);
+    $variasiNomor = [$nomorNormal, $nomorInternasional, '+' . $nomorInternasional];
 
-    if (User::whereIn('no_hp', [$nomorNormal, $nomorInternasional, '+' . $nomorInternasional])->exists()) {
-        throw \Illuminate\Validation\ValidationException::withMessages([
+    if (User::whereIn('no_hp', $variasiNomor)->exists()) {
+        throw ValidationException::withMessages([
             'no_hp' => 'Nomor HP sudah terdaftar. Silakan masuk menggunakan akun tersebut.',
         ]);
     }
 
-    // Pencocokan Master Konsumen mengikuti perilaku lama; hanya menyamakan variasi format.
-    // Catatan keamanan: verifikasi kepemilikan nomor tetap dibutuhkan sebelum
-    // mengizinkan akses ke riwayat dan kendaraan pelanggan (di luar cakupan patch ini).
-    $konsumen = Konsumen::whereIn('no_hp', [$nomorNormal, $nomorInternasional, '+' . $nomorInternasional])->first();
+    // MEMPERTAHANKAN alur lama. PERINGATAN: pencocokan nomor saja belum
+    // membuktikan kepemilikan akun. Perlu OTP/verifikasi sebelum data
+    // kendaraan dan riwayat servis boleh diakses.
+    $konsumen = Konsumen::whereIn('no_hp', $variasiNomor)->first();
 
-    /*
-    |--------------------------------------------------------------------------
-    | Simpan akun baru
-    |--------------------------------------------------------------------------
-    */
     User::create([
         'name'        => trim($request->nama_lengkap),
         'username'    => strtolower(trim($request->username)),
