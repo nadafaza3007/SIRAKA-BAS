@@ -57,9 +57,9 @@ class SirakaSystemTest extends TestCase
             ])
             ->assertSessionHasNoErrors();
 
-        $this->actingAs($this->admin())
+       $this->actingAs($this->admin())
             ->post("/admin/rekam-servis/{$servis->id}/nota/konfirmasi", [
-                'diskon_persen' => 0,
+                'diskon_ribuan' => 0,
             ])
             ->assertSessionHasNoErrors();
 
