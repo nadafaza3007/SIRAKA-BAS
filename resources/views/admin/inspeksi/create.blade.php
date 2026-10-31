@@ -94,88 +94,48 @@
     <section class="rounded-2xl border border-neutral-800 bg-ink-900 p-5">
         <h3 class="mb-4 text-sm font-extrabold text-brand-400">1. Data Kendaraan & Umum</h3>
         <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div class="md:col-span-2 lg:col-span-3 relative" id="kotakCariKonsumen">
+                <label class="mb-1 block text-[10px] font-bold text-neutral-400">Nama Konsumen *</label>
+                <input type="text" name="nama_konsumen_inspeksi" id="inputNamaInspeksi" value="{{ old('nama_konsumen_inspeksi') }}" autocomplete="off" required maxlength="255"
+                    placeholder="Cari atau masukkan nama konsumen"
+                    class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
+                <input type="hidden" name="konsumen_id" id="konsumenIdInspeksi" value="{{ old('konsumen_id') }}">
+                <div id="rekomendasiKonsumen" class="hidden absolute left-0 right-0 z-30 mt-1 max-h-56 overflow-y-auto rounded-xl border border-neutral-700 bg-neutral-800 shadow-xl"></div>
+            </div>
+            <div id="boxWaInspeksi" class="md:col-span-2 lg:col-span-3">
+                <label class="mb-1 block text-[10px] font-bold text-neutral-400">Nomor WhatsApp *</label>
+                <input type="tel" name="no_wa_inspeksi" id="waInspeksi" value="{{ old('no_wa_inspeksi') }}" placeholder="Contoh: 081234567890" autocomplete="tel" inputmode="tel" required maxlength="25" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
+            </div>
+            <div class="md:col-span-2 lg:col-span-3 text-[11px] font-semibold text-neutral-400">Informasi Kendaraan (Opsional)</div>
             <div>
-                <label class="mb-1 block text-[10px] font-bold text-neutral-400">Konsumen *</label>
-                <select name="konsumen_id" id="selectKonsumen" required class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
-                    <option value="">-- Pilih Konsumen --</option>
-                    @foreach($konsumens as $k)
-                        <option value="{{ $k->id }}">{{ $k->nama_lengkap }} ({{ $k->no_hp }})</option>
-                    @endforeach
+                <label class="mb-1 block text-[10px] font-bold text-neutral-400">Plat Nomor</label>
+                <input type="text" name="plat_nomor" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white uppercase" placeholder="B 1234 CD (opsional)">
+            </div>
+            <div>
+                <label class="mb-1 block text-[10px] font-bold text-neutral-400">Merk</label>
+                <input type="text" name="merk" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="Toyota (opsional)">
+            </div>
+            <div>
+                <label class="mb-1 block text-[10px] font-bold text-neutral-400">Tipe / Model</label>
+                <input type="text" name="tipe_model" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="Avanza (opsional)">
+            </div>
+            <div>
+                <label class="mb-1 block text-[10px] font-bold text-neutral-400">Tahun</label>
+                <input type="number" name="tahun" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="2020 (opsional)">
+            </div>
+            <div>
+                <label class="mb-1 block text-[10px] font-bold text-neutral-400">CC (Liter, cth: 2,2)</label>
+                <input type="text" name="cc" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="2,2 (opsional)">
+            </div>
+            <div>
+                <label class="mb-1 block text-[10px] font-bold text-neutral-400">Transmisi</label>
+                <select name="transmisi" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
+                    <option value="">Pilih (opsional)</option>
+                    <option value="manual">Manual</option>
+                    <option value="otomatis">Otomatis</option>
+                    <option value="cvt">CVT</option>
                 </select>
             </div>
-
-            {{-- PILIH JENIS KENDARAAN --}}
-            <div class="md:col-span-2 lg:col-span-3">
-                <label class="mb-2 block text-[10px] font-bold text-neutral-400">Status Kendaraan *</label>
-                <div class="flex gap-4">
-                    <label class="flex cursor-pointer items-center gap-2 text-xs text-white">
-                        <input type="radio" name="jenis_kendaraan" value="lama" checked onchange="toggleKendaraan('lama')" class="accent-brand-500">
-                        Pilih dari Kendaraan Terdaftar
-                    </label>
-                    <label class="flex cursor-pointer items-center gap-2 text-xs text-white">
-                        <input type="radio" name="jenis_kendaraan" value="baru" onchange="toggleKendaraan('baru')" class="accent-brand-500">
-                        Input Kendaraan Baru
-                    </label>
-                </div>
-            </div>
-
-            {{-- BOX: KENDARAAN LAMA --}}
-            <div id="box-kendaraan-lama" class="md:col-span-2 lg:col-span-3">
-                <label class="mb-1 block text-[10px] font-bold text-neutral-400">Kendaraan <span class="text-rose-500">*</span></label>
-                <select name="kendaraan_id" id="selectKendaraan" required class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
-                    <option value="">-- Pilih Konsumen Dulu --</option>
-                </select>
-
-                {{-- INFO KENDARAAN OTOMATIS --}}
-                <div id="infoKendaraan" class="mt-3 hidden rounded-xl border border-brand-500/30 bg-brand-500/5 p-3">
-                    <p class="mb-2 text-[10px] font-extrabold uppercase tracking-wider text-brand-400">Informasi Kendaraan Terpilih</p>
-                    <div class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6 text-xs">
-                        <div><p class="text-[10px] text-neutral-500">Plat Nomor</p><p id="infoPlat" class="font-extrabold uppercase text-brand-400">-</p></div>
-                        <div><p class="text-[10px] text-neutral-500">Merk</p><p id="infoMerk" class="font-bold text-white">-</p></div>
-                        <div><p class="text-[10px] text-neutral-500">Model/Tipe</p><p id="infoModel" class="font-bold text-white">-</p></div>
-                        <div><p class="text-[10px] text-neutral-500">Tahun</p><p id="infoTahun" class="font-bold text-white">-</p></div>
-                        <div><p class="text-[10px] text-neutral-500">CC</p><p id="infoCC" class="font-bold text-white">-</p></div>
-                        <div><p class="text-[10px] text-neutral-500">Transmisi</p><p id="infoTransmisi" class="font-bold text-white">-</p></div>
-                    </div>
-                </div>
-            </div>
-
-            {{-- BOX: KENDARAAN BARU (SEMUA OPTIONAL) --}}
-            <div id="box-kendaraan-baru" class="hidden md:col-span-2 lg:col-span-3 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                <div class="lg:col-span-3 text-[10px] text-neutral-500 italic">
-                    ℹ️ Semua field di bawah ini opsional. Isi sesuai data yang tersedia.
-                </div>
-                <div>
-                    <label class="mb-1 block text-[10px] font-bold text-neutral-400">Plat Nomor</label>
-                    <input type="text" name="plat_nomor" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white uppercase" placeholder="B 1234 CD (opsional)">
-                </div>
-                <div>
-                    <label class="mb-1 block text-[10px] font-bold text-neutral-400">Merk</label>
-                    <input type="text" name="merk" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="Toyota (opsional)">
-                </div>
-                <div>
-                    <label class="mb-1 block text-[10px] font-bold text-neutral-400">Tipe / Model</label>
-                    <input type="text" name="tipe_model" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="Avanza (opsional)">
-                </div>
-                <div>
-                    <label class="mb-1 block text-[10px] font-bold text-neutral-400">Tahun</label>
-                    <input type="number" name="tahun" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="2020 (opsional)">
-                </div>
-                <div>
-                    <label class="mb-1 block text-[10px] font-bold text-neutral-400">CC (Liter, cth: 2,2)</label>
-                    <input type="text" name="cc" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="2,2 (opsional)">
-                </div>
-                <div>
-                    <label class="mb-1 block text-[10px] font-bold text-neutral-400">Transmisi</label>
-                    <select name="transmisi" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
-                        <option value="">Pilih (opsional)</option>
-                        <option value="manual">Manual</option>
-                        <option value="otomatis">Otomatis</option>
-                        <option value="cvt">CVT</option>
-                    </select>
-                </div>
-            </div>
-
             <div>
                 <label class="mb-1 block text-[10px] font-bold text-neutral-400">Tanggal Inspeksi *</label>
                 <input type="date" name="tanggal_inspeksi" value="{{ date('Y-m-d') }}" required class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
@@ -380,76 +340,71 @@ const defaultKomponen = {
     ]
 };
 
-// ============================================================
-// TOGGLE KENDARAAN LAMA / BARU
-// ============================================================
-function toggleKendaraan(jenis) {
-    const boxLama = document.getElementById('box-kendaraan-lama');
-    const boxBaru = document.getElementById('box-kendaraan-baru');
-    const selectKendaraan = document.getElementById('selectKendaraan');
+// AUTOCOMPLETE KONSUMEN: nama bebas atau pilih rekomendasi.
+// Nomor WA selalu ditampilkan dan wajib, termasuk untuk konsumen terdaftar.
+const namaInspeksi = document.getElementById('inputNamaInspeksi');
+const konsumenIdInspeksi = document.getElementById('konsumenIdInspeksi');
+const rekomendasiKonsumen = document.getElementById('rekomendasiKonsumen');
+const waInspeksi = document.getElementById('waInspeksi');
+let namaMasterTerpilih = null;
 
-    if (jenis === 'lama') {
-        boxLama.classList.remove('hidden');
-        boxBaru.classList.add('hidden');
-        selectKendaraan.setAttribute('required', 'required');
-    } else {
-        boxLama.classList.add('hidden');
-        boxBaru.classList.remove('hidden');
-        selectKendaraan.removeAttribute('required');
-        selectKendaraan.value = '';
-        document.getElementById('infoKendaraan').classList.add('hidden');
+function renderCariKonsumen() {
+    const q = namaInspeksi.value.trim().toLocaleLowerCase('id');
+    rekomendasiKonsumen.replaceChildren();
+    if (!q || konsumenIdInspeksi.value) {
+        rekomendasiKonsumen.classList.add('hidden');
+        return;
     }
+    const cocok = konsumensData.filter(k => k.nama.toLocaleLowerCase('id').includes(q)).slice(0, 8);
+    if (!cocok.length) {
+        rekomendasiKonsumen.classList.add('hidden');
+        return;
+    }
+    cocok.forEach(k => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'block w-full border-b border-neutral-700 p-3 text-left text-xs text-white hover:bg-neutral-700';
+        btn.textContent = k.nama + ' (' + (k.no_hp || 'nomor belum tersedia') + ')';
+        btn.addEventListener('click', () => {
+            namaInspeksi.value = k.nama;
+            konsumenIdInspeksi.value = String(k.id);
+            namaMasterTerpilih = k.nama;
+            waInspeksi.value = k.no_hp || '';
+            rekomendasiKonsumen.classList.add('hidden');
+        });
+        rekomendasiKonsumen.appendChild(btn);
+    });
+    rekomendasiKonsumen.classList.remove('hidden');
 }
 
-// ============================================================
-// LOGIC PILIH KONSUMEN -> KENDARAAN
-// ============================================================
-document.getElementById('selectKonsumen').addEventListener('change', function() {
-    const kSelect = document.getElementById('selectKendaraan');
-    const konsumenId = parseInt(this.value);
-
-    kSelect.innerHTML = '<option value="">-- Pilih Kendaraan --</option>';
-    document.getElementById('infoKendaraan').classList.add('hidden');
-
-    if (!konsumenId) return;
-
-    const konsumen = konsumensData.find(k => k.id === konsumenId);
-    if (!konsumen || !konsumen.kendaraans.length) {
-        kSelect.innerHTML = '<option value="">Tidak ada kendaraan</option>';
-        return;
+namaInspeksi.addEventListener('input', () => {
+    // Jangan menghubungkan nama bebas dengan ID konsumen lama.
+    if (konsumenIdInspeksi.value || namaMasterTerpilih !== null) {
+        waInspeksi.value = '';
     }
-
-    konsumen.kendaraans.forEach(k => {
-        const opt = document.createElement('option');
-        opt.value = k.id;
-        opt.textContent = `${k.plat_nomor} - ${k.merk} ${k.tipe_model}`;
-        opt.dataset.kendaraan = JSON.stringify(k);
-        kSelect.appendChild(opt);
-    });
+    konsumenIdInspeksi.value = '';
+    namaMasterTerpilih = null;
+    renderCariKonsumen();
 });
 
-// ============================================================
-// LOGIC PILIH KENDARAAN -> TAMPILKAN INFO
-// ============================================================
-document.getElementById('selectKendaraan').addEventListener('change', function() {
-    const selected = this.options[this.selectedIndex];
-    const infoBox = document.getElementById('infoKendaraan');
-
-    if (!selected.dataset.kendaraan) {
-        infoBox.classList.add('hidden');
-        return;
+// Enter bukan syarat untuk memakai nama bebas; cukup isi nama dan nomor WA.
+namaInspeksi.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+        e.preventDefault();
+        rekomendasiKonsumen.classList.add('hidden');
+        waInspeksi.focus();
     }
-
-    const k = JSON.parse(selected.dataset.kendaraan);
-    document.getElementById('infoPlat').textContent = k.plat_nomor || '-';
-    document.getElementById('infoMerk').textContent = k.merk || '-';
-    document.getElementById('infoModel').textContent = k.tipe_model || '-';
-    document.getElementById('infoTahun').textContent = k.tahun || '-';
-    document.getElementById('infoCC').textContent = k.cc ? k.cc + ' cc' : '-';
-    document.getElementById('infoTransmisi').textContent = k.transmisi_label || '-';
-
-    infoBox.classList.remove('hidden');
 });
+
+document.addEventListener('click', e => {
+    if (!document.getElementById('kotakCariKonsumen').contains(e.target)) {
+        rekomendasiKonsumen.classList.add('hidden');
+    }
+});
+
+// Jika request sebelumnya gagal validasi, pertahankan nilai old() yang diinput.
+// Tidak menimpa nomor WA yang mungkin sudah diperbaiki petugas.
+
 
 // ============================================================
 // TAMBAH BARIS DETAIL INSPEKSI
@@ -577,7 +532,7 @@ function addEstimasi() {
             <label class="estimasi-label">Kategori</label>
             <select name="estimasi[${index}][kategori]" class="kategori-select rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white" onchange="toggleEstimasiFields(this)">
                 <option value="">-- Pilih Kategori --</option>
-                <option value="mesin">Mesin</option>
+                <option value="engine">Mesin</option>
                 <option value="kaki_kaki">Kaki-Kaki</option>
                 <option value="kelistrikan">Kelistrikan</option>
                 <option value="interior">Interior</option>
@@ -614,7 +569,6 @@ function addEstimasi() {
     container.insertAdjacentHTML('beforeend', html);
 }
 
-
 function toggleEstimasiFields(select) {
     const row = select.closest('.estimasi-row');
     const spSelect = row.querySelector('.sp-select');
@@ -624,7 +578,6 @@ function toggleEstimasiFields(select) {
     const namaItem = row.querySelector('.nama-item');
 
     if (select.value === "") {
-        // Jika kategori dikosongkan, reset field lainnya
         spSelect.disabled = true;
         jasaSelect.disabled = true;
         spSelect.value = "";
@@ -633,11 +586,9 @@ function toggleEstimasiFields(select) {
         hargaJasa.value = 0;
         namaItem.value = "";
     } else {
-        // Jika kategori dipilih, aktifkan sparepart dan jasa
         spSelect.disabled = false;
         jasaSelect.disabled = false;
     }
-
     calcTotal();
 }
 
@@ -647,7 +598,7 @@ function fillEstimasi(select, type) {
     const namaInput = row.querySelector('.nama-item');
 
     if (type === 'sp') {
-        if (option.value) {
+        if(option.value) {
             namaInput.value = option.dataset.nama;
             row.querySelector('.harga-part').value = option.dataset.harga;
         } else {
@@ -655,51 +606,14 @@ function fillEstimasi(select, type) {
             row.querySelector('.harga-part').value = 0;
         }
     } else {
-        if (option.value) {
-            // Gabungkan nama sparepart dan jasa jika keduanya dipilih
+        if(option.value) {
             const currentNama = namaInput.value;
-
-            namaInput.value = currentNama
-                ? currentNama + ' + ' + option.dataset.nama
-                : option.dataset.nama;
-
+            namaInput.value = currentNama ? currentNama + ' + ' + option.dataset.nama : option.dataset.nama;
             row.querySelector('.harga-jasa').value = option.dataset.harga;
         } else {
             row.querySelector('.harga-jasa').value = 0;
         }
     }
-
-    calcTotal();
-}
-
-function fillEstimasi(select, type) {
-    const row = select.closest('.estimasi-row');
-    const option = select.options[select.selectedIndex];
-    const namaInput = row.querySelector('.nama-item');
-
-    if (type === 'sp') {
-        if (option.value) {
-            namaInput.value = option.dataset.nama;
-            row.querySelector('.harga-part').value = option.dataset.harga;
-        } else {
-            namaInput.value = '';
-            row.querySelector('.harga-part').value = 0;
-        }
-    } else {
-        if (option.value) {
-            // Gabungkan nama sparepart dan jasa jika keduanya dipilih
-            const currentNama = namaInput.value;
-
-            namaInput.value = currentNama
-                ? currentNama + ' + ' + option.dataset.nama
-                : option.dataset.nama;
-
-            row.querySelector('.harga-jasa').value = option.dataset.harga;
-        } else {
-            row.querySelector('.harga-jasa').value = 0;
-        }
-    }
-
     calcTotal();
 }
 

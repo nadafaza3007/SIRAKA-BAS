@@ -29,25 +29,20 @@
         <span class="shrink-0 rounded-full bg-neutral-800 px-2 py-1 text-[11px] text-amber-400">★ {{ $inspeksi->rating_score }}/10</span>
       </div>
       <div class="mt-3 space-y-1 text-xs">
-        <p class="break-words font-semibold text-white">{{ $inspeksi->konsumen->nama_lengkap }}</p>
-        @if($inspeksi->kendaraan)
-            <p class="text-brand-400">{{ $inspeksi->kendaraan->plat_nomor ?? '-' }}</p>
-            <p class="break-words text-neutral-400">{{ $inspeksi->kendaraan->merk ?? '' }} {{ $inspeksi->kendaraan->tipe_model ?? '' }}</p>
+        <p class="break-words font-semibold text-white">{{ $inspeksi->nama_pelanggan_inspeksi }}</p>
+        @if($inspeksi->plat_nomor_inspeksi || $inspeksi->merk_inspeksi || $inspeksi->tipe_model_inspeksi || $inspeksi->kendaraan)
+            <p class="text-brand-400">{{ $inspeksi->plat_nomor_inspeksi ?: ($inspeksi->kendaraan?->plat_nomor ?? '-') }}</p>
+            <p class="break-words text-neutral-400">{{ $inspeksi->merk_inspeksi ?? '' }} {{ $inspeksi->tipe_model_inspeksi ?? '' }}</p>
         @else
-            <p class="text-neutral-500 italic">Kendaraan tidak terdaftar</p>
+            <p class="text-neutral-500 italic">Data kendaraan tidak diisi</p>
         @endif
         <p class="pt-1 font-bold text-emerald-400">Rp {{ number_format($inspeksi->total_estimasi, 0, ',', '.') }}</p>
       </div>
       <div class="mt-4 flex gap-2">
         @php
-            $noHp = preg_replace('/[^0-9]/', '', $inspeksi->konsumen->no_hp ?? '');
-            if (str_starts_with($noHp, '0')) $noHp = '62' . substr($noHp, 1);
-            elseif (str_starts_with($noHp, '8')) $noHp = '62' . $noHp;
-            $namaKonsumen = $inspeksi->konsumen->nama_lengkap ?? 'Pelanggan';
-            $platInfo = $inspeksi->kendaraan ? ($inspeksi->kendaraan->plat_nomor ?? '') : '';
-            $waLink = 'https://wa.me/' . $noHp . '?text=' . urlencode("Halo {$namaKonsumen}, berikut kami sampaikan laporan inspeksi kendaraan {$platInfo}.");
+            $waLink = $inspeksi->link_whatsapp_inspeksi;
         @endphp
-        @if($noHp)
+        @if($waLink)
         <a href="{{ $waLink }}" target="_blank" class="siraka-mobile-action flex items-center justify-center rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-xs text-emerald-400" aria-label="Hubungi via WhatsApp">
             <i class="fa-brands fa-whatsapp"></i>
         </a>
@@ -87,19 +82,19 @@
                             </div>
                         </td>
                         <td class="p-4">
-                            <div class="font-bold text-white">{{ $inspeksi->konsumen->nama_lengkap }}</div>
-                            <div class="mt-1 text-[10px] text-neutral-600">{{ $inspeksi->konsumen->no_hp }}</div>
+                            <div class="font-bold text-white">{{ $inspeksi->nama_pelanggan_inspeksi }}</div>
+                            <div class="mt-1 text-[10px] text-neutral-600">{{ $inspeksi->nomor_wa_pelanggan_inspeksi }}</div>
                         </td>
                         <td class="p-4">
-                            @if($inspeksi->kendaraan)
+                            @if($inspeksi->plat_nomor_inspeksi || $inspeksi->merk_inspeksi || $inspeksi->tipe_model_inspeksi || $inspeksi->kendaraan)
                                 <div class="font-extrabold uppercase tracking-wide text-brand-400">
-                                    {{ $inspeksi->kendaraan->plat_nomor ?? '-' }}
+                                    {{ $inspeksi->plat_nomor_inspeksi ?: ($inspeksi->kendaraan?->plat_nomor ?? '-') }}
                                 </div>
                                 <div class="mt-1 text-[10px] text-neutral-500">
-                                    {{ $inspeksi->kendaraan->merk ?? '' }} {{ $inspeksi->kendaraan->tipe_model ?? '' }}
+                                    {{ $inspeksi->merk_inspeksi ?? '' }} {{ $inspeksi->tipe_model_inspeksi ?? '' }}
                                 </div>
                             @else
-                                <div class="text-neutral-500 italic text-[10px]">Tidak ada kendaraan</div>
+                                <div class="text-neutral-500 italic text-[10px]">Data kendaraan tidak diisi</div>
                             @endif
                         </td>
                         <td class="p-4 text-center">
@@ -116,15 +111,10 @@
                         <td class="p-4 text-center">
                             <div class="flex items-center justify-center gap-2">
                                 @php
-                                    $noHp = preg_replace('/[^0-9]/', '', $inspeksi->konsumen->no_hp ?? '');
-                                    if (str_starts_with($noHp, '0')) $noHp = '62' . substr($noHp, 1);
-                                    elseif (str_starts_with($noHp, '8')) $noHp = '62' . $noHp;
-                                    $namaKonsumen = $inspeksi->konsumen->nama_lengkap ?? 'Pelanggan';
-                                    $platInfo = $inspeksi->kendaraan ? ($inspeksi->kendaraan->plat_nomor ?? '') : '';
-                                    $waLink = 'https://wa.me/' . $noHp . '?text=' . urlencode("Halo {$namaKonsumen}, berikut kami sampaikan laporan inspeksi kendaraan {$platInfo}.");
-                                @endphp
+            $waLink = $inspeksi->link_whatsapp_inspeksi;
+        @endphp
 
-                                @if($noHp)
+                                @if($waLink)
                                 <a href="{{ $waLink }}" target="_blank" class="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-bold text-emerald-400 transition hover:border-emerald-500 hover:bg-emerald-500 hover:text-white" title="Hubungi via WhatsApp">
                                     <i class="fa-brands fa-whatsapp"></i>
                                 </a>
