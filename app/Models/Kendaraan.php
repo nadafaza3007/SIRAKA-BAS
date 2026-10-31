@@ -84,6 +84,22 @@ class Kendaraan extends Model
         );
     }
 
+    /** Rekomendasi nota yang belum ditangani, lintas kunjungan servis. */
+    public function rekomendasiNotaTerbuka(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            NotaTransaksi::class,
+            RekamServis::class,
+            'kendaraan_id',
+            'rekam_servis_id',
+            'id',
+            'id'
+        )->where('status_rekomendasi', 'belum')
+         ->whereNotNull('catatan_nota')
+         ->where('catatan_nota', '<>', '')
+         ->orderByDesc('nota_transaksis.id');
+    }
+
     /*
     |--------------------------------------------------------------------------
     | Scope
@@ -96,7 +112,7 @@ class Kendaraan extends Model
     public function scopeDenganStatus(Builder $query): Builder
     {
         return $query
-            ->with('servisTerakhir')
+            ->with(['servisTerakhir', 'rekomendasiNotaTerbuka'])
             ->withCount('rekamServis');
     }
 

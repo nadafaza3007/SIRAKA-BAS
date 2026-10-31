@@ -276,6 +276,26 @@
             </dl>
         </div>
 
+        <section class="rounded-2xl border border-neutral-800 bg-ink-900 p-5">
+            <h3 class="text-sm font-extrabold text-white">Rekomendasi Terakhir per Kendaraan</h3>
+            <p class="mt-1 text-xs text-neutral-400">Catatan rekomendasi yang belum ditangani.</p>
+            <div class="mt-4 space-y-3">
+                @forelse($konsumen->kendaraans as $kendaraan)
+                    @php $catatan = $kendaraan->rekomendasiNotaTerbuka->first(); @endphp
+                    <div class="rounded-xl border border-neutral-700 p-3">
+                        <p class="text-xs font-bold text-white">{{ $kendaraan->plat_nomor }} · {{ $kendaraan->merk }} {{ $kendaraan->tipe_model }}</p>
+                        @if($catatan)
+                            <p class="mt-2 whitespace-pre-line text-xs text-amber-200">{{ $catatan->catatan_nota }}</p>
+                        @else
+                            <p class="mt-2 text-xs text-neutral-500">Tidak ada rekomendasi aktif.</p>
+                        @endif
+                    </div>
+                @empty
+                    <p class="text-xs text-neutral-500">Belum ada kendaraan.</p>
+                @endforelse
+            </div>
+        </section>
+
         <div class="flex items-start gap-3 rounded-2xl border border-sky-500/20 bg-sky-500/5 p-4">
             <i class="fa-solid fa-circle-info fa-fw mt-0.5 text-sky-400"></i>
             <p class="text-[11px] leading-5 text-sky-300/80">
