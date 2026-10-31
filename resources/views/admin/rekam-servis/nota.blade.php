@@ -208,11 +208,9 @@
                             class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white">
                             <option value="">Pilih sparepart</option>
                             @foreach($spareparts as $sp)
+                                <option value="{{ $sp->id }}" data-harga="{{ $sp->harga_jual }}">
+                                    {{ $sp->nama_barang }} — {{ $rp($sp->harga_jual) }} (Stok {{ $sp->stok }})
                                 <option value="{{ $sp->id }}">
-                                    {{ $sp->nama_barang }} —
-                                    {{ $rp($sp->harga_jual) }}
-                                    (Stok {{ $sp->stok }})
-                                </option>
                             @endforeach
                         </select>
 
