@@ -32,7 +32,6 @@
     border: 1px solid #4a202e; border-radius: 10px;
     background: rgba(244,63,94,.10);
   }
-  /* Pemeriksaan kaki-kaki: status kiri dan kanan sejajar. */
   #container-kaki_kaki > .inspeksi-detail-row > div:nth-child(2) {grid-column: 1;}
   #container-kaki_kaki > .inspeksi-detail-row > div:nth-child(3) {grid-column: 2;}
   #container-kaki_kaki > .inspeksi-detail-row > div:nth-child(2)::before {content: 'Kiri';}
@@ -41,7 +40,6 @@
   #container-kaki_kaki > .inspeksi-detail-row > div:nth-child(3)::before {
     display:block;color:#aaa;font-size:11px;margin-bottom:5px;
   }
-  /* Label yang tetap bisa dibaca pada form komponen biasa. */
   [id^="container-"] > .inspeksi-detail-row > div:first-child::before {
     content:'Komponen'; display:block; color:#aaa; font-size:11px; margin-bottom:5px;
   }
@@ -55,7 +53,6 @@
   }
 }
 
-/* Estimasi perbaikan: layout berbeda untuk HP dan desktop. */
 .estimasi-grid {
     display: grid;
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 2fr) minmax(0, 2fr) minmax(0, 1.25fr) minmax(0, 1.25fr) 44px;
@@ -106,19 +103,86 @@
                     @endforeach
                 </select>
             </div>
-            <div>
-                <label class="mb-1 block text-[10px] font-bold text-neutral-400">Kendaraan *</label>
+
+            {{-- PILIH JENIS KENDARAAN --}}
+            <div class="md:col-span-2 lg:col-span-3">
+                <label class="mb-2 block text-[10px] font-bold text-neutral-400">Status Kendaraan *</label>
+                <div class="flex gap-4">
+                    <label class="flex cursor-pointer items-center gap-2 text-xs text-white">
+                        <input type="radio" name="jenis_kendaraan" value="lama" checked onchange="toggleKendaraan('lama')" class="accent-brand-500">
+                        Pilih dari Kendaraan Terdaftar
+                    </label>
+                    <label class="flex cursor-pointer items-center gap-2 text-xs text-white">
+                        <input type="radio" name="jenis_kendaraan" value="baru" onchange="toggleKendaraan('baru')" class="accent-brand-500">
+                        Input Kendaraan Baru
+                    </label>
+                </div>
+            </div>
+
+            {{-- BOX: KENDARAAN LAMA --}}
+            <div id="box-kendaraan-lama" class="md:col-span-2 lg:col-span-3">
+                <label class="mb-1 block text-[10px] font-bold text-neutral-400">Kendaraan <span class="text-rose-500">*</span></label>
                 <select name="kendaraan_id" id="selectKendaraan" required class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
                     <option value="">-- Pilih Konsumen Dulu --</option>
                 </select>
+
+                {{-- INFO KENDARAAN OTOMATIS --}}
+                <div id="infoKendaraan" class="mt-3 hidden rounded-xl border border-brand-500/30 bg-brand-500/5 p-3">
+                    <p class="mb-2 text-[10px] font-extrabold uppercase tracking-wider text-brand-400">Informasi Kendaraan Terpilih</p>
+                    <div class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6 text-xs">
+                        <div><p class="text-[10px] text-neutral-500">Plat Nomor</p><p id="infoPlat" class="font-extrabold uppercase text-brand-400">-</p></div>
+                        <div><p class="text-[10px] text-neutral-500">Merk</p><p id="infoMerk" class="font-bold text-white">-</p></div>
+                        <div><p class="text-[10px] text-neutral-500">Model/Tipe</p><p id="infoModel" class="font-bold text-white">-</p></div>
+                        <div><p class="text-[10px] text-neutral-500">Tahun</p><p id="infoTahun" class="font-bold text-white">-</p></div>
+                        <div><p class="text-[10px] text-neutral-500">CC</p><p id="infoCC" class="font-bold text-white">-</p></div>
+                        <div><p class="text-[10px] text-neutral-500">Transmisi</p><p id="infoTransmisi" class="font-bold text-white">-</p></div>
+                    </div>
+                </div>
             </div>
+
+            {{-- BOX: KENDARAAN BARU (SEMUA OPTIONAL) --}}
+            <div id="box-kendaraan-baru" class="hidden md:col-span-2 lg:col-span-3 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                <div class="lg:col-span-3 text-[10px] text-neutral-500 italic">
+                    ℹ️ Semua field di bawah ini opsional. Isi sesuai data yang tersedia.
+                </div>
+                <div>
+                    <label class="mb-1 block text-[10px] font-bold text-neutral-400">Plat Nomor</label>
+                    <input type="text" name="plat_nomor" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white uppercase" placeholder="B 1234 CD (opsional)">
+                </div>
+                <div>
+                    <label class="mb-1 block text-[10px] font-bold text-neutral-400">Merk</label>
+                    <input type="text" name="merk" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="Toyota (opsional)">
+                </div>
+                <div>
+                    <label class="mb-1 block text-[10px] font-bold text-neutral-400">Tipe / Model</label>
+                    <input type="text" name="tipe_model" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="Avanza (opsional)">
+                </div>
+                <div>
+                    <label class="mb-1 block text-[10px] font-bold text-neutral-400">Tahun</label>
+                    <input type="number" name="tahun" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="2020 (opsional)">
+                </div>
+                <div>
+                    <label class="mb-1 block text-[10px] font-bold text-neutral-400">CC (Liter, cth: 2,2)</label>
+                    <input type="text" name="cc" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="2,2 (opsional)">
+                </div>
+                <div>
+                    <label class="mb-1 block text-[10px] font-bold text-neutral-400">Transmisi</label>
+                    <select name="transmisi" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
+                        <option value="">Pilih (opsional)</option>
+                        <option value="manual">Manual</option>
+                        <option value="otomatis">Otomatis</option>
+                        <option value="cvt">CVT</option>
+                    </select>
+                </div>
+            </div>
+
             <div>
                 <label class="mb-1 block text-[10px] font-bold text-neutral-400">Tanggal Inspeksi *</label>
                 <input type="date" name="tanggal_inspeksi" value="{{ date('Y-m-d') }}" required class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
             </div>
             <div>
-                <label class="mb-1 block text-[10px] font-bold text-neutral-400">Kilometer (KM) *</label>
-                <input type="number" name="km_kendaraan" required class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="175000">
+                <label class="mb-1 block text-[10px] font-bold text-neutral-400">Kilometer (KM)</label>
+                <input type="number" name="km_kendaraan" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="175000 (opsional)">
             </div>
             <div>
                 <label class="mb-1 block text-[10px] font-bold text-neutral-400">Rating Score (1-10) *</label>
@@ -136,37 +200,6 @@
                     <select name="ex_tabrak" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
                         <option value="tidak">Tidak</option><option value="ya">Ya</option>
                     </select>
-                </div>
-            </div>
-        </div>
-
-        {{-- INFO KENDARAAN OTOMATIS --}}
-        <div id="infoKendaraan" class="mt-4 hidden rounded-xl border border-brand-500/30 bg-brand-500/5 p-4">
-            <p class="mb-2 text-[10px] font-extrabold uppercase tracking-wider text-brand-400">Informasi Kendaraan Terpilih</p>
-            <div class="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-6 text-xs">
-                <div>
-                    <p class="text-[10px] text-neutral-500">Plat Nomor</p>
-                    <p id="infoPlat" class="font-extrabold uppercase text-brand-400">-</p>
-                </div>
-                <div>
-                    <p class="text-[10px] text-neutral-500">Merk</p>
-                    <p id="infoMerk" class="font-bold text-white">-</p>
-                </div>
-                <div>
-                    <p class="text-[10px] text-neutral-500">Model/Tipe</p>
-                    <p id="infoModel" class="font-bold text-white">-</p>
-                </div>
-                <div>
-                    <p class="text-[10px] text-neutral-500">Tahun</p>
-                    <p id="infoTahun" class="font-bold text-white">-</p>
-                </div>
-                <div>
-                    <p class="text-[10px] text-neutral-500">CC</p>
-                    <p id="infoCC" class="font-bold text-white">-</p>
-                </div>
-                <div>
-                    <p class="text-[10px] text-neutral-500">Transmisi</p>
-                    <p id="infoTransmisi" class="font-bold text-white">-</p>
                 </div>
             </div>
         </div>
@@ -226,7 +259,6 @@
                     </button>
                 </div>
             </div>
-            {{-- HEADER LABEL KIRI & KANAN --}}
             <div class="mb-2 hidden sm:grid grid-cols-12 gap-2 px-3 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
                 <div class="col-span-4">Komponen</div>
                 <div class="col-span-2 text-center">Kiri</div>
@@ -248,7 +280,6 @@
             </button>
         </div>
 
-        {{-- Judul kolom hanya untuk desktop. Di HP tiap field memiliki label. --}}
         <div class="estimasi-grid estimasi-header mb-2 px-3 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
             <div>Kategori</div>
             <div>Sparepart</div>
@@ -294,7 +325,7 @@ const jasas = @json($jasas);
 const konsumensData = @json($konsumensData);
 
 // ============================================================
-// KOMPONEN DEFAULT (SESUAI FORMAT PDF)
+// KOMPONEN DEFAULT
 // ============================================================
 const defaultKomponen = {
     kelistrikan: [
@@ -350,23 +381,44 @@ const defaultKomponen = {
 };
 
 // ============================================================
-// 1. LOGIC PILIH KONSUMEN -> KENDARAAN
+// TOGGLE KENDARAAN LAMA / BARU
+// ============================================================
+function toggleKendaraan(jenis) {
+    const boxLama = document.getElementById('box-kendaraan-lama');
+    const boxBaru = document.getElementById('box-kendaraan-baru');
+    const selectKendaraan = document.getElementById('selectKendaraan');
+
+    if (jenis === 'lama') {
+        boxLama.classList.remove('hidden');
+        boxBaru.classList.add('hidden');
+        selectKendaraan.setAttribute('required', 'required');
+    } else {
+        boxLama.classList.add('hidden');
+        boxBaru.classList.remove('hidden');
+        selectKendaraan.removeAttribute('required');
+        selectKendaraan.value = '';
+        document.getElementById('infoKendaraan').classList.add('hidden');
+    }
+}
+
+// ============================================================
+// LOGIC PILIH KONSUMEN -> KENDARAAN
 // ============================================================
 document.getElementById('selectKonsumen').addEventListener('change', function() {
     const kSelect = document.getElementById('selectKendaraan');
     const konsumenId = parseInt(this.value);
-    
+
     kSelect.innerHTML = '<option value="">-- Pilih Kendaraan --</option>';
     document.getElementById('infoKendaraan').classList.add('hidden');
-    
+
     if (!konsumenId) return;
-    
+
     const konsumen = konsumensData.find(k => k.id === konsumenId);
     if (!konsumen || !konsumen.kendaraans.length) {
         kSelect.innerHTML = '<option value="">Tidak ada kendaraan</option>';
         return;
     }
-    
+
     konsumen.kendaraans.forEach(k => {
         const opt = document.createElement('option');
         opt.value = k.id;
@@ -377,17 +429,17 @@ document.getElementById('selectKonsumen').addEventListener('change', function() 
 });
 
 // ============================================================
-// 2. LOGIC PILIH KENDARAAN -> TAMPILKAN INFO
+// LOGIC PILIH KENDARAAN -> TAMPILKAN INFO
 // ============================================================
 document.getElementById('selectKendaraan').addEventListener('change', function() {
     const selected = this.options[this.selectedIndex];
     const infoBox = document.getElementById('infoKendaraan');
-    
+
     if (!selected.dataset.kendaraan) {
         infoBox.classList.add('hidden');
         return;
     }
-    
+
     const k = JSON.parse(selected.dataset.kendaraan);
     document.getElementById('infoPlat').textContent = k.plat_nomor || '-';
     document.getElementById('infoMerk').textContent = k.merk || '-';
@@ -395,15 +447,12 @@ document.getElementById('selectKendaraan').addEventListener('change', function()
     document.getElementById('infoTahun').textContent = k.tahun || '-';
     document.getElementById('infoCC').textContent = k.cc ? k.cc + ' cc' : '-';
     document.getElementById('infoTransmisi').textContent = k.transmisi_label || '-';
-    
+
     infoBox.classList.remove('hidden');
 });
 
 // ============================================================
-// 3. TAMBAH BARIS DETAIL INSPEKSI
-// ============================================================
-// ============================================================
-// 3. TAMBAH BARIS DETAIL INSPEKSI
+// TAMBAH BARIS DETAIL INSPEKSI
 // ============================================================
 function addRow(type, komponenName = '', status = 'Baik', keterangan = '') {
     const container = document.getElementById(`container-${type}`);
@@ -414,7 +463,7 @@ function addRow(type, komponenName = '', status = 'Baik', keterangan = '') {
         html = `
         <div class="inspeksi-detail-row grid grid-cols-12 gap-2 rounded-xl bg-black/20 p-3 items-center">
             <div class="col-span-4">
-                <input type="text" name="${type}[${index}][komponen]" value="${komponenName}" placeholder="Komponen" 
+                <input type="text" name="${type}[${index}][komponen]" value="${komponenName}" placeholder="Komponen"
                     class="w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">
             </div>
             <div class="col-span-2">
@@ -434,7 +483,7 @@ function addRow(type, komponenName = '', status = 'Baik', keterangan = '') {
                 </select>
             </div>
             <div class="col-span-3">
-                <input type="text" name="${type}[${index}][catatan]" value="${keterangan}" placeholder="Catatan" 
+                <input type="text" name="${type}[${index}][catatan]" value="${keterangan}" placeholder="Catatan"
                     class="w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">
             </div>
             <div class="col-span-1 text-center">
@@ -444,11 +493,10 @@ function addRow(type, komponenName = '', status = 'Baik', keterangan = '') {
             </div>
         </div>`;
     } else if (type === 'dokumen') {
-        // ===== DOKUMEN: Pakai Ya / Tidak / N/A =====
         html = `
         <div class="inspeksi-detail-row grid grid-cols-12 gap-2 rounded-xl bg-black/20 p-3 items-center">
             <div class="col-span-4">
-                <input type="text" name="${type}[${index}][dokumen]" value="${komponenName}" placeholder="Dokumen" 
+                <input type="text" name="${type}[${index}][dokumen]" value="${komponenName}" placeholder="Dokumen"
                     class="w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">
             </div>
             <div class="col-span-3">
@@ -459,7 +507,7 @@ function addRow(type, komponenName = '', status = 'Baik', keterangan = '') {
                 </select>
             </div>
             <div class="col-span-4">
-                <input type="text" name="${type}[${index}][keterangan]" value="${keterangan}" placeholder="Keterangan" 
+                <input type="text" name="${type}[${index}][keterangan]" value="${keterangan}" placeholder="Keterangan"
                     class="w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">
             </div>
             <div class="col-span-1 text-center">
@@ -469,12 +517,10 @@ function addRow(type, komponenName = '', status = 'Baik', keterangan = '') {
             </div>
         </div>`;
     } else {
-        // ===== SECTION LAIN: Pakai Baik / Cukup / Buruk / N/A =====
-        const label = 'Komponen';
         html = `
         <div class="inspeksi-detail-row grid grid-cols-12 gap-2 rounded-xl bg-black/20 p-3 items-center">
             <div class="col-span-4">
-                <input type="text" name="${type}[${index}][komponen]" value="${komponenName}" placeholder="${label}" 
+                <input type="text" name="${type}[${index}][komponen]" value="${komponenName}" placeholder="Komponen"
                     class="w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">
             </div>
             <div class="col-span-3">
@@ -486,7 +532,7 @@ function addRow(type, komponenName = '', status = 'Baik', keterangan = '') {
                 </select>
             </div>
             <div class="col-span-4">
-                <input type="text" name="${type}[${index}][keterangan]" value="${keterangan}" placeholder="Keterangan" 
+                <input type="text" name="${type}[${index}][keterangan]" value="${keterangan}" placeholder="Keterangan"
                     class="w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">
             </div>
             <div class="col-span-1 text-center">
@@ -500,28 +546,28 @@ function addRow(type, komponenName = '', status = 'Baik', keterangan = '') {
 }
 
 // ============================================================
-// 4. RESET / ISI DEFAULT KOMPONEN
+// RESET / ISI DEFAULT KOMPONEN
 // ============================================================
 function resetDefault(type) {
     const container = document.getElementById(`container-${type}`);
     container.innerHTML = '';
     const defaults = defaultKomponen[type] || [];
     defaults.forEach(komponen => {
-    const defaultStatus = type === 'dokumen' ? 'Ya' : 'Baik';
-    addRow(type, komponen, defaultStatus, '');
+        const defaultStatus = type === 'dokumen' ? 'Ya' : 'Baik';
+        addRow(type, komponen, defaultStatus, '');
     });
 }
 
 // ============================================================
-// 5. TAMBAH BARIS ESTIMASI (Tanpa field Nama Item)
+// TAMBAH BARIS ESTIMASI
 // ============================================================
 function addEstimasi() {
     const container = document.getElementById('container-estimasi');
     const index = container.children.length;
-    
+
     let spOptions = '<option value="">-- Pilih Sparepart --</option>';
     spareparts.forEach(sp => spOptions += `<option value="${sp.id}" data-harga="${sp.harga_jual}" data-nama="${sp.nama_barang}">${sp.nama_barang}</option>`);
-    
+
     let jasaOptions = '<option value="">-- Pilih Jasa --</option>';
     jasas.forEach(j => jasaOptions += `<option value="${j.id}" data-harga="${j.harga}" data-nama="${j.nama_jasa}">${j.nama_jasa}</option>`);
 
@@ -529,46 +575,74 @@ function addEstimasi() {
     <div class="estimasi-row estimasi-grid rounded-xl bg-black/20 p-3">
         <div class="estimasi-field">
             <label class="estimasi-label">Kategori</label>
-            <select name="estimasi[${index}][kategori]" class="rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">
-                <option value="engine">Engine</option><option value="kaki_kaki">Kaki-Kaki</option>
-                <option value="kelistrikan">Kelistrikan</option><option value="exterior">Exterior</option>
+            <select name="estimasi[${index}][kategori]" class="kategori-select rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white" onchange="toggleEstimasiFields(this)">
+                <option value="">-- Pilih Kategori --</option>
+                <option value="engine">Mesin</option>
+                <option value="kaki_kaki">Kaki-Kaki</option>
+                <option value="kelistrikan">Kelistrikan</option>
+                <option value="interior">Interior</option>
+                <option value="exterior">Exterior</option>
             </select>
         </div>
         <div class="estimasi-field">
             <label class="estimasi-label">Sparepart</label>
-            <select onchange="fillEstimasi(this, 'sp')" class="sp-select rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">${spOptions}</select>
+            <select name="estimasi[${index}][sparepart_id]" onchange="fillEstimasi(this, 'sp')" class="sp-select rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white" disabled>
+                ${spOptions}
+            </select>
         </div>
         <div class="estimasi-field">
             <label class="estimasi-label">Jasa</label>
-            <select onchange="fillEstimasi(this, 'jasa')" class="jasa-select rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">${jasaOptions}</select>
+            <select name="estimasi[${index}][jasa_id]" onchange="fillEstimasi(this, 'jasa')" class="jasa-select rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white" disabled>
+                ${jasaOptions}
+            </select>
         </div>
         <div class="estimasi-field">
             <label class="estimasi-label">Harga Part (Rp)</label>
-            <input type="number" name="estimasi[${index}][harga_part]" value="0" onchange="calcTotal()" oninput="calcTotal()" class="harga-part rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-right text-xs text-white">
+            <input type="number" name="estimasi[${index}][harga_part]" value="0" onchange="calcTotal()" oninput="calcTotal()" class="harga-part rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-right text-xs text-white" readonly>
         </div>
         <div class="estimasi-field">
             <label class="estimasi-label">Harga Jasa (Rp)</label>
-            <input type="number" name="estimasi[${index}][harga_jasa]" value="0" onchange="calcTotal()" oninput="calcTotal()" class="harga-jasa rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-right text-xs text-white">
+            <input type="number" name="estimasi[${index}][harga_jasa]" value="0" onchange="calcTotal()" oninput="calcTotal()" class="harga-jasa rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-right text-xs text-white" readonly>
         </div>
         <div class="estimasi-hapus flex justify-center lg:justify-end">
             <button type="button" onclick="this.closest('.estimasi-row').remove(); calcTotal()" class="text-rose-400 hover:text-rose-300" aria-label="Hapus item estimasi" title="Hapus item">
-                <i class="fa-solid fa-trash"></i><span class="ml-2 text-xs font-semibold lg:hidden">Hapus item</span>
+                <i class="fa-solid fa-trash"></i><span class="ml-2 text-xs font-semibold lg:hidden">Hapus</span>
             </button>
         </div>
-        <input type="hidden" name="estimasi[${index}][sparepart_id]" class="sp-id">
-        <input type="hidden" name="estimasi[${index}][jasa_id]" class="jasa-id">
         <input type="hidden" name="estimasi[${index}][nama_item]" class="nama-item">
     </div>`;
     container.insertAdjacentHTML('beforeend', html);
+}
+
+function toggleEstimasiFields(select) {
+    const row = select.closest('.estimasi-row');
+    const spSelect = row.querySelector('.sp-select');
+    const jasaSelect = row.querySelector('.jasa-select');
+    const hargaPart = row.querySelector('.harga-part');
+    const hargaJasa = row.querySelector('.harga-jasa');
+    const namaItem = row.querySelector('.nama-item');
+
+    if (select.value === "") {
+        spSelect.disabled = true;
+        jasaSelect.disabled = true;
+        spSelect.value = "";
+        jasaSelect.value = "";
+        hargaPart.value = 0;
+        hargaJasa.value = 0;
+        namaItem.value = "";
+    } else {
+        spSelect.disabled = false;
+        jasaSelect.disabled = false;
+    }
+    calcTotal();
 }
 
 function fillEstimasi(select, type) {
     const row = select.closest('.estimasi-row');
     const option = select.options[select.selectedIndex];
     const namaInput = row.querySelector('.nama-item');
-    
+
     if (type === 'sp') {
-        row.querySelector('.sp-id').value = option.value || '';
         if(option.value) {
             namaInput.value = option.dataset.nama;
             row.querySelector('.harga-part').value = option.dataset.harga;
@@ -577,12 +651,11 @@ function fillEstimasi(select, type) {
             row.querySelector('.harga-part').value = 0;
         }
     } else {
-        row.querySelector('.jasa-id').value = option.value || '';
         if(option.value) {
-            namaInput.value = option.dataset.nama;
+            const currentNama = namaInput.value;
+            namaInput.value = currentNama ? currentNama + ' + ' + option.dataset.nama : option.dataset.nama;
             row.querySelector('.harga-jasa').value = option.dataset.harga;
         } else {
-            namaInput.value = '';
             row.querySelector('.harga-jasa').value = 0;
         }
     }
