@@ -3,7 +3,9 @@
 
 @section('content')
 <style>
-
+/* ============================================
+   RESPONSIVE MOBILE - Tabel Tetap Tabel
+   ============================================ */
 @media screen and (max-width: 768px) {
     #printAreaStandar {
         padding: 10px !important;
@@ -81,15 +83,18 @@
         content: none !important;
     }
 
+    /* Subtotal */
     #printAreaStandar table tbody tr.bg-gray-50 td {
         background: #f9fafb !important;
         font-weight: 700 !important;
     }
 
+    /* Grand Total */
     #printAreaStandar .text-2xl {
         font-size: 1.25rem !important;
     }
 
+    /* Tanda tangan */
     #printAreaStandar .flex.justify-between {
         font-size: 10px !important;
     }
@@ -271,7 +276,7 @@
         <h2 class="mb-4 border-b-2 border-black text-center text-lg font-extrabold uppercase">Estimasi Perbaikan</h2>
 
         @php $grandTotal = 0; @endphp
-        @foreach(['engine' => 'ENGINE', 'kaki_kaki' => 'KAKI-KAKI DEPAN & BELAKANG', 'kelistrikan' => 'KELISTRIKAN', 'exterior' => 'EXTERIOR'] as $key => $title)
+        @foreach(['mesin' => 'MESIN', 'kaki_kaki' => 'KAKI-KAKI DEPAN & BELAKANG', 'kelistrikan' => 'KELISTRIKAN', 'exterior' => 'EXTERIOR'] as $key => $title)
             @php $items = $inspeksi->estimasi->where('kategori', $key); @endphp
             @if($items->isNotEmpty())
                 <div class="mb-4">

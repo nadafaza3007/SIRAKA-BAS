@@ -582,7 +582,7 @@ function addEstimasi() {
                 <option value="kelistrikan">Kelistrikan</option>
                 <option value="interior">Interior</option>
                 <option value="exterior">Exterior</option>
-        </select>
+            </select>
         </div>
         <div class="estimasi-field">
             <label class="estimasi-label">Sparepart</label>
@@ -614,6 +614,7 @@ function addEstimasi() {
     container.insertAdjacentHTML('beforeend', html);
 }
 
+
 function toggleEstimasiFields(select) {
     const row = select.closest('.estimasi-row');
     const spSelect = row.querySelector('.sp-select');
@@ -639,6 +640,7 @@ function toggleEstimasiFields(select) {
 
     calcTotal();
 }
+
 
 function fillEstimasi(select, type) {
     const row = select.closest('.estimasi-row');
