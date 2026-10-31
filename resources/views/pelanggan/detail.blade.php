@@ -132,28 +132,26 @@
                 </div>
 
 
-                <button
-                    type="button"
-                    onclick="window.print()"
-                    class="no-print inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
-                >
-
-                    <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        class="h-4 w-4"
+                @if ($nota && Route::has('pelanggan.nota-resmi'))
+                    <a
+                        href="{{ route('pelanggan.nota-resmi', $servis->id) }}"
+                        class="no-print inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
                     >
-                        <path d="M6 9V2h12v7"></path>
-                        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                        <rect width="12" height="8" x="6" y="14"></rect>
-                    </svg>
-
-                    Cetak / Simpan PDF
-
-                </button>
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            class="h-4 w-4"
+                        >
+                            <path d="M6 9V2h12v7"></path>
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                            <rect width="12" height="8" x="6" y="14"></rect>
+                        </svg>
+                        Lihat / Cetak Nota Resmi
+                    </a>
+                @endif
 
             </div>
 
@@ -255,17 +253,22 @@
                         <div class="flex justify-between gap-4">
 
                             <dt class="text-slate-500">
-                                Kilometer
+                                KM Masuk
                             </dt>
 
                             <dd class="text-right font-semibold tabular-nums text-slate-900">
-                                {{ $servis->km_akhir !== null
-                                    ? $km($servis->km_akhir)
-                                    : '-'
-                                }}
+                                {{ $servis->km_masuk !== null ? $km($servis->km_masuk) : '—' }}
                             </dd>
 
                         </div>
+
+                        <div class="flex justify-between gap-4">
+                            <dt class="text-slate-500">KM Keluar</dt>
+                            <dd class="text-right font-semibold tabular-nums text-slate-900">
+                                {{ $servis->km_keluar !== null ? $km($servis->km_keluar) : '—' }}
+                            </dd>
+                        </div>
+
 
                     </dl>
 
