@@ -299,6 +299,30 @@ Route::prefix('pelanggan')
         Route::get('/kendaraan/{kendaraan}/riwayat', [PelangganController::class, 'riwayatKendaraan'])
             ->name('pelanggan.kendaraan.riwayat');
 
+        // Nota resmi pelanggan: dibatasi ketat pada kepemilikan kendaraan.
+        Route::get('/servis/{id}/nota', function ($id) {
+            $konsumen = auth()->user()->konsumen_id
+                ? Konsumen::find(auth()->user()->konsumen_id)
+                : Konsumen::where('no_hp', auth()->user()->no_hp)->first();
+
+            abort_unless($konsumen, 404);
+
+            $servis = RekamServis::with([
+                'kendaraan.konsumen',
+                'detailSpareparts.sparepart',
+                'detailJasas.jasa',
+                'catatanRekomendasis',
+                'nota.pembayaran',
+            ])->findOrFail($id);
+
+            abort_unless($servis->kendaraan &&
+                (int) $servis->kendaraan->konsumen_id === (int) $konsumen->id, 404);
+            abort_unless($servis->nota, 404);
+
+            $nota = $servis->nota;
+            return view('pelanggan.riwayat-servis.nota-resmi', compact('servis', 'nota'));
+        })->name('pelanggan.nota-resmi');
+
         // Detail satu rekam servis
         Route::get('/servis/{id}', [PelangganController::class, 'detailServis'])
             ->name('pelanggan.detail-servis');
@@ -348,7 +372,7 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
     Route::get('/rekam-servis/create', function () {
         $konsumens = Konsumen::with([
             'kendaraans' => function ($query) {
-                $query->orderBy('plat_nomor');
+                $query->with('rekomendasiNotaTerbuka')->orderBy('plat_nomor');
             },
         ])
             ->orderBy('nama_lengkap')
@@ -738,7 +762,7 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
     Route::get('/konsumen/{konsumen}/edit', function (Konsumen $konsumen) {
         $konsumen->load([
             'kendaraans' => function ($query) {
-                $query->orderBy('plat_nomor');
+                $query->with('rekomendasiNotaTerbuka')->orderBy('plat_nomor');
             },
         ]);
 
@@ -1213,9 +1237,8 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
     );
 
     $data = $request->validate([
-        'diskon_persen' => [
-            'required', 'numeric', 'between:0,100', 'decimal:0,2'
-        ],
+        'diskon_ribuan' => [
+    'required', 'integer', 'min:0', 'max:999999999'],
     ]);
 
     DB::transaction(function () use ($id, $data) {
@@ -1244,11 +1267,7 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
 
         $subtotal = (int) round($servis->subtotal());
 
-        $diskon = (int) round(
-            $subtotal * (float) $data['diskon_persen'] / 100,
-            0,
-            PHP_ROUND_HALF_UP
-        );
+        $diskon = (int) $data['diskon_ribuan'] * 1000;
 
         $diskon = min($subtotal, max(0, $diskon));
 
@@ -1301,6 +1320,8 @@ Route::post('/rekam-servis/{id}/selesaikan', function ($id, Request $request) {
     $data = $request->validate([
         'km_keluar' => ['required', 'integer', 'min:0', 'max:999999999'],
         'catatan_nota' => ['nullable', 'string', 'max:5000'],
+        'rekomendasi_selesai' => ['nullable', 'array'],
+        'rekomendasi_selesai.*' => ['integer', 'distinct'],
     ]);
 
     DB::transaction(function () use ($id, $data) {
@@ -1322,14 +1343,38 @@ Route::post('/rekam-servis/{id}/selesaikan', function ($id, Request $request) {
             ]);
         }
 
+        // Konfirmasi hanya rekomendasi lama milik kendaraan yang sama.
+        $ids = $data['rekomendasi_selesai'] ?? [];
+        if ($ids) {
+            $jumlahValid = NotaTransaksi::query()
+                ->join('rekam_servis as lama', 'lama.id', '=', 'nota_transaksis.rekam_servis_id')
+                ->where('lama.kendaraan_id', $servis->kendaraan_id)
+                ->where('lama.id', '<>', $servis->id)
+                ->where('nota_transaksis.status_rekomendasi', 'belum')
+                ->whereIn('nota_transaksis.id', $ids)
+                ->count();
+            if ($jumlahValid !== count($ids)) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'rekomendasi_selesai' => 'Rekomendasi tidak valid atau sudah ditangani.',
+                ]);
+            }
+        }
+
         $servis->update([
             'km_keluar' => (int) $data['km_keluar'],
             'status' => 'selesai',
         ]);
 
+        $catatanNota = trim((string) ($data['catatan_nota'] ?? ''));
         $nota->update([
-            'catatan_nota' => $data['catatan_nota'] ?? null,
+            'catatan_nota' => $catatanNota !== '' ? $catatanNota : null,
+            'status_rekomendasi' => $catatanNota !== '' ? 'belum' : null,
         ]);
+        if ($ids) {
+            NotaTransaksi::whereIn('id', $ids)
+                ->where('status_rekomendasi', 'belum')
+                ->update(['status_rekomendasi' => 'sudah']);
+        }
     }, 3);
 
     return redirect()

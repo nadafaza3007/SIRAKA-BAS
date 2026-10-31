@@ -3,120 +3,15 @@
 
 @section('content')
 <style>
-/* ============================================
-   RESPONSIVE MOBILE - Tabel Tetap Tabel
-   ============================================ */
-@media screen and (max-width: 768px) {
-    #printAreaStandar {
-        padding: 10px !important;
-    }
-
-    #printAreaStandar h1 {
-        font-size: 1rem !important;
-    }
-
-    #printAreaStandar h2 {
-        font-size: 0.75rem !important;
-    }
-
-    #printAreaStandar .grid-cols-1 {
-        gap: 6px !important;
-    }
-
-    #printAreaStandar .grid-cols-1 > div {
-        font-size: 11px !important;
-    }
-
-    /* Kondisi Umum - 3 kolom di HP */
-    #printAreaStandar .sm\:grid-cols-5 {
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: 4px !important;
-    }
-
-    #printAreaStandar .sm\:grid-cols-5 > div {
-        padding: 6px !important;
-        font-size: 10px !important;
-    }
-
-    /* Semua tabel */
-    #printAreaStandar table {
-        font-size: 10px !important;
-        width: 100% !important;
-        min-width: 0 !important;
-    }
-
-    #printAreaStandar table th {
-        padding: 4px 6px !important;
-        font-size: 9px !important;
-        font-weight: 700 !important;
-    }
-
-    #printAreaStandar table td {
-        padding: 4px 6px !important;
-        font-size: 10px !important;
-        word-break: break-word !important;
-    }
-
-    #printAreaStandar table thead {
-        display: table-header-group !important;
-    }
-
-    #printAreaStandar table tbody {
-        display: table-row-group !important;
-    }
-
-    #printAreaStandar table tbody tr {
-        display: table-row !important;
-        margin: 0 !important;
-        border: none !important;
-        padding: 0 !important;
-        background: transparent !important;
-    }
-
-    #printAreaStandar table tbody td {
-        display: table-cell !important;
-        border: 1px solid #d1d5db !important;
-        padding: 3px 5px !important;
-    }
-
-    #printAreaStandar table tbody td::before {
-        content: none !important;
-    }
-
-    /* Subtotal */
-    #printAreaStandar table tbody tr.bg-gray-50 td {
-        background: #f9fafb !important;
-        font-weight: 700 !important;
-    }
-
-    /* Grand Total */
-    #printAreaStandar .text-2xl {
-        font-size: 1.25rem !important;
-    }
-
-    /* Tanda tangan */
-    #printAreaStandar .flex.justify-between {
-        font-size: 10px !important;
-    }
-
-    #printAreaStandar .flex.justify-between > div {
-        margin-bottom: 40px !important;
-    }
+@media screen and (max-width: 639px) {
+  #printAreaStandar { overflow-x: auto; }
+  #printAreaStandar table { min-width: 600px; }
+  #printAreaStandar h1 { font-size: 1rem; overflow-wrap: anywhere; }
 }
-
-/* Print tetap normal */
 @media print {
-    #printAreaStandar .grid-cols-1 {
-        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-    }
-
-    #printAreaStandar .sm\:grid-cols-5 {
-        grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-    }
-
-    #printAreaStandar table {
-        min-width: 0 !important;
-    }
+  #printAreaStandar .grid-cols-1 { grid-template-columns: repeat(2,minmax(0,1fr)) !important; }
+  #printAreaStandar .sm\:grid-cols-5 { grid-template-columns: repeat(5,minmax(0,1fr)) !important; }
+  #printAreaStandar table { min-width: 0 !important; }
 }
 </style>
 
@@ -130,14 +25,14 @@
     }
 
     $namaKonsumen = $inspeksi->konsumen->nama_lengkap ?? 'Pelanggan';
-    $platInfo = $inspeksi->kendaraan ? ($inspeksi->kendaraan->plat_nomor ?? '') : '';
+    $platInfo = $inspeksi->kendaraan->plat_nomor ?? '';
 
     $waLink = 'https://wa.me/' . $noHp . '?text=' . urlencode(
         "Halo {$namaKonsumen}, berikut kami sampaikan laporan inspeksi kendaraan {$platInfo}."
     );
 @endphp
 
-{{-- Tombol Aksi --}}
+{{-- Tombol Aksi (Akan hilang saat di-print) --}}
 <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between no-print">
     <a href="{{ route('admin.inspeksi.index') }}" class="inline-flex items-center gap-2 text-xs font-bold text-neutral-500 hover:text-white">
         <i class="fa-solid fa-arrow-left"></i> Kembali ke Daftar
@@ -276,7 +171,7 @@
         <h2 class="mb-4 border-b-2 border-black text-center text-lg font-extrabold uppercase">Estimasi Perbaikan</h2>
 
         @php $grandTotal = 0; @endphp
-        @foreach(['mesin' => 'MESIN', 'kaki_kaki' => 'KAKI-KAKI DEPAN & BELAKANG', 'kelistrikan' => 'KELISTRIKAN', 'exterior' => 'EXTERIOR'] as $key => $title)
+        @foreach(['mesin' => 'MESIN', 'kaki_kaki' => 'KAKI-KAKI DEPAN & BELAKANG', 'kelistrikan' => 'KELISTRIKAN', 'interior' => 'INTERIOR', 'exterior' => 'EXTERIOR'] as $key => $title)
             @php $items = $inspeksi->estimasi->where('kategori', $key); @endphp
             @if($items->isNotEmpty())
                 <div class="mb-4">

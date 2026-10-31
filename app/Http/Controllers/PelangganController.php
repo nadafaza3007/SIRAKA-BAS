@@ -53,6 +53,7 @@ class PelangganController extends Controller
                 'perluDipantau' => collect(),
                 'servisTerakhir' => null,
                 'aktivitas' => collect(),
+                'rekomendasiTerbaru' => collect(),
             ]);
         }
 
@@ -92,7 +93,7 @@ class PelangganController extends Controller
         */
         $jumlahPerluServis = $kendaraans
             ->filter(function ($kendaraan) {
-                return $kendaraan->status_servis === 'perlu_servis';
+                return in_array($kendaraan->status_servis, ['perlu_servis'], true);
             })
             ->count();
 
@@ -121,6 +122,23 @@ class PelangganController extends Controller
             ->values();
 
 
+        // Hanya rekomendasi yang masih terbuka, dari kendaraan milik pelanggan.
+        $rekomendasiTerbaru = \App\Models\NotaTransaksi::query()
+            ->join('rekam_servis', 'rekam_servis.id', '=', 'nota_transaksis.rekam_servis_id')
+            ->join('kendaraans', 'kendaraans.id', '=', 'rekam_servis.kendaraan_id')
+            ->where('kendaraans.konsumen_id', $konsumen->id)
+            ->where('nota_transaksis.status_rekomendasi', 'belum')
+            ->whereNotNull('nota_transaksis.catatan_nota')
+            ->whereRaw("TRIM(nota_transaksis.catatan_nota) <> ''")
+            ->orderByDesc('rekam_servis.tanggal_servis')
+            ->orderByDesc('rekam_servis.id')
+            ->limit(3)
+            ->get([
+                'nota_transaksis.id', 'nota_transaksis.catatan_nota',
+                'rekam_servis.id as servis_id', 'rekam_servis.tanggal_servis',
+                'kendaraans.plat_nomor', 'kendaraans.merk', 'kendaraans.tipe_model',
+            ]);
+
         return view('pelanggan.dashboard', [
             'namaDepan' => $namaDepan,
             'totalKendaraan' => $kendaraans->count(),
@@ -128,6 +146,7 @@ class PelangganController extends Controller
             'perluDipantau' => $perluDipantau,
             'servisTerakhir' => $aktivitas->first(),
             'aktivitas' => $aktivitas,
+            'rekomendasiTerbaru' => $rekomendasiTerbaru,
         ]);
     }
 

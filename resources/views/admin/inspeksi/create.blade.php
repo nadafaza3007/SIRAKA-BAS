@@ -624,7 +624,7 @@ function toggleEstimasiFields(select) {
     const namaItem = row.querySelector('.nama-item');
 
     if (select.value === "") {
-        // Jika kategori dikosongkan, disable dan reset field lainnya
+        // Jika kategori dikosongkan, reset field lainnya
         spSelect.disabled = true;
         jasaSelect.disabled = true;
         spSelect.value = "";
@@ -633,14 +633,13 @@ function toggleEstimasiFields(select) {
         hargaJasa.value = 0;
         namaItem.value = "";
     } else {
-        // Jika kategori dipilih, enable field sparepart dan jasa
+        // Jika kategori dipilih, aktifkan sparepart dan jasa
         spSelect.disabled = false;
         jasaSelect.disabled = false;
     }
 
     calcTotal();
 }
-
 
 function fillEstimasi(select, type) {
     const row = select.closest('.estimasi-row');
@@ -659,6 +658,38 @@ function fillEstimasi(select, type) {
         if (option.value) {
             // Gabungkan nama sparepart dan jasa jika keduanya dipilih
             const currentNama = namaInput.value;
+
+            namaInput.value = currentNama
+                ? currentNama + ' + ' + option.dataset.nama
+                : option.dataset.nama;
+
+            row.querySelector('.harga-jasa').value = option.dataset.harga;
+        } else {
+            row.querySelector('.harga-jasa').value = 0;
+        }
+    }
+
+    calcTotal();
+}
+
+function fillEstimasi(select, type) {
+    const row = select.closest('.estimasi-row');
+    const option = select.options[select.selectedIndex];
+    const namaInput = row.querySelector('.nama-item');
+
+    if (type === 'sp') {
+        if (option.value) {
+            namaInput.value = option.dataset.nama;
+            row.querySelector('.harga-part').value = option.dataset.harga;
+        } else {
+            namaInput.value = '';
+            row.querySelector('.harga-part').value = 0;
+        }
+    } else {
+        if (option.value) {
+            // Gabungkan nama sparepart dan jasa jika keduanya dipilih
+            const currentNama = namaInput.value;
+
             namaInput.value = currentNama
                 ? currentNama + ' + ' + option.dataset.nama
                 : option.dataset.nama;
