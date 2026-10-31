@@ -521,79 +521,97 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
     })->name('admin.rekam-servis.nota');
 
     Route::post('/rekam-servis/{id}/sparepart', function ($id, Request $request) {
-        $data = $request->validate([
-            'sparepart_id' => ['required', 'exists:spareparts,id'],
-            'qty' => ['required', 'integer', 'min:1', 'max:999'],
-        ]);
-        $result = DB::transaction(function () use ($id, $data) {
-            $servis = RekamServis::whereKey($id)->lockForUpdate()->firstOrFail();
-            if ($servis->status === 'selesai' || NotaTransaksi::where('rekam_servis_id', $id)->exists()) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'sparepart' => 'Tagihan sudah diterbitkan atau servis selesai. Rincian tidak dapat diubah.',
-                ]);
-            }
-            $sparepart = Sparepart::whereKey($data['sparepart_id'])->lockForUpdate()->firstOrFail();
-            $tambahan = (int) $data['qty'];
-            if ((int) $sparepart->stok < $tambahan) {
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'qty' => 'Stok ' . $sparepart->nama_barang . ' tidak mencukupi. Tersedia ' . $sparepart->stok . '.',
-                ]);
-            }
-            $detailLama = DB::table('detail_spareparts')
-                ->where('rekam_servis_id', $servis->id)
-                ->where('sparepart_id', $sparepart->id)->first();
-            if ($detailLama) {
-                $qtyBaru = (int) $detailLama->qty + $tambahan;
-                if ($qtyBaru > 999) {
-                    throw \Illuminate\Validation\ValidationException::withMessages([
-                        'qty' => 'Jumlah sparepart pada satu baris maksimal 999.',
-                    ]);
-                }
-                DB::table('detail_spareparts')->where('id', $detailLama->id)
-                    ->update(['qty' => $qtyBaru, 'updated_at' => now()]);
-                $detailId = $detailLama->id;
-                $hargaSatuan = (float) $detailLama->harga_jual_saat_transaksi;
-            } else {
-                $qtyBaru = $tambahan;
-                $hargaSatuan = (float) $sparepart->harga_jual;
-                $detailId = DB::table('detail_spareparts')->insertGetId([
-                    'rekam_servis_id' => $servis->id,
-                    'sparepart_id' => $sparepart->id,
-                    'qty' => $qtyBaru,
-                    'harga_modal_saat_transaksi' => $sparepart->harga_modal ?? 0,
-                    'harga_jual_saat_transaksi' => $hargaSatuan,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-            $sparepart->decrement('stok', $tambahan);
-            $servis->load(['detailSpareparts.sparepart', 'detailJasas.jasa']);
-            return [
-                'id' => $detailId,
-                'name' => $sparepart->nama_barang,
-                'qty' => $qtyBaru,
-                'unit_price' => $hargaSatuan,
-                'subtotal' => (float) $servis->subtotal(),
-                'servis_id' => $servis->id,
-            ];
-        }, 3);
-        if ($request->expectsJson()) {
-            return response()->json([
-                'message' => 'Sparepart berhasil ditambahkan.',
-                'subtotal' => $result['subtotal'],
-                'detail' => [
-                    'id' => $result['id'],
-                    'name' => $result['name'],
-                    'qty' => $result['qty'],
-                    'unit_price' => $result['unit_price'],
-                    'subtotal' => $result['unit_price'] * $result['qty'],
-                    'qty_url' => route('admin.rekam-servis.sparepart.qty', [$result['servis_id'], $result['id']]),
-                    'delete_url' => route('admin.rekam-servis.sparepart.hapus', [$result['servis_id'], $result['id']]),
-                ],
+    $data = $request->validate([
+        'sparepart_id' => ['required', 'exists:spareparts,id'],
+        'qty' => ['required', 'integer', 'min:1', 'max:999'],
+        'diskon_persen' => ['nullable', 'numeric', 'min:0', 'max:100'],
+        'diskon_nominal' => ['nullable', 'string'],
+    ]);
+
+    $result = DB::transaction(function () use ($id, $data) {
+        $servis = RekamServis::whereKey($id)->lockForUpdate()->firstOrFail();
+        
+        if ($servis->status === 'selesai' || NotaTransaksi::where('rekam_servis_id', $id)->exists()) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'sparepart' => 'Tagihan sudah diterbitkan atau servis selesai.',
             ]);
         }
-        return back()->with('success', 'Sparepart berhasil ditambahkan ke nota dan stok diperbarui.');
-    })->name('admin.rekam-servis.sparepart.tambah');
+
+        $sparepart = Sparepart::whereKey($data['sparepart_id'])->lockForUpdate()->firstOrFail();
+        $tambahan = (int) $data['qty'];
+
+        if ((int) $sparepart->stok < $tambahan) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'qty' => 'Stok tidak mencukupi. Tersedia ' . $sparepart->stok . '.',
+            ]);
+        }
+
+        // Hitung subtotal
+        $subtotal = (float) $sparepart->harga_jual * $tambahan;
+
+        // Konversi diskon
+        $diskonPersen = (float) ($data['diskon_persen'] ?? 0);
+        $diskonNominalRaw = str_replace('.', '', $data['diskon_nominal'] ?? '0');
+        $diskonNominal = is_numeric($diskonNominalRaw) ? (float) $diskonNominalRaw : 0;
+
+        // Jika yang diisi persen, hitung nominal
+        if ($diskonPersen > 0 && $diskonNominal == 0) {
+            $diskonNominal = round($subtotal * $diskonPersen / 100);
+        }
+        // Jika yang diisi nominal, hitung persen
+        if ($diskonNominal > 0 && $diskonPersen == 0) {
+            $diskonPersen = $subtotal > 0 ? round($diskonNominal / $subtotal * 100, 2) : 0;
+        }
+
+        // Batasi diskon tidak lebih dari subtotal
+        $diskonNominal = min($diskonNominal, $subtotal);
+
+        $detailLama = DB::table('detail_spareparts')
+            ->where('rekam_servis_id', $servis->id)
+            ->where('sparepart_id', $sparepart->id)->first();
+
+        if ($detailLama) {
+            $qtyBaru = (int) $detailLama->qty + $tambahan;
+            DB::table('detail_spareparts')->where('id', $detailLama->id)
+                ->update([
+                    'qty' => $qtyBaru,
+                    'diskon_persen' => $diskonPersen,
+                    'diskon_nominal' => $diskonNominal,
+                    'updated_at' => now()
+                ]);
+            $detailId = $detailLama->id;
+            $hargaSatuan = (float) $detailLama->harga_jual_saat_transaksi;
+        } else {
+            $qtyBaru = $tambahan;
+            $hargaSatuan = (float) $sparepart->harga_jual;
+            $detailId = DB::table('detail_spareparts')->insertGetId([
+                'rekam_servis_id' => $servis->id,
+                'sparepart_id' => $sparepart->id,
+                'qty' => $qtyBaru,
+                'harga_modal_saat_transaksi' => $sparepart->harga_modal ?? 0,
+                'harga_jual_saat_transaksi' => $hargaSatuan,
+                'diskon_persen' => $diskonPersen,
+                'diskon_nominal' => $diskonNominal,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $sparepart->decrement('stok', $tambahan);
+        $servis->load(['detailSpareparts.sparepart', 'detailJasas.jasa']);
+
+        return [
+            'id' => $detailId,
+            'name' => $sparepart->nama_barang,
+            'qty' => $qtyBaru,
+            'unit_price' => $hargaSatuan,
+            'subtotal' => (float) $servis->subtotal(),
+            'servis_id' => $servis->id,
+        ];
+    }, 3);
+
+    return back()->with('success', 'Sparepart berhasil ditambahkan.');
+})->name('admin.rekam-servis.sparepart.tambah');
 
     Route::patch('/rekam-servis/{id}/sparepart/{detailId}/qty', function ($id, $detailId, Request $request) {
         $data = $request->validate(['qty' => ['required', 'integer', 'min:1', 'max:999']]);
@@ -668,50 +686,54 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
     })->name('admin.rekam-servis.sparepart.hapus');
 
     Route::post('/rekam-servis/{id}/jasa', function ($id, Request $request) {
-        abort_unless(in_array(auth()->user()->role, ['admin','anggota'], true), 403);
-        $servis = RekamServis::findOrFail($id);
-        if (
-                $servis->status === 'selesai' ||
-                NotaTransaksi::where('rekam_servis_id', $servis->id)->exists()
-            ) {
-            return $request->expectsJson()
-                ? response()->json(['message' => 'Transaksi sudah dikunci.'], 422)
-                : back()->with('error', 'Transaksi sudah dikunci.');
-        }
+    abort_unless(in_array(auth()->user()->role, ['admin','anggota'], true), 403);
+    $servis = RekamServis::findOrFail($id);
+    
+    if ($servis->status === 'selesai' || NotaTransaksi::where('rekam_servis_id', $servis->id)->exists()) {
+        return back()->with('error', 'Transaksi sudah dikunci.');
+    }
 
-        $data = $request->validate([
-            'jasa_id' => ['required', 'exists:jasas,id'],
-            'harga_custom' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
-        ]);
-        $jasa = Jasa::findOrFail($data['jasa_id']);
-        $harga = $request->filled('harga_custom') ? (float) $data['harga_custom'] : (float) $jasa->harga;
-        // Setiap baris jasa adalah satu layanan (tidak memakai kuantitas).
-        $qty = 1;
-        $bruto = $harga;
-        // Potongan harga hanya pada total nota, bukan per-item jasa.
-        $detailId = DB::table('detail_jasas')->insertGetId([
-            'rekam_servis_id' => $servis->id,
-            'jasa_id' => $jasa->id,
-            'qty' => $qty,
-            'harga_saat_transaksi' => $harga,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        $servis->load(['detailSpareparts.sparepart', 'detailJasas.jasa']);
-        if ($request->expectsJson()) {
-            return response()->json([
-                'message' => 'Jasa berhasil ditambahkan.',
-                'subtotal' => $servis->subtotal(),
-                'detail' => [
-                    'id' => $detailId, 'name' => $jasa->nama_jasa,
-                    'qty' => $qty, 'diskon' => 0,
-                    'unit_price' => $harga, 'subtotal' => $bruto,
-                    'delete_url' => route('admin.rekam-servis.jasa.hapus', [$servis->id, $detailId]),
-                ],
-            ]);
-        }
-        return back()->with('success', 'Jasa berhasil ditambahkan ke nota.');
-    })->name('admin.rekam-servis.jasa.tambah');
+    $data = $request->validate([
+        'jasa_id' => ['required', 'exists:jasas,id'],
+        'harga_custom' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
+        'diskon_persen' => ['nullable', 'numeric', 'min:0', 'max:100'],
+        'diskon_nominal' => ['nullable', 'string'],
+    ]);
+
+    $jasa = Jasa::findOrFail($data['jasa_id']);
+    $harga = $request->filled('harga_custom') ? (float) $data['harga_custom'] : (float) $jasa->harga;
+    $qty = 1;
+    $bruto = $harga;
+
+    // Konversi diskon
+    $diskonPersen = (float) ($data['diskon_persen'] ?? 0);
+    $diskonNominalRaw = str_replace('.', '', $data['diskon_nominal'] ?? '0');
+    $diskonNominal = is_numeric($diskonNominalRaw) ? (float) $diskonNominalRaw : 0;
+
+    if ($diskonPersen > 0 && $diskonNominal == 0) {
+        $diskonNominal = round($bruto * $diskonPersen / 100);
+    }
+    if ($diskonNominal > 0 && $diskonPersen == 0) {
+        $diskonPersen = $bruto > 0 ? round($diskonNominal / $bruto * 100, 2) : 0;
+    }
+
+    $diskonNominal = min($diskonNominal, $bruto);
+
+    $detailId = DB::table('detail_jasas')->insertGetId([
+        'rekam_servis_id' => $servis->id,
+        'jasa_id' => $jasa->id,
+        'qty' => $qty,
+        'harga_saat_transaksi' => $harga,
+        'diskon_persen' => $diskonPersen,
+        'diskon_nominal' => $diskonNominal,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $servis->load(['detailSpareparts.sparepart', 'detailJasas.jasa']);
+
+    return back()->with('success', 'Jasa berhasil ditambahkan.');
+})->name('admin.rekam-servis.jasa.tambah');
 
     Route::delete('/rekam-servis/{id}/jasa/{detailId}', function ($id, $detailId, Request $request) {
         $servis = RekamServis::findOrFail($id);
@@ -790,10 +812,10 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
             'kendaraan.*.tahun'        => ['nullable', 'integer', 'min:1900', 'max:' . (date('Y') + 1)],
 
             /* ===== FIELD BARU: CC, TRANSMISI, BAHAN BAKAR ===== */
-            'kendaraan.*.cc'               => ['nullable', 'integer', 'min:300', 'max:10000'],
+            'kendaraan.*.cc'               => ['nullable', 'string', 'regex:/^\d{1,2}([,.]\d{1,2})?$/'], // ✅ Diubah: hapus min/max, pakai numeric
             'kendaraan.*.transmisi'        => ['nullable', 'string', 'in:manual,otomatis,cvt'],
             'kendaraan.*.jenis_bahan_bakar' => ['nullable', 'string', 'in:gasoline,diesel'],
-        ], [
+                ]  , [
             'nama_lengkap.required'              => 'Nama konsumen wajib diisi.',
             'no_hp.required'                     => 'Nomor HP konsumen wajib diisi.',
             'no_hp.unique'                       => 'Nomor HP tersebut sudah terdaftar sebagai konsumen.',
@@ -801,8 +823,6 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
             'kendaraan.*.plat_nomor.required'    => 'Plat nomor kendaraan wajib diisi.',
             'kendaraan.*.merk.required'          => 'Merk kendaraan wajib diisi.',
             'kendaraan.*.tipe_model.required'    => 'Tipe atau model kendaraan wajib diisi.',
-            'kendaraan.*.cc.min'                 => 'CC mesin minimal 300.',
-            'kendaraan.*.cc.max'                 => 'CC mesin maksimal 10000.',
             'kendaraan.*.transmisi.in'           => 'Transmisi harus: manual, otomatis, atau cvt.',
             'kendaraan.*.jenis_bahan_bakar.in'   => 'Bahan bakar harus: gasoline atau diesel.',
         ]);
@@ -852,7 +872,7 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
                     'tahun'        => ! empty($data['tahun']) ? (int) $data['tahun'] : null,
 
                     /* ===== FIELD BARU: CC, TRANSMISI, BAHAN BAKAR ===== */
-                    'cc'                => ! empty($data['cc']) ? (int) $data['cc'] : null,
+                    'cc'                => ! empty($data['cc']) ? (float) str_replace(',', '.', $data['cc']) : null,
                     'transmisi'         => ! empty($data['transmisi']) ? $data['transmisi'] : null,
                     'jenis_bahan_bakar' => ! empty($data['jenis_bahan_bakar']) ? $data['jenis_bahan_bakar'] : null,
                 ]);
@@ -895,12 +915,10 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
             'kendaraan.*.tahun'        => ['nullable', 'integer', 'min:1900', 'max:' . (date('Y') + 1)],
 
             /* ===== FIELD BARU: CC, TRANSMISI, BAHAN BAKAR ===== */
-            'kendaraan.*.cc'               => ['nullable', 'integer', 'min:300', 'max:10000'],
+            'kendaraan.*.cc'               => ['nullable', 'string', 'regex:/^\d{1,2}([,.]\d{1,2})?$/'], // ✅ Diubah
             'kendaraan.*.transmisi'        => ['nullable', 'string', 'in:manual,otomatis,cvt'],
             'kendaraan.*.jenis_bahan_bakar' => ['nullable', 'string', 'in:gasoline,diesel'],
         ], [
-            'kendaraan.*.cc.min'               => 'CC mesin minimal 300.',
-            'kendaraan.*.cc.max'               => 'CC mesin maksimal 10000.',
             'kendaraan.*.transmisi.in'         => 'Transmisi harus: manual, otomatis, atau cvt.',
             'kendaraan.*.jenis_bahan_bakar.in' => 'Bahan bakar harus: gasoline atau diesel.',
         ]);
@@ -965,7 +983,7 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
                     'tahun'        => ! empty($data['tahun']) ? (int) $data['tahun'] : null,
 
                     /* ===== FIELD BARU: CC, TRANSMISI, BAHAN BAKAR ===== */
-                    'cc'                => ! empty($data['cc']) ? (int) $data['cc'] : null,
+                    'cc'                => ! empty($data['cc']) ? (float) str_replace(',', '.', $data['cc']) : null,
                     'transmisi'         => ! empty($data['transmisi']) ? $data['transmisi'] : null,
                     'jenis_bahan_bakar' => ! empty($data['jenis_bahan_bakar']) ? $data['jenis_bahan_bakar'] : null,
                 ]);
@@ -1019,12 +1037,10 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
             'kendaraan.*.tahun'        => ['nullable', 'integer', 'min:1900', 'max:' . (date('Y') + 1)],
 
             /* ===== FIELD BARU: CC, TRANSMISI, BAHAN BAKAR ===== */
-            'kendaraan.*.cc'               => ['nullable', 'integer', 'min:300', 'max:10000'],
+            'kendaraan.*.cc'               => ['nullable', 'string', 'regex:/^\d{1,2}([,.]\d{1,2})?$/'], // ✅ Diubah
             'kendaraan.*.transmisi'        => ['nullable', 'string', 'in:manual,otomatis,cvt'],
             'kendaraan.*.jenis_bahan_bakar' => ['nullable', 'string', 'in:gasoline,diesel'],
         ], [
-            'kendaraan.*.cc.min'               => 'CC mesin minimal 300.',
-            'kendaraan.*.cc.max'               => 'CC mesin maksimal 10000.',
             'kendaraan.*.transmisi.in'         => 'Transmisi harus: manual, otomatis, atau cvt.',
             'kendaraan.*.jenis_bahan_bakar.in' => 'Bahan bakar harus: gasoline atau diesel.',
         ]);
@@ -1069,7 +1085,7 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
                     'tahun'        => ! empty($data['tahun']) ? (int) $data['tahun'] : null,
 
                     /* ===== FIELD BARU: CC, TRANSMISI, BAHAN BAKAR ===== */
-                    'cc'                => ! empty($data['cc']) ? (int) $data['cc'] : null,
+                    'cc'                => ! empty($data['cc']) ? (float) str_replace(',', '.', $data['cc']) : null,
                     'transmisi'         => ! empty($data['transmisi']) ? $data['transmisi'] : null,
                     'jenis_bahan_bakar' => ! empty($data['jenis_bahan_bakar']) ? $data['jenis_bahan_bakar'] : null,
                 ]);
@@ -1229,7 +1245,7 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
 
     // Selesaikan servis dan terbitkan SATU nota dengan status BELUM LUNAS.
     // Jangan menyimpan pembayaran di sini.
-    Route::post('/rekam-servis/{id}/nota/konfirmasi', function ($id, Request $request) {
+        Route::post('/rekam-servis/{id}/nota/konfirmasi', function ($id, Request $request) {
     abort_unless(
         auth()->check() &&
         in_array(auth()->user()->role, ['admin', 'anggota'], true),
@@ -1239,16 +1255,15 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
     $data = $request->validate([
         'diskon_ribuan' => [
     'required', 'integer', 'min:0', 'max:999999999'],
+        'diskon_persen_total' => ['nullable', 'numeric', 'min:0', 'max:100'],
+        'diskon_nominal_total' => ['nullable', 'string'],
     ]);
 
     DB::transaction(function () use ($id, $data) {
-        $servis = RekamServis::whereKey($id)
-            ->lockForUpdate()->firstOrFail();
+        $servis = RekamServis::whereKey($id)->lockForUpdate()->firstOrFail();
 
-        if (
-                $servis->status === 'selesai' ||
-                NotaTransaksi::where('rekam_servis_id', $servis->id)->exists()
-            ) {
+        if ($servis->status === 'selesai' ||
+            NotaTransaksi::where('rekam_servis_id', $servis->id)->exists()) {
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'nota' => 'Servis ini sudah selesai atau tagihannya sudah diterbitkan.',
             ]);
@@ -1256,10 +1271,8 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
 
         $servis->load(['detailSpareparts', 'detailJasas']);
 
-        if (
-            $servis->detailSpareparts->isEmpty() &&
-            $servis->detailJasas->isEmpty()
-        ) {
+        if ($servis->detailSpareparts->isEmpty() &&
+            $servis->detailJasas->isEmpty()) {
             throw \Illuminate\Validation\ValidationException::withMessages([
                 'nota' => 'Tambahkan sparepart atau jasa terlebih dahulu.',
             ]);
@@ -1267,9 +1280,24 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
 
         $subtotal = (int) round($servis->subtotal());
 
+
         $diskon = (int) $data['diskon_ribuan'] * 1000;
 
-        $diskon = min($subtotal, max(0, $diskon));
+        // Konversi diskon total
+        $diskonPersen = (float) ($data['diskon_persen_total'] ?? 0);
+        $diskonNominalRaw = str_replace('.', '', $data['diskon_nominal_total'] ?? '0');
+        $diskonNominal = is_numeric($diskonNominalRaw) ? (float) $diskonNominalRaw : 0;
+
+        // Jika yang diisi persen, hitung nominal
+        if ($diskonPersen > 0 && $diskonNominal == 0) {
+            $diskonNominal = round($subtotal * $diskonPersen / 100);
+        }
+        // Jika yang diisi nominal, hitung persen
+        if ($diskonNominal > 0 && $diskonPersen == 0) {
+            $diskonPersen = $subtotal > 0 ? round($diskonNominal / $subtotal * 100, 2) : 0;
+        }
+
+        $diskonNominal = min($diskonNominal, $subtotal);
 
         NotaTransaksi::create([
             'rekam_servis_id' => $servis->id,
@@ -1278,8 +1306,8 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
             'tanggal_cetak' => now()->toDateString(),
             'tanggal_terbit_tagihan' => now(),
             'subtotal' => $subtotal,
-            'diskon' => $diskon,
-            'total_biaya' => $subtotal - $diskon,
+            'diskon' => $diskonNominal,
+            'total_biaya' => $subtotal - $diskonNominal,
             'metode_cetak' => 'standar',
             'status_pembayaran' => 'belum_lunas',
             'tanggal_lunas' => null,
@@ -1423,23 +1451,70 @@ Route::get('/inspeksi/create', function () {
     return view('admin.inspeksi.create', compact('konsumens', 'spareparts', 'jasas', 'konsumensData'));
 })->name('admin.inspeksi.create');
 
-// 3. Simpan inspeksi (POST)
 Route::post('/inspeksi', function (\Illuminate\Http\Request $request) {
     $request->validate([
         'konsumen_id' => 'required|exists:konsumens,id',
-        'kendaraan_id' => 'required|exists:kendaraans,id',
         'tanggal_inspeksi' => 'required|date',
-        'km_kendaraan' => 'required|integer|min:0',
+        'km_kendaraan' => 'nullable|integer|min:0', // ✅ Diubah jadi nullable
         'rating_score' => 'required|integer|min:1|max:10',
+        'jenis_kendaraan' => 'required|in:lama,baru',
+        
+        // Kendaraan lama - wajib pilih
+        'kendaraan_id' => 'required_if:jenis_kendaraan,lama|nullable|exists:kendaraans,id',
+        
+        // Kendaraan baru - SEMUA OPTIONAL
+        'plat_nomor' => 'nullable|string|max:20',
+        'merk' => 'nullable|string|max:100',
+        'tipe_model' => 'nullable|string|max:100',
+        'tahun' => 'nullable|integer|min:1900|max:' . (date('Y') + 1),
+        'cc' => 'nullable|string|max:10',
+        'transmisi' => 'nullable|in:manual,otomatis,cvt',
+        'jenis_bahan_bakar' => 'nullable|in:gasoline,diesel',
     ]);
 
     \Illuminate\Support\Facades\DB::transaction(function () use ($request) {
+        $konsumen = \App\Models\Konsumen::findOrFail($request->konsumen_id);
+        $kendaraanId = null;
+
+        // 1. Handle Kendaraan
+        if ($request->jenis_kendaraan === 'baru') {
+            $adaData = !empty($request->plat_nomor) 
+                    || !empty($request->merk) 
+                    || !empty($request->tipe_model)
+                    || !empty($request->tahun)
+                    || !empty($request->cc);
+
+            if ($adaData) {
+                $ccValue = null;
+                if (!empty($request->cc)) {
+                    $ccLiter = str_replace(',', '.', $request->cc);
+                    $ccValue = (int) round(floatval($ccLiter) * 1000);
+                }
+
+                $kendaraanBaru = $konsumen->kendaraans()->create([
+                    'plat_nomor' => !empty($request->plat_nomor) 
+                        ? strtoupper(preg_replace('/\s+/', ' ', trim($request->plat_nomor))) 
+                        : null,
+                    'merk' => !empty($request->merk) ? trim($request->merk) : null,
+                    'tipe_model' => !empty($request->tipe_model) ? trim($request->tipe_model) : null,
+                    'tahun' => !empty($request->tahun) ? (int) $request->tahun : null,
+                    'cc' => $ccValue,
+                    'transmisi' => $request->transmisi ?? null,
+                    'jenis_bahan_bakar' => $request->jenis_bahan_bakar ?? null,
+                ]);
+                $kendaraanId = $kendaraanBaru->id;
+            }
+        } else {
+            $kendaraanId = $request->kendaraan_id;
+        }
+
+        // 2. Simpan Inspeksi (km_kendaraan boleh null)
         $inspeksiId = \Illuminate\Support\Facades\DB::table('laporan_inspeksis')->insertGetId([
             'konsumen_id' => $request->konsumen_id,
-            'kendaraan_id' => $request->kendaraan_id,
+            'kendaraan_id' => $kendaraanId,
             'nomor_inspeksi' => \App\Models\LaporanInspeksi::generateNomorInspeksi(),
             'tanggal_inspeksi' => $request->tanggal_inspeksi,
-            'km_kendaraan' => $request->km_kendaraan,
+            'km_kendaraan' => !empty($request->km_kendaraan) ? (int) $request->km_kendaraan : null, // ✅ Handle null
             'rating_score' => $request->rating_score,
             'ex_banjir' => $request->ex_banjir ?? 'tidak',
             'ex_tabrak' => $request->ex_tabrak ?? 'tidak',
@@ -1455,106 +1530,51 @@ Route::post('/inspeksi', function (\Illuminate\Http\Request $request) {
             'updated_at' => now(),
         ]);
 
-        // Simpan KELISTRIKAN
-        foreach ($request->input('kelistrikan', []) as $item) {
-            if (!empty($item['komponen'])) {
-                \Illuminate\Support\Facades\DB::table('inspeksi_kelistrikan')->insert([
-                    'laporan_inspeksi_id' => $inspeksiId,
-                    'komponen' => $item['komponen'],
-                    'status' => $item['status'] ?? 'Baik',
-                    'keterangan' => $item['keterangan'] ?? null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+        // 3. Simpan Detail (sama seperti sebelumnya)
+        foreach (['kelistrikan', 'interior', 'kaki_kaki', 'exterior', 'mesin', 'dokumen'] as $section) {
+            if ($request->has($section)) {
+                $tableName = 'inspeksi_' . $section;
+                foreach ($request->input($section) as $item) {
+                    if (!empty($item['komponen']) || !empty($item['dokumen'])) {
+                        $payload = ['laporan_inspeksi_id' => $inspeksiId, 'created_at' => now(), 'updated_at' => now()];
+                        
+                        if ($section === 'kaki_kaki') {
+                            $payload['komponen'] = $item['komponen'] ?? '';
+                            $payload['status_kiri'] = $item['status_kiri'] ?? 'Baik';
+                            $payload['status_kanan'] = $item['status_kanan'] ?? 'Baik';
+                            $payload['catatan'] = $item['catatan'] ?? null;
+                        } elseif ($section === 'dokumen') {
+                            $payload['dokumen'] = $item['dokumen'] ?? '';
+                            $payload['status'] = $item['status'] ?? 'Ya';
+                            $payload['keterangan'] = $item['keterangan'] ?? null;
+                        } else {
+                            $payload['komponen'] = $item['komponen'] ?? '';
+                            $payload['status'] = $item['status'] ?? 'Baik';
+                            $payload['keterangan'] = $item['keterangan'] ?? null;
+                        }
+                        \Illuminate\Support\Facades\DB::table($tableName)->insert($payload);
+                    }
+                }
             }
         }
 
-        // Simpan INTERIOR
-        foreach ($request->input('interior', []) as $item) {
-            if (!empty($item['komponen'])) {
-                \Illuminate\Support\Facades\DB::table('inspeksi_interior')->insert([
-                    'laporan_inspeksi_id' => $inspeksiId,
-                    'komponen' => $item['komponen'],
-                    'status' => $item['status'] ?? 'Baik',
-                    'keterangan' => $item['keterangan'] ?? null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        }
-
-        // Simpan KAKI-KAKI
-        foreach ($request->input('kaki_kaki', []) as $item) {
-            if (!empty($item['komponen'])) {
-                \Illuminate\Support\Facades\DB::table('inspeksi_kaki_kaki')->insert([
-                    'laporan_inspeksi_id' => $inspeksiId,
-                    'komponen' => $item['komponen'],
-                    'status_kiri' => $item['status_kiri'] ?? 'Baik',
-                    'status_kanan' => $item['status_kanan'] ?? 'Baik',
-                    'catatan' => $item['catatan'] ?? null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        }
-
-        // Simpan EXTERIOR
-        foreach ($request->input('exterior', []) as $item) {
-            if (!empty($item['komponen'])) {
-                \Illuminate\Support\Facades\DB::table('inspeksi_exterior')->insert([
-                    'laporan_inspeksi_id' => $inspeksiId,
-                    'komponen' => $item['komponen'],
-                    'status' => $item['status'] ?? 'Baik',
-                    'keterangan' => $item['keterangan'] ?? null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        }
-
-        // Simpan MESIN
-        foreach ($request->input('mesin', []) as $item) {
-            if (!empty($item['komponen'])) {
-                \Illuminate\Support\Facades\DB::table('inspeksi_mesin')->insert([
-                    'laporan_inspeksi_id' => $inspeksiId,
-                    'komponen' => $item['komponen'],
-                    'status' => $item['status'] ?? 'Baik',
-                    'keterangan' => $item['keterangan'] ?? null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        }
-
-        // Simpan DOKUMEN
-        foreach ($request->input('dokumen', []) as $item) {
-            if (!empty($item['dokumen'])) {
-                \Illuminate\Support\Facades\DB::table('inspeksi_dokumen')->insert([
-                    'laporan_inspeksi_id' => $inspeksiId,
-                    'dokumen' => $item['dokumen'],
-                    'status' => $item['status'] ?? 'Ya',
-                    'keterangan' => $item['keterangan'] ?? null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
-            }
-        }
-
-        // Simpan ESTIMASI
-        foreach ($request->input('estimasi', []) as $item) {
-            if (!empty($item['nama_item'])) {
-                \Illuminate\Support\Facades\DB::table('inspeksi_estimasi')->insert([
-                    'laporan_inspeksi_id' => $inspeksiId,
-                    'kategori' => $item['kategori'] ?? 'engine',
-                    'sparepart_id' => !empty($item['sparepart_id']) ? $item['sparepart_id'] : null,
-                    'jasa_id' => !empty($item['jasa_id']) ? $item['jasa_id'] : null,
-                    'nama_item' => $item['nama_item'],
-                    'qty' => 1,
-                    'harga_part' => $item['harga_part'] ?? 0,
-                    'harga_jasa' => $item['harga_jasa'] ?? 0,
-                    'created_at' => now(),
-                    'updated_at' => now(),
-                ]);
+        // 4. Simpan Estimasi (sama seperti sebelumnya)
+        if ($request->has('estimasi')) {
+            foreach ($request->input('estimasi') as $item) {
+                if (!empty($item['nama_item'])) {
+                    \Illuminate\Support\Facades\DB::table('inspeksi_estimasi')->insert([
+                        'laporan_inspeksi_id' => $inspeksiId,
+                        'kategori' => $item['kategori'] ?? 'engine',
+                        'sparepart_id' => !empty($item['sparepart_id']) ? $item['sparepart_id'] : null,
+                        'jasa_id' => !empty($item['jasa_id']) ? $item['jasa_id'] : null,
+                        'nama_item' => $item['nama_item'],
+                        'qty' => 1,
+                        'harga_part' => $item['harga_part'] ?? 0,
+                        'harga_jasa' => $item['harga_jasa'] ?? 0,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
             }
         }
     });
@@ -1562,11 +1582,20 @@ Route::post('/inspeksi', function (\Illuminate\Http\Request $request) {
     return redirect()->route('admin.inspeksi.index')->with('success', 'Laporan inspeksi berhasil dibuat.');
 })->name('admin.inspeksi.store');
 
-// 4. Detail inspeksi (GET)
+// 4. Detail inspeksi (GET) - TAMBAHKAN INI
 Route::get('/inspeksi/{id}', function ($id) {
     $inspeksi = \App\Models\LaporanInspeksi::with([
-        'konsumen', 'kendaraan', 'user', 'kelistrikan', 'interior', 'kakiKaki',
-        'exterior', 'mesin', 'dokumen', 'estimasi.sparepart', 'estimasi.jasa',
+        'konsumen', 
+        'kendaraan', 
+        'user', 
+        'kelistrikan', 
+        'interior', 
+        'kakiKaki',
+        'exterior', 
+        'mesin', 
+        'dokumen', 
+        'estimasi.sparepart', 
+        'estimasi.jasa',
     ])->findOrFail($id);
     return view('admin.inspeksi.show', compact('inspeksi'));
 })->name('admin.inspeksi.show');

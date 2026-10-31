@@ -173,6 +173,150 @@
                     </div>
                 </section>
             @endif
+    <section class="nota-seksi">
+        <h4 class="nota-seksi-judul">Biaya Suku Cadang</h4>
+        <div class="nota-table-wrap">
+            <table class="nota-table">
+                <thead>
+                    <tr>
+                        <th class="col-no">No</th>
+                        <th>Deskripsi</th>
+                        <th class="text-center">Qty</th>
+                        <th class="text-right">Harga</th>
+                        <th class="text-right">Subtotal</th>
+                        <th class="text-right">Diskon</th>
+                        <th class="text-right">Total</th>
+                        @if($bolehEdit)
+                            <th class="no-print text-right">Aksi</th>
+                        @endif
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($servis->detailSpareparts as $item)
+                        @php
+                            $subtotalSP = $item->harga_jual_saat_transaksi * $item->qty;
+                            $diskonSP = $item->diskon_nominal ?? 0;
+                            $totalSP = $subtotalSP - $diskonSP;
+                        @endphp
+                        <tr>
+                            <td class="col-no">{{ $loop->iteration }}</td>
+                            <td class="col-desk">
+                                {{ $item->sparepart->nama_barang ?? 'Sparepart' }}
+                            </td>
+                            <td class="text-center" data-label="Qty">{{ $item->qty }}</td>
+                            <td class="text-right" data-label="Harga">
+                                {{ $rp($item->harga_jual_saat_transaksi) }}
+                            </td>
+                            <td class="text-right" data-label="Subtotal">
+                                {{ $rp($subtotalSP) }}
+                            </td>
+                            @if($diskonSP > 0)
+                            <td class="text-right text-rose-500" data-label="Diskon">
+                                <div class="text-[10px] italic">disc {{ number_format($item->diskon_persen, 2) }}%</div>
+                                <div>({{ $rp($diskonSP) }})</div>
+                            </td>
+                            @else
+                            <td class="text-right" data-label="Diskon">-</td>
+                            @endif
+                            <td class="text-right font-bold" data-label="Total">
+                                {{ $rp($totalSP) }}
+                            </td>
+                            @if($bolehEdit)
+                                <td class="no-print text-right">
+                                    <form method="POST" action="{{ route('admin.rekam-servis.sparepart.hapus', [$servis->id, $item->id]) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" data-confirm="Hapus sparepart ini dari rincian?" class="font-bold text-rose-600">Hapus</button>
+                                    </form>
+                                </td>
+                            @endif
+                        </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="4" class="ttl-label">Jumlah total</td>
+                        <td class="text-right">{{ $rp($subSparepart) }}</td>
+                        <td class="text-right">-</td>
+                        <td class="text-right font-bold">{{ $rp($subSparepart - $servis->detailSpareparts->sum('diskon_nominal')) }}</td>
+                        @if($bolehEdit)<td class="no-print"></td>@endif
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </section>
+@endif
+
+            {{-- BIAYA JASA SERVIS --}}
+            @if($servis->detailJasas->isNotEmpty())
+    <section class="nota-seksi">
+        <h4 class="nota-seksi-judul">Biaya Jasa Servis</h4>
+        <div class="nota-table-wrap">
+            <table class="nota-table">
+                <thead>
+                    <tr>
+                        <th class="col-no">No</th>
+                        <th>Deskripsi</th>
+                        <th class="text-right">Subtotal</th>
+                        <th class="text-right">Diskon</th>
+                        <th class="text-right">Total</th>
+                        @if($bolehEdit)
+                            <th class="no-print text-right">Aksi</th>
+                        @endif
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($servis->detailJasas as $item)
+                        @php
+                            $qtyJasa = (int) ($item->qty ?? 1);
+                            $subtotalJasa = $item->harga_saat_transaksi * $qtyJasa;
+                            $diskonJasa = $item->diskon_nominal ?? 0;
+                            $totalJasa = $subtotalJasa - $diskonJasa;
+                        @endphp
+                        <tr>
+                            <td class="col-no">{{ $loop->iteration }}</td>
+                            <td class="col-desk">
+                                {{ $item->jasa->nama_jasa ?? 'Jasa Servis' }}
+                            </td>
+                            <td class="text-right" data-label="Subtotal">
+                                {{ $rp($subtotalJasa) }}
+                            </td>
+                            @if($diskonJasa > 0)
+                            <td class="text-right text-rose-500" data-label="Diskon">
+                                <div class="text-[10px] italic">disc {{ number_format($item->diskon_persen, 2) }}%</div>
+                                <div>({{ $rp($diskonJasa) }})</div>
+                            </td>
+                            @else
+                            <td class="text-right" data-label="Diskon">-</td>
+                            @endif
+                            <td class="text-right font-bold" data-label="Total">
+                                {{ $rp($totalJasa) }}
+                            </td>
+                            @if($bolehEdit)
+                                <td class="no-print text-right">
+                                    <form method="POST" action="{{ route('admin.rekam-servis.jasa.hapus', [$servis->id, $item->id]) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" data-confirm="Hapus jasa ini dari rincian?" class="font-bold text-rose-600">Hapus</button>
+                                    </form>
+                                </td>
+                            @endif
+                        </tr>
+                    @endforeach
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="2" class="ttl-label">Jumlah total</td>
+                        <td class="text-right">{{ $rp($subJasa) }}</td>
+                        <td class="text-right">-</td>
+                        <td class="text-right font-bold">{{ $rp($subJasa - $servis->detailJasas->sum('diskon_nominal')) }}</td>
+                        @if($bolehEdit)<td class="no-print"></td>@endif
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </section>
+@endif
 
             @unless($adaBiaya)
                 <p class="nota-kosong">Belum ada biaya servis.</p>
