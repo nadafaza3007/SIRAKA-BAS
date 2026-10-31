@@ -205,12 +205,7 @@
                             <option value="">Pilih sparepart</option>
                             @foreach($spareparts as $sp)
                                 <option value="{{ $sp->id }}" data-harga="{{ $sp->harga_jual }}">
-                                    {{ $sp->nama_barang }} — {{ $rp($sp->harga_jual) }}
-                                    @if($sp->isBarangPo())
-                                        (Pre-Order)
-                                    @else
-                                        (Stok tersedia: {{ $sp->stok }})
-                                    @endif
+                                    {{ $sp->nama_barang }} — {{ $rp($sp->harga_jual) }} (Stok {{ $sp->stok }})
                                 </option>
                             @endforeach
                         </select>
