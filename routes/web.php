@@ -1253,6 +1253,8 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
     );
 
     $data = $request->validate([
+        'diskon_ribuan' => [
+        'required', 'integer', 'min:0', 'max:999999999'],
         'diskon_persen_total' => ['nullable', 'numeric', 'min:0', 'max:100'],
         'diskon_nominal_total' => ['nullable', 'string'],
     ]);
@@ -1277,6 +1279,23 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
         }
 
         $subtotal = (int) round($servis->subtotal());
+
+        // Konversi diskon total
+        $diskonPersen = (float) ($data['diskon_persen_total'] ?? 0);
+        $diskonNominalRaw = str_replace('.', '', $data['diskon_nominal_total'] ?? '0');
+        $diskonNominal = is_numeric($diskonNominalRaw) ? (float) $diskonNominalRaw : 0;
+
+        // Jika yang diisi persen, hitung nominal
+        if ($diskonPersen > 0 && $diskonNominal == 0) {
+            $diskonNominal = round($subtotal * $diskonPersen / 100);
+        }
+        // Jika yang diisi nominal, hitung persen
+        if ($diskonNominal > 0 && $diskonPersen == 0) {
+            $diskonPersen = $subtotal > 0 ? round($diskonNominal / $subtotal * 100, 2) : 0;
+        }
+
+
+        $diskon = (int) $data['diskon_ribuan'] * 1000;
 
         // Konversi diskon total
         $diskonPersen = (float) ($data['diskon_persen_total'] ?? 0);
