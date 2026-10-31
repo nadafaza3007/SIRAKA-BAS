@@ -35,8 +35,12 @@ return new class extends Migration
         }
 
         // Hanya lengkapi kolom nota yang belum ada; jangan ubah data historis.
-        if (! Schema::hasColumn('nota_transaksis', 'status_pembayaran')) {
-            throw new RuntimeException('Kolom nota_transaksis.status_pembayaran belum tersedia.');
+        if (! Schema::hasColumn('nota_transaksis', 'tanggal_terbit_tagihan')) {
+            Schema::table('nota_transaksis', function (Blueprint $table) {
+                $table->dateTime('tanggal_terbit_tagihan')
+                    ->nullable()
+                    ->after('tanggal_cetak');
+            });
         }
 
         if (! Schema::hasColumn('nota_transaksis', 'tanggal_lunas')) {

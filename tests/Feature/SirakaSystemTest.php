@@ -28,50 +28,86 @@ class SirakaSystemTest extends TestCase
         return User::where('role', 'admin')->firstOrFail();
     }
 
+    /**
+     * Membuat transaksi servis baru untuk pengujian.
+     */
     private function buatServisBaru(): RekamServis
     {
         $kendaraan = Kendaraan::firstOrFail();
 
-        $response = $this->actingAs($this->admin())
+        $this->actingAs($this->admin())
             ->post('/admin/rekam-servis', [
                 'konsumen_id' => $kendaraan->konsumen_id,
                 'kendaraan_id' => $kendaraan->id,
                 'km_masuk' => 60000,
-                'keluhan_awal' => 'rem bunyi decit',
-            ]);
+                'keluhan_awal' => 'Rem bunyi decit',
+            ])
+            ->assertSessionHasNoErrors();
 
-        $response->assertSessionHasNoErrors();
-
-        return RekamServis::where('kendaraan_id', $kendaraan->id)
+        $servis = RekamServis::where('kendaraan_id', $kendaraan->id)
             ->where('km_masuk', 60000)
             ->firstOrFail();
+
+        $this->assertEquals(
+            'menunggu_pengerjaan',
+            $servis->status
+        );
+
+        return $servis;
     }
 
+    /**
+     * Menambahkan jasa dan menerbitkan nota tagihan V3.
+     */
     private function terbitkanNota(RekamServis $servis): NotaTransaksi
     {
         $jasa = Jasa::firstOrFail();
 
+        // 1. Tambahkan jasa ke transaksi servis.
         $this->actingAs($this->admin())
             ->post("/admin/rekam-servis/{$servis->id}/jasa", [
                 'jasa_id' => $jasa->id,
             ])
-            ->assertSessionHasNoErrors();
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
 
+        // 2. Pastikan jasa tersimpan.
+        $this->assertDatabaseHas('detail_jasas', [
+            'rekam_servis_id' => $servis->id,
+            'jasa_id' => $jasa->id,
+        ]);
+
+        // 3. Terbitkan nota menggunakan parameter V3.
         $this->actingAs($this->admin())
             ->post("/admin/rekam-servis/{$servis->id}/nota/konfirmasi", [
-                'diskon_ribuan' => 0,
+                'diskon_persen_total' => 0,
+                'diskon_nominal_total' => '0',
             ])
-            ->assertSessionHasNoErrors();
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
+
+        // 4. Pastikan nota diterbitkan sebagai BELUM LUNAS.
+        $this->assertDatabaseHas('nota_transaksis', [
+            'rekam_servis_id' => $servis->id,
+            'status_pembayaran' => 'belum_lunas',
+        ]);
 
         return NotaTransaksi::where('rekam_servis_id', $servis->id)
             ->firstOrFail();
     }
 
+    /**
+     * TEST 1: Halaman login.
+     */
     public function test_login_screen_can_be_rendered(): void
     {
-        $this->get('/login')->assertOk();
+        $this->get('/login')
+            ->assertOk();
     }
 
+    /**
+     * TEST 2: Dashboard admin.
+     */
     public function test_admin_can_access_dashboard(): void
     {
         $this->actingAs($this->admin())
@@ -79,6 +115,9 @@ class SirakaSystemTest extends TestCase
             ->assertOk();
     }
 
+    /**
+     * TEST 3: Smart search kendaraan.
+     */
     public function test_smart_search_returns_vehicle_data(): void
     {
         $this->actingAs($this->admin())
@@ -96,15 +135,22 @@ class SirakaSystemTest extends TestCase
             ]);
     }
 
+    /**
+     * TEST 4: Akses riwayat servis pelanggan.
+     */
     public function test_pelanggan_can_access_service_history(): void
     {
-        $pelanggan = User::where('role', 'pelanggan')->firstOrFail();
+        $pelanggan = User::where('role', 'pelanggan')
+            ->firstOrFail();
 
         $this->actingAs($pelanggan)
             ->get('/pelanggan/rekam-servis')
             ->assertRedirect(route('pelanggan.riwayat'));
     }
 
+    /**
+     * TEST 5: Registrasi beberapa kendaraan.
+     */
     public function test_multiple_vehicles_can_be_registered(): void
     {
         $this->actingAs($this->admin())
@@ -137,6 +183,9 @@ class SirakaSystemTest extends TestCase
         ]);
     }
 
+    /**
+     * TEST 6: Penolakan plat nomor duplikat.
+     */
     public function test_duplicate_vehicle_plate_is_rejected(): void
     {
         $this->actingAs($this->admin())
@@ -154,17 +203,27 @@ class SirakaSystemTest extends TestCase
             ->assertSessionHas('error');
     }
 
+    /**
+     * TEST 7: KM masuk pada transaksi servis.
+     */
     public function test_rekam_servis_uses_km_masuk(): void
     {
         $servis = $this->buatServisBaru();
 
-        $this->assertEquals(60000, $servis->km_masuk);
+        $this->assertEquals(
+            60000,
+            $servis->km_masuk
+        );
+
         $this->assertEquals(
             'menunggu_pengerjaan',
             $servis->status
         );
     }
 
+    /**
+     * TEST 8: Koreksi diagnosis.
+     */
     public function test_koreksi_diagnosa_updates_service_status(): void
     {
         $servis = $this->buatServisBaru();
@@ -189,6 +248,9 @@ class SirakaSystemTest extends TestCase
         );
     }
 
+    /**
+     * TEST 9: Nota yang baru diterbitkan berstatus belum lunas.
+     */
     public function test_nota_is_initially_unpaid(): void
     {
         $servis = $this->buatServisBaru();
@@ -202,29 +264,50 @@ class SirakaSystemTest extends TestCase
 
         $this->assertGreaterThan(
             0,
-            $nota->total_biaya
+            (float) $nota->total_biaya
+        );
+
+        $this->assertNotNull(
+            $nota->tanggal_terbit_tagihan
+        );
+
+        $this->assertNull(
+            $nota->tanggal_lunas
+        );
+
+        $this->assertEquals(
+            0,
+            PembayaranNota::where(
+                'nota_transaksi_id',
+                $nota->id
+            )->count()
         );
     }
 
+    /**
+     * TEST 10: Pembayaran sebagian hingga lunas.
+     */
     public function test_nota_supports_partial_payments(): void
     {
         $servis = $this->buatServisBaru();
+
         $nota = $this->terbitkanNota($servis);
 
-        $total = (int) $nota->total_biaya;
+        $total = (int) round((float) $nota->total_biaya);
 
         $this->assertGreaterThan(1, $total);
 
         $pembayaranPertama = intdiv($total, 2);
         $pembayaranKedua = $total - $pembayaranPertama;
 
-        // Pembayaran pertama
+        // Pembayaran pertama: sebagian.
         $this->actingAs($this->admin())
             ->post("/admin/rekam-servis/{$servis->id}/nota/bayar", [
                 'jumlah_diterima' => $pembayaranPertama,
                 'metode_pembayaran' => 'tunai',
             ])
-            ->assertSessionHasNoErrors();
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
 
         $nota->refresh();
 
@@ -233,19 +316,44 @@ class SirakaSystemTest extends TestCase
             $nota->status_pembayaran
         );
 
-        // Pembayaran kedua hingga lunas
+        $this->assertNull(
+            $nota->tanggal_lunas
+        );
+
+        $this->assertEquals(
+            1,
+            PembayaranNota::where(
+                'nota_transaksi_id',
+                $nota->id
+            )->count()
+        );
+
+        $this->assertEquals(
+            $pembayaranPertama,
+            (int) PembayaranNota::where(
+                'nota_transaksi_id',
+                $nota->id
+            )->sum('nominal_dialokasikan')
+        );
+
+        // Pembayaran kedua: pelunasan.
         $this->actingAs($this->admin())
             ->post("/admin/rekam-servis/{$servis->id}/nota/bayar", [
                 'jumlah_diterima' => $pembayaranKedua,
                 'metode_pembayaran' => 'tunai',
             ])
-            ->assertSessionHasNoErrors();
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
 
         $nota->refresh();
 
         $this->assertEquals(
             'lunas',
             $nota->status_pembayaran
+        );
+
+        $this->assertNotNull(
+            $nota->tanggal_lunas
         );
 
         $this->assertEquals(
@@ -265,22 +373,44 @@ class SirakaSystemTest extends TestCase
         );
     }
 
+    /**
+     * TEST 11: Penyelesaian servis mencatat KM keluar.
+     */
     public function test_service_completion_records_km_keluar(): void
     {
         $servis = $this->buatServisBaru();
 
-        $this->terbitkanNota($servis);
+        $nota = $this->terbitkanNota($servis);
 
         $this->actingAs($this->admin())
             ->post("/admin/rekam-servis/{$servis->id}/selesaikan", [
                 'km_keluar' => 60010,
                 'catatan_nota' => 'Periksa rem kembali bulan depan',
             ])
-            ->assertSessionHasNoErrors();
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('success');
 
         $servis->refresh();
+        $nota->refresh();
 
-        $this->assertEquals(60010, $servis->km_keluar);
-        $this->assertEquals('selesai', $servis->status);
+        $this->assertEquals(
+            60010,
+            $servis->km_keluar
+        );
+
+        $this->assertEquals(
+            'selesai',
+            $servis->status
+        );
+
+        $this->assertEquals(
+            'Periksa rem kembali bulan depan',
+            $nota->catatan_nota
+        );
+
+        $this->assertEquals(
+            'belum',
+            $nota->status_rekomendasi
+        );
     }
 }
