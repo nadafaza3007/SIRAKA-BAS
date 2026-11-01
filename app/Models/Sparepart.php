@@ -61,4 +61,12 @@ class Sparepart extends Model
             1
         );
     }
+
+    public function riwayatStok()
+    {
+        return $this->hasMany(
+            StokSukuCadang::class,
+            'sparepart_id'
+        );
+    }
 }
