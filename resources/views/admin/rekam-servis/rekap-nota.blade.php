@@ -24,12 +24,27 @@
     <form method="GET" action="{{ route('admin.rekam-servis.rekap-nota.index') }}"
           class="grid gap-3 rounded-2xl border border-neutral-800 bg-ink-900 p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
         <label class="block text-xs font-bold text-neutral-300">Tanggal mulai
-            <input type="date" name="start_date" required value="{{ $startDate }}"
-                   class="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white">
+            <input type="text"
+       id="startDate"
+       name="start_date"
+       required
+       value="{{ $startDate }}"
+       data-min-target="endDate"
+       placeholder="Pilih tanggal mulai"
+       autocomplete="off"
+       class="js-datepicker mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white">
+
         </label>
         <label class="block text-xs font-bold text-neutral-300">Tanggal akhir
-            <input type="date" name="end_date" required min="{{ $startDate }}" value="{{ $endDate }}"
-                   class="mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white">
+            <input type="text"
+       id="endDate"
+       name="end_date"
+       required
+       min="{{ $startDate }}"
+       value="{{ $endDate }}"
+       placeholder="Pilih tanggal akhir"
+       autocomplete="off"
+       class="js-datepicker mt-2 w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white">
         </label>
         <button type="submit" class="rounded-xl bg-brand-500 px-5 py-3 text-xs font-bold text-white hover:bg-brand-600">Tampilkan Rekap</button>
     </form>
