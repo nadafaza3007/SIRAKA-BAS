@@ -6,8 +6,16 @@
     <title>Laporan Pemasukan SIRAKA — {{ $startDate }} s.d. {{ $endDate }}</title>
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; background: #f1f3f5; color: #222; font: 12px Arial, Helvetica, sans-serif; }
-        .actions { max-width: 1100px; margin: 18px auto; display: flex; justify-content: space-between; gap: 12px; }
+        body { 
+        margin: 0; 
+        background: #f1f3f5; 
+        color: #222; 
+        font: 12px Arial, Helvetica, sans-serif; 
+        }
+        .actions { 
+        max-width: 1100px; 
+        margin: 18px auto; 
+        display: flex; justify-content: space-between; gap: 12px; }
         .actions a, .actions button { border: 1px solid #bbb; border-radius: 5px; padding: 9px 14px; background: #fff; color: #222; text-decoration: none; cursor: pointer; font-size: 12px; }
         .actions button { background: #222; color: #fff; }
         .paper { max-width: 1100px; margin: 0 auto 30px; background: #fff; padding: 36px 40px; box-shadow: 0 3px 18px #0002; }
@@ -89,17 +97,17 @@
                     <tr><th>Uraian</th><th class="num" style="width: 23%;">Jumlah</th></tr>
                 </thead>
                 <tbody>
-                    <tr><td>Penerimaan servis (sparepart dan jasa, termasuk cicilan)</td><td class="num">{{ $rp($pendapatanKotor) }}</td></tr>
+                    <tr><td>Penerimaan servis (suku minang dan jasa, termasuk cicilan)</td><td class="num">{{ $rp($pendapatanKotor) }}</td></tr>
                     <tr><td>Tips pelanggan</td><td class="num">{{ $rp($totalTips) }}</td></tr>
                     <tr class="total"><td>Total pemasukan</td><td class="num">{{ $rp($totalPemasukan) }}</td></tr>
-                    <tr><td>Modal sparepart pada nota yang menerima pembayaran dalam periode</td><td class="num">{{ $rp($totalModalSparepart) }}</td></tr>
+                    <tr><td>Modal suku cadang pada nota yang menerima pembayaran dalam periode</td><td class="num">{{ $rp($totalModalSparepart) }}</td></tr>
                 </tbody>
             </table>
         </div>
         <p class="note">
             Uang diterima: {{ $rp($totalUangDiterima) }}; kembalian: {{ $rp($totalKembalian) }}.
-            Total pemasukan mencakup penerimaan servis dan tips. Modal sparepart dihitung sekali per nota yang mempunyai pembayaran dalam periode,
-            bukan pengeluaran kas pembelian sparepart pada periode tersebut. Laporan ini tidak menghitung laba bersih bengkel.
+            Total pemasukan mencakup penerimaan servis dan tips. Modal suku cadang dihitung sekali per nota yang mempunyai pembayaran dalam periode,
+            bukan pengeluaran kas pembelian suku cadang pada periode tersebut. Laporan ini tidak menghitung laba bersih bengkel.
         </p>
     </section>
 
@@ -154,13 +162,13 @@
     </section>
 
     <section class="section">
-        <h3>C. Analisis Penjualan Sparepart (10 Terlaris)</h3>
+        <h3>C. Analisis Penjualan Suku Cadang (10 Terlaris)</h3>
         <div class="table-wrap">
             <table>
                 <thead>
                     <tr>
                         <th style="width: 4%;">No.</th>
-                        <th>Nama Sparepart</th>
+                        <th>Nama Suku Cadang</th>
                         <th>Jenis</th>
                         <th class="num">Jumlah Terjual</th>
                         <th class="num">Jumlah Tagihan</th>
@@ -182,7 +190,7 @@
                             <td class="num">{{ $rp($sp->laba_kotor) }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" style="text-align: center;">Tidak ada penjualan sparepart pada periode ini.</td></tr>
+                        <tr><td colspan="8" style="text-align: center;">Tidak ada penjualan suku cadang pada periode ini.</td></tr>
                     @endforelse
                     @if($sparepartTerlaris->isNotEmpty())
                         <tr class="total">
@@ -194,7 +202,7 @@
                             <td class="num">{{ $rp($sumTop->laba) }}</td>
                         </tr>
                         <tr class="total">
-                            <td colspan="3">Seluruh sparepart periode ini</td>
+                            <td colspan="3">Seluruh suku cadang periode ini</td>
                             <td class="num">{{ $ringkasanSparepart->unit_terjual }}</td>
                             <td></td>
                             <td class="num">{{ $rp($ringkasanSparepart->omzet) }}</td>
@@ -206,8 +214,8 @@
             </table>
         </div>
         <p class="note">
-            Nilai penjualan sparepart berasal dari tagihan yang diterbitkan dalam periode, termasuk tagihan yang belum lunas. Diskon nota dialokasikan secara proporsional.
-            Pada periode tanggal servis yang sama terdapat {{ $ringkasanBelumLunas->unit }} sparepart terpakai dalam
+            Nilai penjualan suku minang berasal dari tagihan yang diterbitkan dalam periode, termasuk tagihan yang belum lunas. Diskon nota dialokasikan secara proporsional.
+            Pada periode tanggal servis yang sama terdapat {{ $ringkasanBelumLunas->unit }} suku cadang terpakai dalam
             {{ $ringkasanBelumLunas->jumlah_servis }} servis belum lunas
             (nilai sebelum diskon {{ $rp($ringkasanBelumLunas->nilai) }}).
         </p>
