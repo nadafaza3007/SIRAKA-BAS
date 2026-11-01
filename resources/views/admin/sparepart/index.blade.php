@@ -1,16 +1,16 @@
 @extends('layouts.admin')
 
-@section('title', 'Master Sparepart - SIRAKA')
+@section('title', 'Master Suku Cadang - SIRAKA')
 
 @section('content')
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
     <div>
-        <h2 class="text-xl font-extrabold text-white tracking-tight">Master Sparepart</h2>
+        <h2 class="text-xl font-extrabold text-white tracking-tight">Master Suku Cadang</h2>
         <p class="text-xs text-neutral-500">Kelola stok barang, harga modal, harga jual, dan margin keuntungan.</p>
     </div>
     <button onclick="document.getElementById('modalTambah').classList.remove('hidden')" class="px-4 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 flex items-center gap-2 w-fit">
         <i class="fa-solid fa-plus"></i>
-        <span>Tambah Sparepart</span>
+        <span>Tambah Suku Cadang</span>
     </button>
 </div>
 
@@ -54,12 +54,27 @@
                             @endif
                         </td>
                         <td class="p-4 text-right">
-                            <form action="{{ route('admin.sparepart.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus sparepart ini?')">
-                                @csrf
-                                @method('DELETE')
-                                <button type="submit" class="text-rose-500 hover:text-rose-400 font-bold">Hapus</button>
-                            </form>
-                        </td>
+    <div class="flex justify-end items-center gap-3">
+
+        <a href="{{ route('admin.sparepart.edit', $item->id) }}"
+           class="text-sky-400 hover:text-sky-300 font-bold">
+            Edit
+        </a>
+
+        <form action="{{ route('admin.sparepart.destroy', $item->id) }}"
+              method="POST"
+              onsubmit="return confirm('Hapus suku cadang ini?')">
+            @csrf
+            @method('DELETE')
+
+            <button type="submit"
+                    class="text-rose-500 hover:text-rose-400 font-bold">
+                Hapus
+            </button>
+        </form>
+
+    </div>
+</td>
                     </tr>
                 @empty
                     <tr><td colspan="7" class="p-8 text-center text-neutral-600">Belum ada suku cadang terdaftar.</td></tr>
@@ -91,7 +106,11 @@
                 <div class="flex justify-between text-neutral-500"><span>Margin Untung</span><span class="text-emerald-400 font-bold">Rp {{ number_format($item->marginKeuntungan(), 0, ',', '.') }}</span></div>
             </div>
             <div class="flex gap-2 pt-2 border-t border-neutral-800">
-                <form action="{{ route('admin.sparepart.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus sparepart ini?')" class="w-full">
+                <a href="{{ route('admin.sparepart.edit', $item->id) }}"
+                    class="w-full py-2 bg-sky-500/10 text-sky-400 rounded-xl font-bold text-xs text-center">
+                    Edit
+                </a>
+                <form action="{{ route('admin.sparepart.destroy', $item->id) }}" method="POST" onsubmit="return confirm('Hapus suku cadang ini?')" class="w-full">
                     @csrf
                     @method('DELETE')
                     <button type="submit" class="w-full py-2 bg-rose-500/10 text-rose-400 rounded-xl font-bold text-xs">Hapus</button>
@@ -103,7 +122,7 @@
     @endforelse
 </div>
 
-<!-- Modal Tambah Sparepart -->
+<!-- Modal Tambah Suku Cadang -->
 <div id="modalTambah" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
     <div class="bg-ink-900 border border-neutral-800 rounded-2xl w-full max-w-md p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
         <div class="flex items-center justify-between mb-4 border-b border-neutral-800 pb-3">
@@ -140,15 +159,40 @@
                 </div>
             </div>
             <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block font-bold mb-1 text-neutral-300">Harga Modal (Rp) *</label>
-                    <input type="number" name="harga_modal" id="modalPrice" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" oninput="hitungMargin()">
-                </div>
-                <div>
-                    <label class="block font-bold mb-1 text-neutral-300">Harga Jual (Rp) *</label>
-                    <input type="number" name="harga_jual" id="jualPrice" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" oninput="hitungMargin()">
-                </div>
-            </div>
+
+    <div>
+        <label class="block font-bold mb-1 text-neutral-300">
+            Harga Modal (Rp) *
+        </label>
+
+        <input type="text"
+               id="modalPrice"
+               inputmode="numeric"
+               autocomplete="off"
+               required
+               placeholder="Contoh: 15.000"
+               class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+
+        <input type="hidden" name="harga_modal" id="modalPriceRaw">
+    </div>
+
+    <div>
+        <label class="block font-bold mb-1 text-neutral-300">
+            Harga Jual (Rp) *
+        </label>
+
+        <input type="text"
+               id="jualPrice"
+               inputmode="numeric"
+               autocomplete="off"
+               required
+               placeholder="Contoh: 20.000"
+               class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
+
+        <input type="hidden" name="harga_jual" id="jualPriceRaw">
+    </div>
+
+</div>
             <div class="p-2.5 rounded-xl bg-brand-500/10 text-brand-400 text-[11px] font-semibold flex justify-between border border-brand-500/20">
                 <span>Estimasi Margin / Keuntungan:</span>
                 <span id="labelMargin" class="font-bold">Rp 0</span>
@@ -175,10 +219,55 @@ function toggleStokSparepart() {
     stok.required = !po;
 }
 document.addEventListener('DOMContentLoaded', function () { toggleStokSparepart(); @if ($errors->any()) document.getElementById('modalTambah').classList.remove('hidden'); @endif });
+// Mengubah angka menjadi format ribuan Indonesia
+function formatAngka(angka) {
+    return angka.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+// Mengambil angka tanpa titik
+function ambilAngka(nilai) {
+    return nilai.replace(/\D/g, '');
+}
+
+// Format input harga modal
+document.getElementById('modalPrice').addEventListener('input', function () {
+
+    let angka = ambilAngka(this.value);
+
+    this.value = formatAngka(angka);
+
+    document.getElementById('modalPriceRaw').value = angka;
+
+    hitungMargin();
+});
+
+// Format input harga jual
+document.getElementById('jualPrice').addEventListener('input', function () {
+
+    let angka = ambilAngka(this.value);
+
+    this.value = formatAngka(angka);
+
+    document.getElementById('jualPriceRaw').value = angka;
+
+    hitungMargin();
+});
+
+// Menghitung margin otomatis
 function hitungMargin() {
-    const modal = parseFloat(document.getElementById('modalPrice').value) || 0;
-    const jual = parseFloat(document.getElementById('jualPrice').value) || 0;
-    document.getElementById('labelMargin').innerText = 'Rp ' + (jual - modal).toLocaleString('id-ID');
+
+    const modal = Number(
+        document.getElementById('modalPriceRaw').value
+    ) || 0;
+
+    const jual = Number(
+        document.getElementById('jualPriceRaw').value
+    ) || 0;
+
+    const margin = jual - modal;
+
+    document.getElementById('labelMargin').innerText =
+        'Rp ' + margin.toLocaleString('id-ID');
 }
 </script>
 @endsection
