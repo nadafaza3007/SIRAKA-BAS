@@ -3,8 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/logo_bengkel.jpe') }}">
     <title>@yield('title', 'Admin Dashboard - SIRAKA')</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
+    <script>
+    // Terapkan tema sebelum halaman ditampilkan
+    (function () {
+        try {
+            const savedTheme = localStorage.getItem('siraka-theme') || 'dark';
+
+            if (savedTheme === 'light') {
+                document.documentElement.classList.add('light-mode');
+            }
+        } catch (error) {
+            console.warn('Tema tidak dapat dimuat:', error);
+        }
+    })();
+</script>
     <!-- Tailwind CSS via CDN (Tanpa perlu npm / Vite) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -85,6 +101,210 @@
             color: black !important;
         }
     }
+
+    /* =====================================
+       SIRAKA THEME SWITCH
+    ===================================== */
+    .theme-switch {
+        position: relative;
+        display: inline-block;
+        width: 42px;
+        height: 23px;
+        flex: 0 0 auto;
+    }
+
+    .theme-switch input {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+    }
+
+    .theme-slider {
+        position: absolute;
+        inset: 0;
+        cursor: pointer;
+        border: 1px solid #525252;
+        border-radius: 999px;
+        background: #404040;
+        transition: background .2s ease, border-color .2s ease;
+    }
+
+    .theme-slider::before {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 17px;
+        height: 17px;
+        border-radius: 50%;
+        background: #ffffff;
+        transition: transform .2s ease;
+    }
+
+    .theme-switch input:checked + .theme-slider {
+        background: #f97316;
+        border-color: #f97316;
+    }
+
+    .theme-switch input:checked + .theme-slider::before {
+        transform: translateX(19px);
+    }
+
+    .theme-switch input:focus-visible + .theme-slider {
+        outline: 2px solid #fb923c;
+        outline-offset: 3px;
+    }
+
+    /* =====================================
+       LIGHT MODE
+       Hanya mengubah warna, bukan layout.
+    ===================================== */
+    html.light-mode body {
+        background-color: #f1f5f9 !important;
+        color: #1e293b !important;
+    }
+
+    /* Sidebar: putih dengan teks gelap; area logo tetap hitam */
+    html.light-mode #sidebar {
+        background-color: #ffffff !important;
+        border-color: #e2e8f0 !important;
+    }
+
+    html.light-mode #sidebar > div:first-child > div:first-child {
+        background-color: #000000 !important;
+        border-color: #262626 !important;
+    }
+
+    html.light-mode #sidebar > div:first-child > div:first-child h1 {
+        color: #ffffff !important;
+    }
+
+    html.light-mode #sidebar nav > div {
+        color: #64748b !important;
+    }
+
+    html.light-mode #sidebar nav a:not(.bg-brand-500) {
+        color: #334155 !important;
+    }
+
+    html.light-mode #sidebar nav a:not(.bg-brand-500):hover {
+        background-color: #f1f5f9 !important;
+        color: #f97316 !important;
+    }
+
+    html.light-mode #sidebar nav a.bg-brand-500,
+    html.light-mode #sidebar nav a.bg-brand-500 * {
+        color: #ffffff !important;
+    }
+
+    html.light-mode #sidebar > div:last-child {
+        border-color: #e2e8f0 !important;
+        color: #64748b !important;
+    }
+
+    html.light-mode #sidebar > div:last-child button {
+        background-color: #f1f5f9 !important;
+        color: #334155 !important;
+    }
+
+    /* Header: pertahankan warna hitam seperti desain asli */
+    html.light-mode header {
+        background-color: #000000 !important;
+        border-color: #262626 !important;
+    }
+
+    /* Konten utama */
+    html.light-mode main {
+        background-color: #f1f5f9 !important;
+        color: #1e293b !important;
+    }
+
+    /* Panel/kartu gelap menjadi putih */
+    html.light-mode main .bg-black,
+    html.light-mode main .bg-ink-950,
+    html.light-mode main .bg-ink-900,
+    html.light-mode main .bg-ink-850,
+    html.light-mode main .bg-ink-800,
+    html.light-mode main .bg-neutral-950,
+    html.light-mode main .bg-neutral-900,
+    html.light-mode main .bg-neutral-800 {
+        background-color: #ffffff !important;
+    }
+
+    /* Teks utama dan teks pendukung */
+    html.light-mode main .text-white,
+    html.light-mode main .text-neutral-100,
+    html.light-mode main .text-neutral-200,
+    html.light-mode main .text-neutral-300 {
+        color: #1e293b !important;
+    }
+
+    html.light-mode main .text-neutral-400,
+    html.light-mode main .text-neutral-500,
+    html.light-mode main .text-neutral-600 {
+        color: #64748b !important;
+    }
+
+    /* Border kartu dan tabel */
+    html.light-mode main .border-neutral-800,
+    html.light-mode main .border-neutral-900,
+    html.light-mode main .border-neutral-700,
+    html.light-mode main .border-ink-700 {
+        border-color: #e2e8f0 !important;
+    }
+
+    /* Form */
+    html.light-mode main input:not([type="checkbox"]):not([type="radio"]),
+    html.light-mode main select,
+    html.light-mode main textarea {
+        background-color: #ffffff !important;
+        color: #1e293b !important;
+        border-color: #cbd5e1 !important;
+    }
+
+    html.light-mode main input::placeholder,
+    html.light-mode main textarea::placeholder {
+        color: #94a3b8 !important;
+        opacity: 1;
+    }
+
+    /* Tabel */
+    html.light-mode main table {
+        color: #334155 !important;
+    }
+
+    html.light-mode main thead,
+    html.light-mode main thead tr {
+        background-color: #f1f5f9 !important;
+    }
+
+    html.light-mode main th {
+        color: #334155 !important;
+    }
+
+    html.light-mode main td {
+        color: #475569;
+    }
+
+    html.light-mode main tbody tr {
+        border-color: #e2e8f0 !important;
+    }
+
+    /* Bottom navigation mobile tetap hitam */
+    html.light-mode nav.lg\:hidden {
+        background-color: #000000 !important;
+        border-color: #262626 !important;
+    }
+
+    /* Scrollbar */
+    html.light-mode ::-webkit-scrollbar-track {
+        background: #f1f5f9;
+    }
+
+    html.light-mode ::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+    }
     </style>
 
     <!-- SweetAlert2 -->
@@ -100,8 +320,8 @@
         <div class="overflow-y-auto">
             <!-- Header Brand Bengkel -->
             <div class="h-16 flex items-center gap-3 px-6 bg-black border-b border-neutral-900 sticky top-0">
-                <img src="{{ asset('images/logo-siraka.png') }}"
-                    alt="Logo SIRAKA"
+                <img src="{{ asset('images/logo_bengkel.jpe') }}"
+                    alt="Logo Bengkel SIRAKA"
                     class="w-9 h-9 object-contain shrink-0">
                 <div>
                     <h1 class="font-extrabold text-sm text-white tracking-wide leading-none">SIRAKA</h1>
@@ -133,7 +353,7 @@
                 </a>
                 <a href="{{ route('admin.inspeksi.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-neutral-900 hover:text-white transition {{ request()->routeIs('admin.inspeksi.*') ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20' : '' }}">
                     <i class="fa-solid fa-clipboard-check w-4 text-center"></i>
-                    <span>Laporan Inspeksi</span>
+                    <span>Inspeksi</span>
                 </a>
 
                 <!-- KHUSUS ADMIN: Master Data & Keuangan (Disembunyikan untuk Mekanik) -->
@@ -141,7 +361,12 @@
                     <div class="pt-3 px-3 py-1.5 text-[10px] uppercase tracking-wider text-neutral-600 font-bold">Master Data (Admin)</div>
                     <a href="{{ route('admin.sparepart.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-neutral-900 hover:text-white transition {{ request()->routeIs('admin.sparepart.*') ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20' : '' }}">
                         <i class="fa-solid fa-boxes-stacked w-4 text-center"></i>
-                        <span>Master Sparepart</span>
+                        <span>Master Suku Cadang</span>
+                    </a>
+                    <a href="{{ route('admin.stok-suku-cadang.index') }}"
+                        class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-neutral-900 hover:text-white transition {{ request()->routeIs('admin.stok-suku-cadang.*') ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20' : '' }}">
+                        <i class="fa-solid fa-warehouse w-4 text-center"></i>
+                            <span>Stok Suku Cadang</span>
                     </a>
                     <a href="{{ route('admin.jasa.index') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-neutral-900 hover:text-white transition {{ request()->routeIs('admin.jasa.*') ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20' : '' }}">
                         <i class="fa-solid fa-screwdriver-wrench w-4 text-center"></i>
@@ -190,8 +415,15 @@
                     <span class="font-extrabold text-sm text-white">SIRAKA</span>
                 </div>
             </div>
-            <!-- Pojok Kanan Atas: Menampilkan Nama / Username yang sedang login -->
-            <div class="flex items-center gap-2 text-xs font-bold text-neutral-300">
+            <!-- Pojok Kanan Atas: Toggle Tema dan Informasi Pengguna -->
+            <div class="flex items-center gap-3 text-xs font-bold text-neutral-300">
+                <div class="flex items-center gap-2">
+                    <span id="themeLabel" class="text-xs font-semibold text-neutral-300">Dark</span>
+                    <label class="theme-switch" title="Ganti tema tampilan">
+                        <input type="checkbox" id="themeSwitch" onchange="toggleSirakaTheme()" aria-label="Ganti Light Mode dan Dark Mode">
+                        <span class="theme-slider"></span>
+                    </label>
+                </div>
                 <div class="w-8 h-8 rounded-full bg-neutral-800 flex items-center justify-center text-brand-500 border border-neutral-700">
                     <i class="fa-solid fa-user"></i>
                 </div>
@@ -370,6 +602,93 @@
             });
         })();
     </script>
+    <script>
+        // Tema hanya mengubah class warna; tidak mengubah struktur atau layout.
+        function applySirakaTheme(theme) {
+            const isLight = theme === 'light';
+            document.documentElement.classList.toggle('light-mode', isLight);
+
+            const switchInput = document.getElementById('themeSwitch');
+            const label = document.getElementById('themeLabel');
+
+            if (switchInput) switchInput.checked = isLight;
+            if (label) label.textContent = isLight ? 'Light' : 'Dark';
+
+            // Perbarui warna label grafik Chart.js yang sudah dibuat oleh halaman.
+            if (window.Chart) {
+                const textColor = isLight ? '#64748b' : '#a3a3a3';
+                const gridColor = isLight ? 'rgba(148,163,184,0.22)' : 'rgba(148,163,184,0.12)';
+                Chart.defaults.color = textColor;
+
+                if (Chart.instances) {
+                    Object.values(Chart.instances).forEach(function (chart) {
+                        if (!chart || !chart.options) return;
+                        chart.options.color = textColor;
+                        if (chart.options.plugins && chart.options.plugins.legend && chart.options.plugins.legend.labels) {
+                            chart.options.plugins.legend.labels.color = textColor;
+                        }
+                        if (chart.options.scales) {
+                            Object.values(chart.options.scales).forEach(function (scale) {
+                                scale.ticks = scale.ticks || {};
+                                scale.ticks.color = textColor;
+                                scale.grid = scale.grid || {};
+                                scale.grid.color = gridColor;
+                                if (scale.title) scale.title.color = textColor;
+                            });
+                        }
+                        chart.update('none');
+                    });
+                }
+            }
+        }
+
+        function toggleSirakaTheme() {
+            const current = localStorage.getItem('siraka-theme') || 'dark';
+            const next = current === 'dark' ? 'light' : 'dark';
+            localStorage.setItem('siraka-theme', next);
+            applySirakaTheme(next);
+        }
+
+        // Terapkan tema tersimpan sedini mungkin setelah elemen header tersedia.
+        document.addEventListener('DOMContentLoaded', function () {
+            applySirakaTheme(localStorage.getItem('siraka-theme') || 'dark');
+        });
+    </script>
+
+        <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.js-datepicker').forEach(function (input) {
+                const picker = flatpickr(input, {
+                    locale: 'id',
+                    dateFormat: 'Y-m-d',
+                    altInput: true,
+                    altFormat: 'd-m-Y',
+                    allowInput: true,
+                    disableMobile: true,
+                    minDate: input.getAttribute('min') || null
+                });
+
+                // Hubungkan tanggal mulai dengan tanggal akhir.
+                if (input.dataset.minTarget) {
+                    input.addEventListener('change', function () {
+                        const target = document.getElementById(input.dataset.minTarget);
+
+                        if (!target || !target._flatpickr) return;
+
+                        target._flatpickr.set('minDate', input.value || null);
+
+                        if (target.value && input.value && target.value < input.value) {
+                            target._flatpickr.clear();
+                        }
+                    });
+                }
+            });
+        });
+    </script>
+
     @stack('scripts')
 </body>
 </html>
