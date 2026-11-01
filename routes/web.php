@@ -201,6 +201,42 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
     Route::delete('/sparepart/{id}', [\App\Http\Controllers\Admin\SparepartController::class, 'destroy'])
         ->name('admin.sparepart.destroy');
 
+    // Edit Master Sparepart
+    Route::get(
+        '/sparepart/{id}/edit',
+        [\App\Http\Controllers\Admin\SparepartController::class, 'edit']
+    )->name('admin.sparepart.edit');
+
+    // Update Master Sparepart
+    Route::put(
+        '/sparepart/{id}',
+        [\App\Http\Controllers\Admin\SparepartController::class, 'update']
+    )->name('admin.sparepart.update');
+
+    // =========================================================
+    // STOK SUKU CADANG DAN BARANG MASUK
+    // =========================================================
+
+    Route::get(
+        '/stok-suku-cadang',
+        [\App\Http\Controllers\Admin\StokSukuCadangController::class, 'index']
+    )->name('admin.stok-suku-cadang.index');
+
+    Route::get(
+        '/stok-suku-cadang/barang-masuk',
+        [\App\Http\Controllers\Admin\StokSukuCadangController::class, 'create']
+    )->name('admin.stok-suku-cadang.create');
+
+    Route::post(
+        '/stok-suku-cadang/barang-masuk',
+        [\App\Http\Controllers\Admin\StokSukuCadangController::class, 'store']
+    )->name('admin.stok-suku-cadang.store');
+
+    Route::get(
+        '/stok-suku-cadang/riwayat',
+        [\App\Http\Controllers\Admin\StokSukuCadangController::class, 'riwayat']
+    )->name('admin.stok-suku-cadang.riwayat');
+
     // 5. Master Jasa — logika dipindahkan ke JasaController.
     Route::get('/jasa', [\App\Http\Controllers\Admin\JasaController::class, 'index'])
         ->name('admin.jasa.index');
