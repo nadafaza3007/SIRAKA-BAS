@@ -45,6 +45,44 @@ class SparepartController extends Controller
         return redirect('/admin/sparepart')->with('success', 'Sparepart berhasil ditambahkan');
     }
 
+    // Menampilkan halaman edit
+public function edit($id)
+{
+    $this->hanyaAdmin();
+
+    $sparepart = Sparepart::findOrFail($id);
+
+    return view('admin.sparepart.edit', compact('sparepart'));
+}
+
+// Memperbarui data suku cadang
+public function update(Request $request, $id)
+{
+    $this->hanyaAdmin();
+
+    $data = $request->validate([
+        'nama_barang' => ['required', 'string', 'max:255'],
+        'kode_barang' => ['nullable', 'string', 'max:255'],
+        'nama_toko' => ['nullable', 'string', 'max:255'],
+        'jenis_ketersediaan' => ['required', 'in:stok,po'],
+        'harga_modal' => ['required', 'numeric', 'min:0'],
+        'harga_jual' => ['required', 'numeric', 'min:0'],
+    ]);
+
+    $sparepart = Sparepart::findOrFail($id);
+
+    // Pertahankan stok lama saat mengedit data barang.
+    // Jika diubah menjadi PO, stok menjadi null.
+    $data['stok'] = $data['jenis_ketersediaan'] === 'po'
+        ? null
+        : ($sparepart->isBarangStok() ? $sparepart->stok : 0);
+
+    $sparepart->update($data);
+
+    return redirect()->route('admin.sparepart.index')
+        ->with('success', 'Data suku cadang berhasil diperbarui.');
+}
+
     public function destroy($id)
     {
         if (auth()->user()->role !== 'admin') {
