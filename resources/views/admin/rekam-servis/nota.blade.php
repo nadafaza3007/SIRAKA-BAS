@@ -200,9 +200,9 @@
                     <form method="POST" action="{{ route('admin.rekam-servis.sparepart.tambah', $servis->id) }}" class="space-y-3">
                         @csrf
 
-                        <label class="block text-xs font-bold text-neutral-300">Pilih Sparepart</label>
+                        <label class="block text-xs font-bold text-neutral-300">Pilih Suku Cadang</label>
                         <select name="sparepart_id" id="selectSparepart" required class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-3 text-sm text-white">
-                            <option value="">Pilih sparepart</option>
+                            <option value="">Pilih suku cadang</option>
                             @foreach($spareparts as $sp)
                                 <option value="{{ $sp->id }}" data-harga="{{ $sp->harga_jual }}">
                                     {{ $sp->nama_barang }} — {{ $rp($sp->harga_jual) }}
@@ -230,7 +230,7 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="w-full rounded-xl bg-orange-500 p-3 text-sm font-bold text-white">Tambah Sparepart</button>
+                        <button type="submit" class="w-full rounded-xl bg-orange-500 p-3 text-sm font-bold text-white">Tambah Suku Cadang</button>
                     </form>
                 </section>
 
@@ -936,7 +936,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ==========================================================
-    // 2. DISKON SPAREPART
+    // 2. DISKON SUKU CADANG
     // ==========================================================
     const selSP = document.getElementById('selectSparepart');
     const qtySP = document.getElementById('qtySP');
