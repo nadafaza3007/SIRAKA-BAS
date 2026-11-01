@@ -138,7 +138,13 @@
             </div>
             <div>
                 <label class="mb-1 block text-[10px] font-bold text-neutral-400">Tanggal Inspeksi *</label>
-                <input type="date" name="tanggal_inspeksi" value="{{ date('Y-m-d') }}" required class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
+                <input type="text"
+       name="tanggal_inspeksi"
+       value="{{ date('Y-m-d') }}"
+       placeholder="Pilih tanggal inspeksi"
+       autocomplete="off"
+       required
+       class="js-datepicker w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
             </div>
             <div>
                 <label class="mb-1 block text-[10px] font-bold text-neutral-400">Kilometer (KM)</label>
