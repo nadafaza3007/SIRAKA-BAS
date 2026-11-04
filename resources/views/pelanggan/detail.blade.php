@@ -132,26 +132,29 @@
                 </div>
 
 
-                @if ($nota && Route::has('pelanggan.nota-resmi'))
-                    <a
-                        href="{{ route('pelanggan.nota-resmi', $servis->id) }}"
-                        class="no-print inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                            class="h-4 w-4"
+                @if ($nota && Route::has('pelanggan.nota-pdf'))
+                        <a
+                            href="{{ route('pelanggan.nota-pdf', $servis->id) }}"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class="no-print inline-flex items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
                         >
-                            <path d="M6 9V2h12v7"></path>
-                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                            <rect width="12" height="8" x="6" y="14"></rect>
-                        </svg>
-                        Lihat / Cetak Nota Resmi
-                    </a>
-                @endif
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                class="h-4 w-4"
+                            >
+                                <path d="M6 9V2h12v7"></path>
+                                <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                                <rect width="12" height="8" x="6" y="14"></rect>
+                            </svg>
+
+                            Cetak Nota PDF
+                        </a>
+                    @endif
 
             </div>
 

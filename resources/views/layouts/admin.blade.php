@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/jpeg" href="{{ asset('images/logo_bengkel.jpe') }}">
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/logo_bengkel.jpg') }}">
     <title>@yield('title', 'Admin Dashboard - SIRAKA')</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
@@ -21,35 +21,8 @@
         }
     })();
 </script>
-    <!-- Tailwind CSS via CDN (Tanpa perlu npm / Vite) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#fff7ed',
-                            100: '#ffedd5',
-                            400: '#fb923c',
-                            500: '#f97316',
-                            600: '#ea580c',
-                            700: '#c2410c',
-                            900: '#7c2d12',
-                        },
-                        ink: {
-                            950: '#0a0a0a',
-                            900: '#141414',
-                            850: '#191919',
-                            800: '#1f1f1f',
-                            700: '#2a2a2a',
-                            600: '#3a3a3a',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    {{-- Tailwind CSS v4 dari hasil build Vite --}}
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <!-- FontAwesome Icons & Google Font -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -320,7 +293,7 @@
         <div class="overflow-y-auto">
             <!-- Header Brand Bengkel -->
             <div class="h-16 flex items-center gap-3 px-6 bg-black border-b border-neutral-900 sticky top-0">
-                <img src="{{ asset('images/logo_bengkel.jpe') }}"
+                <img src="{{ asset('images/logo_bengkel.jpg') }}"
                     alt="Logo Bengkel SIRAKA"
                     class="w-9 h-9 object-contain shrink-0">
                 <div>

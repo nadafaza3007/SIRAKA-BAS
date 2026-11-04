@@ -8,6 +8,7 @@ use App\Models\RekamServis;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PelangganController extends Controller
 {
@@ -571,6 +572,49 @@ class PelangganController extends Controller
      * 2. users.no_hp = konsumens.no_hp
      *
      */
+
+    /**
+ * Cetak nota resmi pelanggan dalam format PDF.
+ */
+    public function cetakNotaPdf($id)
+    {
+        $konsumen = $this->konsumen();
+
+        abort_unless($konsumen, 404);
+
+        $servis = RekamServis::with([
+            'kendaraan.konsumen',
+            'detailSpareparts.sparepart',
+            'detailJasas.jasa',
+            'catatanRekomendasis',
+            'nota.pembayaran.penerima',
+        ])->findOrFail($id);
+
+        // Pelanggan hanya boleh mengakses nota kendaraannya.
+        abort_unless(
+            $servis->kendaraan &&
+            (int) $servis->kendaraan->konsumen_id === (int) $konsumen->id,
+            404
+        );
+
+        // Nota harus sudah diterbitkan.
+        abort_unless($servis->nota, 404);
+
+        $nomor = $servis->nota->no_nota;
+
+        $namaFile = 'nota-servis-' .
+            preg_replace('/[^A-Za-z0-9_-]/', '-', $nomor) .
+            '.pdf';
+
+        return Pdf::loadView(
+            'admin.rekam-servis.nota-pdf',
+            compact('servis')
+        )
+            ->setPaper('a4', 'portrait')
+            ->stream($namaFile);
+    }
+
+
     private function konsumen(): ?Konsumen
     {
         $user = Auth::user();
