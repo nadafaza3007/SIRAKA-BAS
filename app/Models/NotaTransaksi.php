@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\NotaWhatsappDelivery;
 
 class NotaTransaksi extends Model
 {
@@ -103,4 +104,17 @@ class NotaTransaksi extends Model
     {
         return $this->status_pembayaran === 'lunas';
     }
+
+        /**
+     * Riwayat pengiriman WhatsApp untuk nota ini.
+     */
+    
+    public function whatsappDeliveries(): HasMany
+    {
+        return $this->hasMany(
+            NotaWhatsappDelivery::class,
+            'nota_transaksi_id'
+        )->orderBy('created_at');
+    }
+
 }
