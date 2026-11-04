@@ -105,6 +105,15 @@ class DetailNotaSparepartController extends Controller
         ];
     }, 3);
 
+    if ($request->expectsJson()) {
+        return response()->json([
+            'message' => 'Suku cadang berhasil ditambahkan.',
+            'detail_id' => $result['id'],
+            'qty' => $result['qty'],
+            'subtotal' => $result['subtotal'],
+        ], 201);
+    }
+
     return back()->with('success', 'Sparepart berhasil ditambahkan.');
 }
 
