@@ -79,6 +79,10 @@
     $tautanWa = $nomorWaValid
         ? 'https://wa.me/' . $nomorBersihWa . '?text=' . rawurlencode($pesanWa)
         : null;
+    
+    $riwayatWhatsApp = $nota
+        ? $nota->whatsappDeliveries
+        : collect();
 @endphp
 
 <div class="mx-auto min-w-0 max-w-5xl space-y-5">
@@ -124,11 +128,11 @@
                 {{ $labelCetak }} Thermal
             </button>
 
-            <button type="button" onclick="cetakSiraka('a4')"
-                class="rounded-xl bg-orange-500 px-4 py-3 text-xs font-bold text-white hover:bg-orange-600">
-                <i class="fa-solid fa-print mr-1"></i>
-                {{ $labelCetak }} A4
-            </button>
+            <a href="{{ route('admin.rekam-servis.nota-pdf', $servis->id) }}"
+                class="inline-flex items-center justify-center rounded-xl bg-orange-500 px-4 py-3 text-xs font-bold text-white hover:bg-orange-600">
+                <i class="fa-solid fa-file-pdf mr-1"></i>
+                Cetak / Simpan {{ $labelCetak }} PDF A4
+            </a>
         </div>
     </div>
 
@@ -187,6 +191,8 @@
     {{-- TAHAP 1: ESTIMASI --}}
     <div data-panel="1" class="space-y-4">
 
+        <div id="ajaxTransaksiFeedback" class="no-print hidden rounded-xl border p-3 text-sm" role="status" aria-live="polite" hidden></div>
+
                 @if($bolehEdit)
             <div class="no-print grid grid-cols-1 gap-4 md:grid-cols-2">
 
@@ -197,7 +203,7 @@
                         Suku Cadang
                     </h2>
 
-                    <form method="POST" action="{{ route('admin.rekam-servis.sparepart.tambah', $servis->id) }}" class="space-y-3">
+                    <form method="POST" action="{{ route('admin.rekam-servis.sparepart.tambah', $servis->id) }}" class="space-y-3" data-ajax-transaksi="tambah-sparepart">
                         @csrf
 
                         <label class="block text-xs font-bold text-neutral-300">Pilih Suku Cadang</label>
@@ -241,7 +247,7 @@
                         Jasa Servis
                     </h2>
 
-                    <form method="POST" action="{{ route('admin.rekam-servis.jasa.tambah', $servis->id) }}" class="space-y-3">
+                    <form method="POST" action="{{ route('admin.rekam-servis.jasa.tambah', $servis->id) }}" class="space-y-3" data-ajax-transaksi="tambah-jasa">
                         @csrf
 
                         <label class="block text-xs font-bold text-neutral-300">Pilih Jasa</label>
@@ -277,6 +283,128 @@
 
         {{-- DOKUMEN ESTIMASI / TAGIHAN / NOTA --}}
         @include('partials.nota-resmi')
+
+        {{-- RIWAYAT PENGIRIMAN WHATSAPP --}}
+        @if($nota)
+        <section class="no-print rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+
+            <div class="flex items-center justify-between gap-3">
+
+                <div>
+                    <h3 class="text-sm font-black text-white">
+                        <i class="fa-brands fa-whatsapp mr-2 text-green-500"></i>
+                        Riwayat Pengiriman WhatsApp
+                    </h3>
+
+                    <p class="mt-1 text-xs text-neutral-400">
+                        Riwayat pengiriman PDF tagihan dan nota akhir pelanggan.
+                    </p>
+                </div>
+
+                <span class="rounded-full bg-neutral-800 px-3 py-1 text-xs text-neutral-300">
+                    {{ $riwayatWhatsApp->count() }} Riwayat
+                </span>
+
+            </div>
+
+            <div class="mt-4 space-y-3">
+
+                @forelse($riwayatWhatsApp as $riwayat)
+
+                    @php
+                        $namaJenis = match($riwayat->jenis) {
+                            'tagihan_awal' => 'Tagihan Awal',
+                            'nota_lunas' => 'Nota Akhir (Lunas)',
+                            default => ucfirst($riwayat->jenis),
+                        };
+
+                        $statusClass = match($riwayat->status) {
+                            'sent' => 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30',
+                            'failed' => 'bg-rose-500/10 text-rose-400 border-rose-500/30',
+                            'sending' => 'bg-amber-500/10 text-amber-400 border-amber-500/30',
+                            default => 'bg-neutral-800 text-neutral-300 border-neutral-700',
+                        };
+
+                        $statusLabel = match($riwayat->status) {
+                            'sent' => 'Berhasil dikirim',
+                            'failed' => 'Gagal dikirim',
+                            'sending' => 'Sedang dikirim',
+                            default => 'Menunggu',
+                        };
+                    @endphp
+
+                    <div class="rounded-xl border border-neutral-700 bg-neutral-800/60 p-4">
+
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+
+                            <div>
+                                <p class="text-sm font-bold text-white">
+                                    {{ $namaJenis }}
+                                </p>
+
+                                <p class="mt-1 text-xs text-neutral-400">
+                                    Percobaan ke-{{ $riwayat->attempts }}
+                                </p>
+                            </div>
+
+                            <span class="rounded-full border px-3 py-1 text-[11px] font-bold {{ $statusClass }}">
+                                {{ $statusLabel }}
+                            </span>
+
+                        </div>
+
+                        <div class="mt-3 border-t border-neutral-700 pt-3 text-xs text-neutral-400">
+
+                            <p>
+                                <i class="fa-regular fa-clock mr-1"></i>
+                                Waktu:
+                                {{ ($riwayat->sent_at ?? $riwayat->updated_at)?->format('d/m/Y H:i') ?? '-' }}
+                            </p>
+
+                            @if($riwayat->message_id)
+                                <p class="mt-2 break-all">
+                                    Message ID: {{ $riwayat->message_id }}
+                                </p>
+                            @endif
+
+                            @if($riwayat->error_message)
+                                <div class="mt-3 rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-rose-300">
+                                    <p class="font-bold">
+                                        Keterangan kegagalan:
+                                    </p>
+
+                                    <p class="mt-1 break-words">
+                                        {{ $riwayat->error_message }}
+                                    </p>
+                                </div>
+                            @endif
+
+                        </div>
+
+                    </div>
+
+                @empty
+
+                    <div class="rounded-xl border border-dashed border-neutral-700 p-5 text-center">
+
+                        <i class="fa-regular fa-paper-plane text-2xl text-neutral-500"></i>
+
+                        <p class="mt-2 text-sm font-bold text-neutral-300">
+                            Belum Ada Riwayat Pengiriman
+                        </p>
+
+                        <p class="mt-1 text-xs text-neutral-500">
+                            Riwayat akan muncul otomatis setelah sistem mencoba mengirim PDF melalui WhatsApp.
+                        </p>
+
+                    </div>
+
+                @endforelse
+
+            </div>
+
+        </section>
+@endif
 
         @if(!$nota)
     <section class="no-print rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
@@ -333,7 +461,7 @@
                 </div>
             </div>
 
-            <button type="submit"
+            <button type="submit" id="btnTerbitkanTagihan"
                 @disabled($servis->detailSpareparts->isEmpty() && $servis->detailJasas->isEmpty())
                 class="w-full rounded-xl bg-orange-500 p-3 text-sm font-bold text-white disabled:opacity-50">
                 Terbitkan Tagihan Servis
@@ -831,13 +959,51 @@
     }
     body.print-thermal #printArea .nota-ttd {display:none !important}
 }
+
+/* PERBAIKAN KHUSUS TAMPILAN LIHAT NOTA DI LAYAR.
+   Tidak berlaku ketika mencetak thermal / PDF; tidak menyentuh logika transaksi. */
+@media screen {
+    #printArea {
+        width: 100% !important;
+        max-width: 850px !important;
+        margin: 0 auto 24px !important;
+        padding: 28px 30px !important;
+        box-sizing: border-box !important;
+        background: #fff !important;
+        color: #1f2937 !important;
+        border: 1px solid #d1d5db !important;
+        border-radius: 12px !important;
+        box-shadow: 0 10px 28px rgba(0,0,0,.15) !important;
+    }
+    #printArea .nota-kop {gap: 16px; padding-bottom: 12px;}
+    #printArea .nota-logo {width: 65px; height: 65px;}
+    #printArea .nota-logo-cadangan {width: 65px; height: 65px;}
+    #printArea .nota-nama {font-size: 22px;}
+    #printArea .nota-judul {gap: 12px; padding: 15px 0 12px;}
+    #printArea .nota-judul-teks {font-size: 19px;}
+    #printArea .nota-meta-sel strong {font-size: 11px; overflow-wrap: anywhere;}
+    #printArea .nota-info {column-gap: 24px;}
+    #printArea .nota-table {min-width: 0; font-size: 11px;}
+    #printArea .nota-table th, #printArea .nota-table td {padding: 6px 7px;}
+    #printArea .nota-bottom {gap: 18px;}
+    #printArea .nota-ttd {margin-top: 25px;}
+}
+@media screen and (max-width: 680px) {
+    #printArea {padding: 18px 14px !important; border-radius: 8px !important;}
+    #printArea .nota-nama {font-size: 18px;}
+    #printArea .nota-judul-teks {font-size: 17px;}
+    #printArea .nota-info, #printArea .nota-bottom {grid-template-columns: 1fr;}
+    #printArea .nota-table {min-width: 480px;}
+    #printArea .nota-table-wrap {overflow-x: auto;}
+}
+
 </style>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     const maxTahap = @json($tahap);
     const total = @json($total);
-    const subtotal = @json($subtotal);
+    let subtotal = @json($subtotal);
     const sisa = @json($sisaTagihan);
 
     let aktif = @json(!$nota ? 1 : ($pekerjaanSelesai ? 4 : 2));
@@ -885,15 +1051,145 @@ document.addEventListener('DOMContentLoaded', function () {
     const pctTotal = document.getElementById('diskonPersenTotal');
     const nomTotal = document.getElementById('diskonNominalTotal');
     const lblTotal = document.getElementById('diskonTotalDisplay');
-    const lblDiskon = document.getElementById('labelDiskon');
-    const lblNota = document.getElementById('labelTotal');
+    let lblDiskon = document.getElementById('labelDiskon');
+    let lblNota = document.getElementById('labelTotal');
 
     function updateTotal(nominal) {
-        const aman = Math.min(nominal, subtotal);
+        const aman = Math.min(Math.max(0, Number(nominal) || 0), subtotal);
         if (lblTotal) lblTotal.textContent = rp(subtotal - aman);
         if (lblDiskon) lblDiskon.textContent = '- ' + rp(aman);
         if (lblNota) lblNota.textContent = rp(subtotal - aman);
     }
+
+    // Ambil ulang HTML nota dari server tanpa me-reload halaman.
+    // Ini memastikan rincian, stok dropdown, subtotal, dan tombol terbitkan
+    // selalu mengikuti hasil transaksi yang benar-benar tersimpan di database.
+    async function refreshTransaksiView() {
+        const response = await fetch(window.location.href, {
+            method: 'GET',
+            cache: 'no-store',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'text/html'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Data transaksi tersimpan, tetapi tampilan nota gagal diperbarui. Muat ulang halaman untuk melihat perubahan.');
+        }
+
+        const html = await response.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const printAreaBaru = doc.querySelector('#printArea');
+        const printAreaLama = document.querySelector('#printArea');
+
+        if (!printAreaBaru || !printAreaLama) {
+            throw new Error('Tampilan nota terbaru tidak ditemukan. Silakan muat ulang halaman.');
+        }
+
+        printAreaLama.replaceWith(printAreaBaru);
+
+        // Perbarui daftar sparepart/jasa (termasuk stok terbaru) tanpa
+        // mengganti elemen select agar event listener yang ada tetap aktif.
+        ['selectSparepart', 'selectJasa'].forEach(id => {
+            const selectLama = document.getElementById(id);
+            const selectBaru = doc.getElementById(id);
+            if (!selectLama || !selectBaru) return;
+
+            // Simpan pilihan sebelum memperbarui daftar opsi dari server.
+            // Dengan begitu, form yang TIDAK dikirim tetap mempertahankan pilihan.
+            const pilihanSebelumnya = selectLama.value;
+
+            // Perbarui label/harga/stok tanpa mengganti elemen select,
+            // agar event listener yang sudah terpasang tetap aktif.
+            selectLama.innerHTML = selectBaru.innerHTML;
+
+            // Pertahankan pilihan jika item masih tersedia di daftar.
+            const pilihanMasihAda = Array.from(selectLama.options)
+                .some(option => option.value === pilihanSebelumnya);
+            selectLama.value = pilihanMasihAda ? pilihanSebelumnya : '';
+
+            // Sinkronkan ulang harga yang dipakai kalkulasi diskon.
+            selectLama.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+
+        const tombolTerbitBaru = doc.getElementById('btnTerbitkanTagihan');
+        const tombolTerbitLama = document.getElementById('btnTerbitkanTagihan');
+        if (tombolTerbitBaru && tombolTerbitLama) {
+            tombolTerbitLama.disabled = tombolTerbitBaru.disabled;
+        }
+
+        const subtotalBaru = Number(printAreaBaru.dataset.subtotal);
+        if (Number.isFinite(subtotalBaru)) subtotal = subtotalBaru;
+
+        // Elemen ringkasan berada di dalam #printArea sehingga referensinya
+        // perlu diambil kembali setelah elemen nota diganti.
+        lblDiskon = document.getElementById('labelDiskon');
+        lblNota = document.getElementById('labelTotal');
+        if (pctTotal) pctTotal.value = '0';
+        if (nomTotal) nomTotal.value = '0';
+        updateTotal(0);
+    }
+
+    const feedbackTransaksi = document.getElementById('ajaxTransaksiFeedback');
+    function tampilkanFeedbackTransaksi(pesan, berhasil = true) {
+        if (!feedbackTransaksi) return;
+        feedbackTransaksi.textContent = pesan;
+        feedbackTransaksi.className = berhasil
+            ? 'no-print rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-300'
+            : 'no-print rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-300';
+        feedbackTransaksi.hidden = false;
+    }
+
+    // Tangani tambah/hapus rincian menggunakan Fetch API. Form biasa tetap
+    // dapat bekerja jika atribut data-ajax-transaksi tidak digunakan.
+    document.addEventListener('submit', async function (event) {
+        const formTransaksi = event.target.closest('form[data-ajax-transaksi]');
+        if (!formTransaksi || formTransaksi.dataset.submitting === '1') return;
+
+        event.preventDefault();
+        formTransaksi.dataset.submitting = '1';
+        const tombol = formTransaksi.querySelector('button[type="submit"]');
+        if (tombol) tombol.disabled = true;
+
+        try {
+            const response = await fetch(formTransaksi.action, {
+                method: (formTransaksi.method || 'POST').toUpperCase(),
+                body: new FormData(formTransaksi),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+
+            const raw = await response.text();
+            let payload = {};
+            try { payload = raw ? JSON.parse(raw) : {}; }
+            catch (_) { payload = { message: raw }; }
+
+            if (!response.ok) {
+                const daftarError = payload.errors
+                    ? Object.values(payload.errors).flat().join(' ')
+                    : '';
+                throw new Error(daftarError || payload.message || `Permintaan gagal (${response.status}).`);
+            }
+
+            if (formTransaksi.dataset.ajaxTransaksi.startsWith('tambah-') && formTransaksi.isConnected) {
+                // Hanya form yang dikirim yang dikosongkan.
+                // Form satunya (termasuk pilihan, tarif, dan diskonnya) tetap utuh.
+                // Reset dilakukan setelah server mengonfirmasi transaksi tersimpan.
+                formTransaksi.reset();
+            }
+
+            await refreshTransaksiView();
+            tampilkanFeedbackTransaksi(payload.message || 'Rincian transaksi berhasil diperbarui.', true);
+        } catch (error) {
+            tampilkanFeedbackTransaksi(error.message || 'Terjadi kesalahan saat memproses transaksi.', false);
+        } finally {
+            if (formTransaksi.isConnected) delete formTransaksi.dataset.submitting;
+            if (tombol && tombol.isConnected) tombol.disabled = false;
+        }
+    });
 
     if (pctTotal) {
         pctTotal.addEventListener('input', function() {
