@@ -8,10 +8,14 @@ use App\Models\PembayaranNota;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use App\Models\RekamServis;
+use App\Services\KirimaWhatsAppService;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class PembayaranNotaController extends Controller
 {
-    public function bayar(Request $request, $id)
+    public function bayar(Request $request, $id, KirimaWhatsAppService $kirima)
     {
         abort_unless(
             auth()->check() && in_array(auth()->user()->role, ['admin', 'anggota'], true),
@@ -95,10 +99,49 @@ class PembayaranNotaController extends Controller
             return $lunas;
         }, 3);
 
+        $pesan = $lunasSekarang
+            ? 'Pembayaran berhasil. Tagihan sudah LUNAS.'
+            : 'Pembayaran sebagian berhasil dicatat. Sisa tagihan masih tersedia.';
+
+        // Nota akhir hanya dikirim jika pembayaran lunas
+        // DAN data akhir pekerjaan sudah lengkap.
+        if ($lunasSekarang) {
+
+            $servis = RekamServis::with([
+                'kendaraan.konsumen',
+                'detailSpareparts.sparepart',
+                'detailJasas.jasa',
+                'nota.pembayaran.penerima',
+            ])->findOrFail($id);
+
+            try {
+
+                $terkirim = $kirima->kirimNotaAkhirJikaSiap($servis);
+
+                if ($terkirim) {
+
+                    $pesan = 'Pembayaran berhasil. Nota sudah LUNAS dan PDF nota akhir berhasil dikirim ke WhatsApp pelanggan.';
+
+                } else {
+
+                    $pesan = 'Pembayaran sudah LUNAS. Nota akhir akan dikirim setelah Data Akhir pekerjaan selesai dilengkapi.';
+
+                }
+
+            } catch (Throwable $e) {
+
+                Log::warning('Pengiriman PDF nota lunas Kirima gagal.', [
+                    'rekam_servis_id' => $id,
+                    'error' => $e->getMessage(),
+                ]);
+
+                $pesan = 'Pembayaran berhasil dan sudah LUNAS, tetapi pengiriman PDF WhatsApp gagal. Periksa log aplikasi.';
+
+            }
+        }
+
         return redirect()
             ->route('admin.rekam-servis.nota', $id)
-            ->with('success', $lunasSekarang
-                ? 'Pembayaran diterima. Tagihan sudah lunas. Nota Akhir tersedia setelah Data Akhir lengkap.'
-                : 'Pembayaran sebagian berhasil dicatat. Sisa tagihan dapat dibayar kemudian.');
+            ->with('success', $pesan);
     }
 }
