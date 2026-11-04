@@ -8,6 +8,7 @@ use App\Models\RekamServis;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class PelangganController extends Controller
 {
@@ -53,6 +54,7 @@ class PelangganController extends Controller
                 'perluDipantau' => collect(),
                 'servisTerakhir' => null,
                 'aktivitas' => collect(),
+                'rekomendasiTerbaru' => collect(),
             ]);
         }
 
@@ -92,7 +94,7 @@ class PelangganController extends Controller
         */
         $jumlahPerluServis = $kendaraans
             ->filter(function ($kendaraan) {
-                return $kendaraan->status_servis === 'perlu_servis';
+                return in_array($kendaraan->status_servis, ['perlu_servis'], true);
             })
             ->count();
 
@@ -121,6 +123,23 @@ class PelangganController extends Controller
             ->values();
 
 
+        // Hanya rekomendasi yang masih terbuka, dari kendaraan milik pelanggan.
+        $rekomendasiTerbaru = \App\Models\NotaTransaksi::query()
+            ->join('rekam_servis', 'rekam_servis.id', '=', 'nota_transaksis.rekam_servis_id')
+            ->join('kendaraans', 'kendaraans.id', '=', 'rekam_servis.kendaraan_id')
+            ->where('kendaraans.konsumen_id', $konsumen->id)
+            ->where('nota_transaksis.status_rekomendasi', 'belum')
+            ->whereNotNull('nota_transaksis.catatan_nota')
+            ->whereRaw("TRIM(nota_transaksis.catatan_nota) <> ''")
+            ->orderByDesc('rekam_servis.tanggal_servis')
+            ->orderByDesc('rekam_servis.id')
+            ->limit(3)
+            ->get([
+                'nota_transaksis.id', 'nota_transaksis.catatan_nota',
+                'rekam_servis.id as servis_id', 'rekam_servis.tanggal_servis',
+                'kendaraans.plat_nomor', 'kendaraans.merk', 'kendaraans.tipe_model',
+            ]);
+
         return view('pelanggan.dashboard', [
             'namaDepan' => $namaDepan,
             'totalKendaraan' => $kendaraans->count(),
@@ -128,6 +147,7 @@ class PelangganController extends Controller
             'perluDipantau' => $perluDipantau,
             'servisTerakhir' => $aktivitas->first(),
             'aktivitas' => $aktivitas,
+            'rekomendasiTerbaru' => $rekomendasiTerbaru,
         ]);
     }
 
@@ -552,6 +572,49 @@ class PelangganController extends Controller
      * 2. users.no_hp = konsumens.no_hp
      *
      */
+
+    /**
+ * Cetak nota resmi pelanggan dalam format PDF.
+ */
+    public function cetakNotaPdf($id)
+    {
+        $konsumen = $this->konsumen();
+
+        abort_unless($konsumen, 404);
+
+        $servis = RekamServis::with([
+            'kendaraan.konsumen',
+            'detailSpareparts.sparepart',
+            'detailJasas.jasa',
+            'catatanRekomendasis',
+            'nota.pembayaran.penerima',
+        ])->findOrFail($id);
+
+        // Pelanggan hanya boleh mengakses nota kendaraannya.
+        abort_unless(
+            $servis->kendaraan &&
+            (int) $servis->kendaraan->konsumen_id === (int) $konsumen->id,
+            404
+        );
+
+        // Nota harus sudah diterbitkan.
+        abort_unless($servis->nota, 404);
+
+        $nomor = $servis->nota->no_nota;
+
+        $namaFile = 'nota-servis-' .
+            preg_replace('/[^A-Za-z0-9_-]/', '-', $nomor) .
+            '.pdf';
+
+        return Pdf::loadView(
+            'admin.rekam-servis.nota-pdf',
+            compact('servis')
+        )
+            ->setPaper('a4', 'portrait')
+            ->stream($namaFile);
+    }
+
+
     private function konsumen(): ?Konsumen
     {
         $user = Auth::user();
