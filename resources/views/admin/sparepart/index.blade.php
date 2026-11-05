@@ -138,7 +138,7 @@
             @endif
             <div>
                 <label class="block font-bold mb-1 text-neutral-300">Nama Barang *</label>
-                <input type="text" name="nama_barang" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="Oli Shell Helix 10W-40">
+                <input type="text" name="nama_barang" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="Masukkan Nama Barang">
             </div>
             <div>
                 <label class="block font-bold mb-1 text-neutral-300">Jenis Ketersediaan *</label>
@@ -151,7 +151,7 @@
             <div class="grid grid-cols-2 gap-3">
                 <div>
                     <label class="block font-bold mb-1 text-neutral-300">Kode Barang</label>
-                    <input type="text" name="kode_barang" class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="KOD-01">
+                    <input type="text" name="kode_barang" class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="Masukkan Kode Barang">
                 </div>
                 <div id="wrapStokAwal">
                     <label class="block font-bold mb-1 text-neutral-300">Stok Awal *</label>
@@ -170,7 +170,7 @@
                inputmode="numeric"
                autocomplete="off"
                required
-               placeholder="Contoh: 15.000"
+               placeholder="Masukkan Harga Modal"
                class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
 
         <input type="hidden" name="harga_modal" id="modalPriceRaw">
@@ -186,7 +186,7 @@
                inputmode="numeric"
                autocomplete="off"
                required
-               placeholder="Contoh: 20.000"
+               placeholder="Masukkan Harga Jual"
                class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500">
 
         <input type="hidden" name="harga_jual" id="jualPriceRaw">
@@ -199,7 +199,7 @@
             </div>
             <div>
                 <label class="block font-bold mb-1 text-neutral-300">Nama Toko / Supplier</label>
-                <input type="text" name="nama_toko" class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="Sumber Makmur Motor">
+                <input type="text" name="nama_toko" class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="Masukkan Nama Toko / Supplier">
             </div>
             <div class="flex justify-end gap-2 pt-2">
                 <button type="button" onclick="document.getElementById('modalTambah').classList.add('hidden')" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-xl font-bold">Batal</button>

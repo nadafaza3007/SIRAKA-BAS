@@ -3,11 +3,14 @@
 @section('title', 'Koreksi Diagnosa - SIRAKA')
 
 @section('content')
+<style>
+.siraka-row { background: rgba(127,127,127,.10); border: 1px solid rgba(127,127,127,.22); }
+</style>
 <div class="max-w-xl bg-ink-900 p-6 rounded-2xl border border-neutral-800 shadow-sm">
     <h2 class="text-lg font-extrabold text-white mb-1">Koreksi Diagnosa Pasca Fisik Mekanik</h2>
     <p class="text-xs text-neutral-500 mb-4">Kendaraan: <span class="font-bold text-white">{{ $servis->kendaraan->plat_nomor }}</span> ({{ $servis->kendaraan->konsumen->nama_lengkap }})</p>
 
-    <div class="p-3 bg-black/40 rounded-xl text-xs mb-4 border border-neutral-800">
+    <div class="siraka-row p-3 rounded-xl text-xs mb-4">
         <span class="text-neutral-500 font-semibold block text-[10px] uppercase">Keluhan Awal:</span>
         <span class="text-neutral-300 font-medium">{{ $servis->keluhan_awal }}</span>
         <span class="text-neutral-500 font-semibold block text-[10px] uppercase mt-2">Diagnosa Awal Sistem:</span>

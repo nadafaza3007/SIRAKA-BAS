@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/jpeg" href="{{ asset('images/logo_bengkel.jpe') }}">
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/logo_bengkel.jpg') }}">
     <title>@yield('title', 'Admin Dashboard - SIRAKA')</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
@@ -21,35 +21,8 @@
         }
     })();
 </script>
-    <!-- Tailwind CSS via CDN (Tanpa perlu npm / Vite) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        brand: {
-                            50: '#fff7ed',
-                            100: '#ffedd5',
-                            400: '#fb923c',
-                            500: '#f97316',
-                            600: '#ea580c',
-                            700: '#c2410c',
-                            900: '#7c2d12',
-                        },
-                        ink: {
-                            950: '#0a0a0a',
-                            900: '#141414',
-                            850: '#191919',
-                            800: '#1f1f1f',
-                            700: '#2a2a2a',
-                            600: '#3a3a3a',
-                        }
-                    }
-                }
-            }
-        }
-    </script>
+    {{-- Tailwind CSS v4 dari hasil build Vite --}}
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <!-- FontAwesome Icons & Google Font -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -159,18 +132,21 @@
     /* =====================================
        LIGHT MODE
        Hanya mengubah warna, bukan layout.
+       Sidebar & header putih, teks/ikon hitam.
     ===================================== */
     html.light-mode body {
         background-color: #f1f5f9 !important;
-        color: #1e293b !important;
+        color: #0f172a !important;
     }
 
-    /* Sidebar: putih dengan teks gelap; area logo tetap hitam */
+    /* ---------- SIDEBAR: tetap hitam, teks & ikon terang ---------- */
     html.light-mode #sidebar {
-        background-color: #ffffff !important;
-        border-color: #e2e8f0 !important;
+        background-color: #000000 !important;
+        border-color: #262626 !important;
+        color: #e5e5e5 !important;
     }
 
+    /* Area logo */
     html.light-mode #sidebar > div:first-child > div:first-child {
         background-color: #000000 !important;
         border-color: #262626 !important;
@@ -180,44 +156,101 @@
         color: #ffffff !important;
     }
 
-    html.light-mode #sidebar nav > div {
-        color: #64748b !important;
+    html.light-mode #sidebar > div:first-child > div:first-child button {
+        color: #d4d4d4 !important;
     }
 
-    html.light-mode #sidebar nav a:not(.bg-brand-500) {
-        color: #334155 !important;
+    /* Label seksi (UTAMA, OPERASIONAL, dst.) */
+    html.light-mode #sidebar nav > div {
+        color: #a3a3a3 !important;
+    }
+
+    /* Menu biasa: teks + ikon putih keabuan */
+    html.light-mode #sidebar nav a:not(.bg-brand-500),
+    html.light-mode #sidebar nav a:not(.bg-brand-500) i,
+    html.light-mode #sidebar nav a:not(.bg-brand-500) span {
+        color: #e5e5e5 !important;
     }
 
     html.light-mode #sidebar nav a:not(.bg-brand-500):hover {
-        background-color: #f1f5f9 !important;
-        color: #f97316 !important;
+        background-color: #171717 !important;
     }
 
+    html.light-mode #sidebar nav a:not(.bg-brand-500):hover,
+    html.light-mode #sidebar nav a:not(.bg-brand-500):hover i,
+    html.light-mode #sidebar nav a:not(.bg-brand-500):hover span {
+        color: #ffffff !important;
+    }
+
+    /* Menu aktif: tetap oranye, teks putih */
     html.light-mode #sidebar nav a.bg-brand-500,
     html.light-mode #sidebar nav a.bg-brand-500 * {
         color: #ffffff !important;
     }
 
+    /* Footer sidebar */
     html.light-mode #sidebar > div:last-child {
-        border-color: #e2e8f0 !important;
-        color: #64748b !important;
+        border-color: #262626 !important;
+        color: #a3a3a3 !important;
     }
 
     html.light-mode #sidebar > div:last-child button {
-        background-color: #f1f5f9 !important;
-        color: #334155 !important;
+        background-color: #171717 !important;
+        color: #d4d4d4 !important;
     }
 
-    /* Header: pertahankan warna hitam seperti desain asli */
+    html.light-mode #sidebar > div:last-child button:hover {
+        background-color: rgba(244, 63, 94, 0.2) !important;
+        color: #fb7185 !important;
+    }
+
+    /* ---------- HEADER: putih, teks gelap ---------- */
     html.light-mode header {
-        background-color: #000000 !important;
-        border-color: #262626 !important;
+        background-color: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
     }
 
-    /* Konten utama */
+    html.light-mode header .text-neutral-300,
+    html.light-mode header .text-neutral-400,
+    html.light-mode header .text-white,
+    html.light-mode header #themeLabel {
+        color: #0a0a0a !important;
+    }
+
+    html.light-mode header .text-brand-500 {
+        color: #f97316 !important;
+    }
+
+    /* Avatar & tombol menu mobile */
+    html.light-mode header .bg-neutral-800,
+    html.light-mode header .bg-neutral-900 {
+        background-color: #f1f5f9 !important;
+    }
+
+    html.light-mode header .border-neutral-700 {
+        border-color: #cbd5e1 !important;
+    }
+
+    html.light-mode header button {
+        color: #0a0a0a !important;
+    }
+
+    /* Toggle tema: kondisi mati lebih terlihat di latar putih */
+    html.light-mode .theme-slider {
+        background: #cbd5e1;
+        border-color: #94a3b8;
+    }
+
+    html.light-mode .theme-switch input:checked + .theme-slider {
+        background: #f97316;
+        border-color: #f97316;
+    }
+
+    /* ---------- KONTEN UTAMA ---------- */
     html.light-mode main {
         background-color: #f1f5f9 !important;
-        color: #1e293b !important;
+        color: #0f172a !important;
     }
 
     /* Panel/kartu gelap menjadi putih */
@@ -237,14 +270,37 @@
     html.light-mode main .text-neutral-100,
     html.light-mode main .text-neutral-200,
     html.light-mode main .text-neutral-300 {
-        color: #1e293b !important;
+        color: #0f172a !important;
     }
 
     html.light-mode main .text-neutral-400,
     html.light-mode main .text-neutral-500,
     html.light-mode main .text-neutral-600 {
-        color: #64748b !important;
+        color: #475569 !important;
     }
+
+    /* Tombol/elemen oranye: teks tetap putih */
+    html.light-mode main .bg-brand-500,
+    html.light-mode main .bg-brand-500 *,
+    html.light-mode main .bg-brand-600,
+    html.light-mode main .bg-brand-600 * {
+        color: #ffffff !important;
+    }
+
+    /* Warna status pada latar putih: digelapkan agar terbaca */
+    html.light-mode main .text-emerald-300,
+    html.light-mode main .text-emerald-400 { color: #047857 !important; }
+    html.light-mode main .text-amber-400,
+    html.light-mode main .text-amber-500,
+    html.light-mode main .text-amber-500\/90 { color: #b45309 !important; }
+    html.light-mode main .text-blue-400 { color: #1d4ed8 !important; }
+    html.light-mode main .text-sky-400 { color: #0369a1 !important; }
+    html.light-mode main .text-orange-400 { color: #c2410c !important; }
+    html.light-mode main .text-rose-400 { color: #be123c !important; }
+
+    /* Efek hover pada baris tabel & tombol sekunder */
+    html.light-mode main .hover\:bg-neutral-800\/40:hover { background-color: #f8fafc !important; }
+    html.light-mode main .hover\:bg-neutral-700:hover { background-color: #e2e8f0 !important; }
 
     /* Border kartu dan tabel */
     html.light-mode main .border-neutral-800,
@@ -254,12 +310,16 @@
         border-color: #e2e8f0 !important;
     }
 
+    html.light-mode main .divide-neutral-800 > :not(:last-child) {
+        border-color: #e2e8f0 !important;
+    }
+
     /* Form */
     html.light-mode main input:not([type="checkbox"]):not([type="radio"]),
     html.light-mode main select,
     html.light-mode main textarea {
         background-color: #ffffff !important;
-        color: #1e293b !important;
+        color: #0f172a !important;
         border-color: #cbd5e1 !important;
     }
 
@@ -320,7 +380,7 @@
         <div class="overflow-y-auto">
             <!-- Header Brand Bengkel -->
             <div class="h-16 flex items-center gap-3 px-6 bg-black border-b border-neutral-900 sticky top-0">
-                <img src="{{ asset('images/logo_bengkel.jpe') }}"
+                <img src="{{ asset('images/logo_bengkel.jpg') }}"
                     alt="Logo Bengkel SIRAKA"
                     class="w-9 h-9 object-contain shrink-0">
                 <div>

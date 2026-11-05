@@ -11,6 +11,7 @@ use App\Models\AturanDiagnosa;
 use App\Models\Sparepart;
 use App\Models\Jasa;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 /**
  * Tahap 7: proses inti Rekam Servis dipindahkan dari closure routes/web.php.
@@ -180,11 +181,32 @@ class RekamServisController extends Controller
             'detailJasas.jasa',
             'catatanRekomendasis',
             'nota.pembayaran.penerima',
+            'nota.whatsappDeliveries',
         ])->findOrFail($id);
 
         $spareparts = Sparepart::latest()->get();
         $jasas      = Jasa::latest()->get();
 
         return view('admin.rekam-servis.nota', compact('servis', 'spareparts', 'jasas'));
+    }
+
+    /** Tampilkan PDF nota/estimasi di browser tanpa mengubah data transaksi. */
+    public function cetakNotaPdf($id)
+    {
+        $servis = RekamServis::with([
+            'kendaraan.konsumen',
+            'detailSpareparts.sparepart',
+            'detailJasas.jasa',
+            'catatanRekomendasis',
+            'nota.pembayaran.penerima',
+        ])->findOrFail($id);
+
+        $nomor = $servis->nota?->no_nota
+            ?? 'EST-RS-' . str_pad((string) $servis->id, 6, '0', STR_PAD_LEFT);
+        $namaFile = 'nota-servis-' . preg_replace('/[^A-Za-z0-9_-]/', '-', $nomor) . '.pdf';
+
+        return Pdf::loadView('admin.rekam-servis.nota-pdf', compact('servis'))
+            ->setPaper('a4', 'portrait')
+            ->stream($namaFile);
     }
 }

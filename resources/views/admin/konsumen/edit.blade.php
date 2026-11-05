@@ -3,7 +3,9 @@
 @section('title', 'Kelola Konsumen - SIRAKA')
 
 @section('content')
-
+<style>
+.siraka-row { background: rgba(127,127,127,.10); border: 1px solid rgba(127,127,127,.22); }
+</style>
 @php
     $input = 'w-full rounded-xl border border-neutral-700 bg-neutral-800/60 px-3 py-2.5 text-xs text-white placeholder-neutral-500 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30';
     $label = 'mb-1.5 block text-xs font-semibold text-neutral-300';
@@ -104,7 +106,7 @@
                         @foreach($konsumen->kendaraans as $kendaraan)
                             @php $p = 'kendaraan.' . $kendaraan->id . '.'; @endphp
 
-                            <div class="rounded-2xl border border-neutral-800 bg-black/20 p-4">
+                            <div class="siraka-row rounded-2xl p-4">
 
                                 <div class="mb-4 flex items-center gap-3">
                                     <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-neutral-800 text-brand-400">
@@ -344,7 +346,7 @@ function kendaraanCard(i) {
     const n = (key) => `kendaraan[${i}][${key}]`;
 
     const el = document.createElement('div');
-    el.className = 'vehicle-new rounded-2xl border border-neutral-800 bg-black/20 p-4';
+    el.className = 'vehicle-new siraka-row rounded-2xl p-4';
 
     el.innerHTML = `
         <div class="mb-4 flex items-center justify-between gap-3">

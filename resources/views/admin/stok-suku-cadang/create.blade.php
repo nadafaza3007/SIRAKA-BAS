@@ -72,7 +72,7 @@
                        max="999999"
                        value="{{ old('jumlah') }}"
                        required
-                       placeholder="Contoh: 10"
+                       placeholder="Masukkan Jumlah Barang Masuk "
                        class="w-full p-3 bg-neutral-800 border border-neutral-700 text-white rounded-xl text-sm">
             </div>
 
@@ -95,7 +95,7 @@
 
                 <textarea name="keterangan"
                           rows="3"
-                          placeholder="Contoh: Pembelian stok dari supplier."
+                          placeholder="Masukkan Keterangan"
                           class="w-full p-3 bg-neutral-800 border border-neutral-700 text-white rounded-xl text-sm">{{ old('keterangan') }}</textarea>
             </div>
 

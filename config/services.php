@@ -35,4 +35,17 @@ return [
         ],
     ],
 
+    'kirima' => [
+    'base_url' => env(
+        'KIRIMA_BASE_URL',
+        'https://api.kirima.app'
+    ),
+
+    'client_id' => env('KIRIMA_CLIENT_ID'),
+
+    'client_secret' => env('KIRIMA_CLIENT_SECRET'),
+
+    'device_jid' => env('KIRIMA_DEVICE_JID'),
+    ],
+
 ];

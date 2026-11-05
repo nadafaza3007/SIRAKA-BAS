@@ -7,10 +7,13 @@ use App\Models\NotaTransaksi;
 use App\Models\RekamServis;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\KirimaWhatsAppService;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class PenyelesaianServisController extends Controller
 {
-    public function selesaikan(int $id, Request $request)
+    public function selesaikan(int $id, Request $request, KirimaWhatsAppService $kirima)
     {
         abort_unless(
             auth()->check() &&
@@ -78,8 +81,38 @@ class PenyelesaianServisController extends Controller
             }
         }, 3);
 
+        $pesan = 'Data akhir pekerjaan berhasil disimpan.';
+
+        $servis = RekamServis::with([
+            'kendaraan.konsumen',
+            'detailSpareparts.sparepart',
+            'detailJasas.jasa',
+            'nota.pembayaran.penerima',
+        ])->findOrFail($id);
+
+        try {
+
+            $terkirim = $kirima->kirimNotaAkhirJikaSiap($servis);
+
+            if ($terkirim) {
+
+                $pesan = 'Data akhir berhasil disimpan. PDF nota akhir LUNAS berhasil dikirim ke WhatsApp pelanggan.';
+
+            }
+
+        } catch (Throwable $e) {
+
+            Log::warning('Pengiriman nota akhir setelah penyelesaian servis gagal.', [
+                'rekam_servis_id' => $id,
+                'error' => $e->getMessage(),
+            ]);
+
+            $pesan = 'Data akhir berhasil disimpan, tetapi pengiriman PDF WhatsApp gagal. Periksa log aplikasi.';
+
+        }
+
         return redirect()
             ->route('admin.rekam-servis.nota', $id)
-            ->with('success', 'Data akhir pekerjaan berhasil disimpan.');
+            ->with('success', $pesan);
     }
 }

@@ -2,7 +2,26 @@
 @section('title', 'Detail Laporan Inspeksi - ' . $inspeksi->nomor_inspeksi)
 
 @section('content')
+
+@if(session('success'))
+    <div class="no-print mb-4 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-400">
+        <i class="fa-solid fa-circle-check mr-2"></i>
+        {{ session('success') }}
+    </div>
+@endif
+
+@if(session('error'))
+    <div class="no-print mb-4 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-400">
+        <i class="fa-solid fa-circle-exclamation mr-2"></i>
+        {{ session('error') }}
+    </div>
+@endif
+
 <style>
+
+.siraka-row { background: rgba(127,127,127,.10); border: 1px solid rgba(127,127,127,.22); }
+.siraka-divider { border-color: rgba(127,127,127,.25) !important; }
+
 @media screen and (max-width: 768px) {
     #printAreaStandar {
         padding: 10px !important;
@@ -121,9 +140,31 @@
             <i class="fa-brands fa-whatsapp"></i> Hubungi via WhatsApp
         </a>
         @endif
-        <button onclick="window.print()" class="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-bold text-white shadow-md hover:bg-brand-600">
-            <i class="fa-solid fa-print"></i> Cetak / Print PDF
-        </button>
+        <a href="{{ route('admin.inspeksi.cetak-pdf', $inspeksi->id) }}"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-orange-600">
+
+            <i class="fa-solid fa-file-pdf"></i>
+            Cetak / Print PDF
+
+        </a>
+
+        <form
+            action="{{ route('admin.inspeksi.kirim-whatsapp', $inspeksi->id) }}"
+            method="POST"
+            onsubmit="return confirm('Kirim PDF laporan inspeksi ke WhatsApp pelanggan?')"
+        >
+            @csrf
+
+            <button
+                type="submit"
+                class="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2.5 text-xs font-bold text-white shadow-md transition hover:bg-green-700"
+            >
+                <i class="fa-solid fa-file-pdf"></i>
+                Kirim PDF WhatsApp
+            </button>
+        </form>
     </div>
 </div>
 
@@ -296,6 +337,122 @@
             <p class="border-b border-black px-8 font-bold">{{ $inspeksi->user->name ?? 'Admin' }}</p>
         </div>
     </div>
+</div>
+
+{{-- RIWAYAT PENGIRIMAN WHATSAPP --}}
+<div class="no-print mx-auto mt-5 max-w-4xl rounded-2xl border border-neutral-800 bg-neutral-900 p-5">
+
+    <div class="flex items-center justify-between gap-3">
+
+        <div>
+            <h3 class="text-sm font-black text-white">
+                <i class="fa-brands fa-whatsapp mr-2 text-green-500"></i>
+                Riwayat Pengiriman WhatsApp
+            </h3>
+
+            <p class="mt-1 text-xs text-neutral-400">
+                Riwayat pengiriman PDF laporan inspeksi.
+            </p>
+        </div>
+
+        <span class="rounded-full bg-neutral-800 px-3 py-1 text-xs text-neutral-300">
+            {{ $riwayatWhatsApp->count() }} Riwayat
+        </span>
+
+    </div>
+
+    <div class="mt-4 space-y-3">
+
+        @forelse($riwayatWhatsApp as $riwayat)
+
+            @php
+                $statusClass = match($riwayat->status) {
+                    'sent' => 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400',
+                    'failed' => 'border-rose-500/30 bg-rose-500/10 text-rose-400',
+                    'sending' => 'border-amber-500/30 bg-amber-500/10 text-amber-400',
+                    default => 'border-neutral-700 bg-neutral-800 text-neutral-300',
+                };
+
+                $statusLabel = match($riwayat->status) {
+                    'sent' => 'Berhasil dikirim',
+                    'failed' => 'Gagal dikirim',
+                    'sending' => 'Sedang dikirim',
+                    default => 'Menunggu',
+                };
+            @endphp
+
+            <div class="siraka-row rounded-xl p-4">
+
+                <div class="flex flex-wrap items-center justify-between gap-3">
+
+                    <div>
+                        <p class="text-sm font-bold text-white">
+                            PDF Laporan Inspeksi
+                        </p>
+
+                        <p class="mt-1 text-xs text-neutral-400">
+                            Percobaan ke-{{ $riwayat->attempts }}
+                        </p>
+                    </div>
+
+                    <span class="rounded-full border px-3 py-1 text-[11px] font-bold {{ $statusClass }}">
+                        {{ $statusLabel }}
+                    </span>
+
+                </div>
+
+                <div class="siraka-divider mt-3 border-t pt-3 text-xs text-neutral-400">
+
+                    <p>
+                        <i class="fa-regular fa-clock mr-1"></i>
+                        Waktu:
+                        {{ ($riwayat->sent_at ?? $riwayat->updated_at)?->format('d/m/Y H:i') ?? '-' }}
+                    </p>
+
+                    @if($riwayat->message_id)
+                        <p class="mt-2 break-all">
+                            Message ID: {{ $riwayat->message_id }}
+                        </p>
+                    @endif
+
+                    @if($riwayat->error_message)
+                        <div class="mt-3 rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-rose-300">
+
+                            <p class="font-bold">
+                                Keterangan kegagalan:
+                            </p>
+
+                            <p class="mt-1 break-words">
+                                {{ $riwayat->error_message }}
+                            </p>
+
+                        </div>
+                    @endif
+
+                </div>
+
+            </div>
+
+        @empty
+
+            <div class="rounded-xl border border-dashed border-neutral-700 p-5 text-center">
+
+                <i class="fa-regular fa-paper-plane text-2xl text-neutral-500"></i>
+
+                <p class="mt-2 text-sm font-bold text-neutral-300">
+                    Belum Ada Riwayat Pengiriman
+                </p>
+
+                <p class="mt-1 text-xs text-neutral-500">
+                    Riwayat akan muncul setelah sistem mencoba mengirim PDF.
+                </p>
+
+            </div>
+
+        @endforelse
+
+    </div>
+
 </div>
 
 @push('scripts')

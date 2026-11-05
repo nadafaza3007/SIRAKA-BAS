@@ -7,6 +7,9 @@ use App\Models\NotaTransaksi;
 use App\Models\RekamServis;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Services\KirimaWhatsAppService;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class NotaTagihanController extends Controller
 {
@@ -21,7 +24,7 @@ class NotaTagihanController extends Controller
         return redirect("/admin/rekam-servis/{$id}/nota");
     }
 
-    public function terbitkanTagihan(int $id, Request $request)
+    public function terbitkanTagihan(int $id, Request $request, KirimaWhatsAppService $kirima)
     {
         abort_unless(
             auth()->check() &&
@@ -87,8 +90,33 @@ class NotaTagihanController extends Controller
             ]);
         }, 3);
 
-        return redirect()
-            ->route('admin.rekam-servis.nota', $id)
-            ->with('success', 'Tagihan servis berhasil diterbitkan.');
+                    // Ambil kembali data servis setelah transaksi berhasil disimpan.
+            $servis = RekamServis::with([
+                'kendaraan.konsumen',
+                'detailSpareparts.sparepart',
+                'detailJasas.jasa',
+                'nota.pembayaran.penerima',
+            ])->findOrFail($id);
+
+            // Kirim PDF tagihan awal ke WhatsApp.
+            try {
+
+                $kirima->kirimEstimasi($servis);
+
+                $pesan = 'Tagihan berhasil diterbitkan dan PDF berhasil dikirim ke WhatsApp pelanggan.';
+
+            } catch (Throwable $e) {
+
+                Log::warning('Pengiriman PDF tagihan Kirima gagal.', [
+                    'rekam_servis_id' => $id,
+                    'error' => $e->getMessage(),
+                ]);
+
+                $pesan = 'Tagihan berhasil diterbitkan, tetapi PDF WhatsApp gagal dikirim. Periksa log aplikasi.';
+            }
+
+            return redirect()
+                ->route('admin.rekam-servis.nota', $id)
+                ->with('success', $pesan);
     }
 }
