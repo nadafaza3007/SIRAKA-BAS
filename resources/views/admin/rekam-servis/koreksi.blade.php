@@ -29,7 +29,13 @@
         </div>
         <div class="flex justify-end gap-2 pt-2">
             <a href="{{ route('admin.rekam-servis.index') }}" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-xl font-bold">Batal</a>
-            <button type="submit" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold shadow-md shadow-emerald-500/20">Simpan Diagnosa Akhir</button>
+            <button type="submit"
+            style="background-color: #FB923C;"
+            onmouseover="this.style.backgroundColor='#F97316'"
+            onmouseout="this.style.backgroundColor='#FB923C'"
+            class="px-4 py-2 text-white rounded-xl font-bold shadow-md">
+            Simpan Diagnosa Akhir
+        </button>
         </div>
     </form>
 </div>
