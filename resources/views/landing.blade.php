@@ -3,6 +3,7 @@
 @section('title', 'Baba Auto Service | Bengkel Mobil Pekanbaru')
 
 @section('head')
+
 <style>
     /* ===== Mobil interaktif ===== */
     .car-line { fill: none; stroke: var(--text); stroke-width: 1.4; stroke-dasharray: 4 5; opacity: .35; transition: opacity .25s, stroke-width .25s; }

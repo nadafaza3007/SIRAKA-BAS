@@ -6,6 +6,10 @@
     <meta name="theme-color" content="#101820">
     <meta name="description" content="Baba Auto Service - bengkel mobil di Pekanbaru. Lihat layanan, promo, tips perawatan mobil, dan akses riwayat servis kendaraan Anda melalui SIRAKA.">
     <title>@yield('title', 'Baba Auto Service | SIRAKA')</title>
+    {{-- Favicon --}}
+    <link rel="icon" type="image/jpeg" href="{{ asset('images/logo_bengkel.jpg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('images/logo_bengkel.jpg') }}">
+    
 
     <script>
         // Terapkan tema sebelum halaman tampil (kunci sama dengan panel admin & portal pelanggan)
