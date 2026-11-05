@@ -108,7 +108,7 @@ class NotaTransaksi extends Model
         /**
      * Riwayat pengiriman WhatsApp untuk nota ini.
      */
-
+    
     public function whatsappDeliveries(): HasMany
     {
         return $this->hasMany(
