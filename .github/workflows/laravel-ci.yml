@@ -1,4 +1,3 @@
-
 name: SIRAKA Laravel CI
 
 on:
@@ -33,7 +32,6 @@ jobs:
       APP_ENV: testing
       APP_DEBUG: true
       APP_URL: http://localhost
-
       DB_CONNECTION: mysql
       DB_HOST: 127.0.0.1
       DB_PORT: 3306
@@ -41,7 +39,6 @@ jobs:
       DB_USERNAME: root
       DB_PASSWORD: root
       DB_URL: ""
-
       SESSION_DRIVER: array
       CACHE_STORE: array
       QUEUE_CONNECTION: sync
@@ -94,3 +91,25 @@ jobs:
 
       - name: Run Laravel tests
         run: php artisan test
+
+  deploy:
+    name: Deploy to VPS
+    needs: laravel-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Deploy to server over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /var/www/siraka
+            git pull origin main
+            docker compose exec -T app composer install --no-dev --optimize-autoloader
+            docker run --rm -v /var/www/siraka:/app -w /app node:22 sh -c "npm ci && npm run build"
+            docker compose exec -T app php artisan migrate --force
+            docker compose exec -T app php artisan config:clear
+            docker compose exec -T app php artisan view:clear
