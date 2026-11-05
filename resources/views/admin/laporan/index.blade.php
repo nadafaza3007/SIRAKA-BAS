@@ -433,7 +433,7 @@
 
             <h2 class="text-sm font-bold text-white">D. Analisis Penjualan Sparepart — 10 Terlaris</h2>
 
-            <p class="mt-1 text-xs text-neutral-500">Berdasarkan sparepart dalam tagihan yang diterbitkan pada periode laporan, terlepas dari status pembayarannya.</p>
+            <p class="mt-1 text-xs text-neutral-500">Berdasarkan sparepart dalam tagihan yang diterbitkan pada periode laporan, terlepas dari status pembayarannya. Jenis Stok/Pre-Order mengikuti kategori Master Sparepart saat laporan dibuat.</p>
 
         </div>
 
@@ -511,17 +511,17 @@
 
         <div class="overflow-x-auto"><table class="w-full min-w-[800px] text-xs">
 
-            <thead class="bg-neutral-900 text-neutral-400"><tr><th class="px-3 py-3 text-left">No.</th><th class="px-3 py-3 text-left">Nama Sparepart</th><th class="px-3 py-3 text-right">Jumlah terjual</th><th class="px-3 py-3 text-right">Jumlah tagihan</th><th class="px-3 py-3 text-right">Nilai penjualan</th><th class="px-3 py-3 text-right">Modal</th><th class="px-3 py-3 text-right">Laba kotor</th></tr></thead>
+            <thead class="bg-neutral-900 text-neutral-400"><tr><th class="px-3 py-3 text-left">No.</th><th class="px-3 py-3 text-left">Nama Sparepart</th><th class="px-3 py-3 text-left">Jenis</th><th class="px-3 py-3 text-right">Jumlah terjual</th><th class="px-3 py-3 text-right">Jumlah tagihan</th><th class="px-3 py-3 text-right">Nilai penjualan</th><th class="px-3 py-3 text-right">Modal</th><th class="px-3 py-3 text-right">Laba kotor</th></tr></thead>
 
             <tbody class="divide-y divide-neutral-800 text-neutral-200">
 
                 @forelse($sparepartTerlaris as $i => $sp)
 
-                    <tr><td class="px-3 py-3">{{ $i + 1 }}</td><td class="px-3 py-3 font-medium">{{ $sp->nama_barang }} @if($sp->kode_barang)<span class="block font-normal text-neutral-500">{{ $sp->kode_barang }}</span>@endif</td><td class="px-3 py-3 text-right">{{ number_format($sp->unit_terjual,0,',','.') }}</td><td class="px-3 py-3 text-right">{{ $sp->frekuensi }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sp->omzet) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sp->modal) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sp->laba_kotor) }}</td></tr>
+                    <tr><td class="px-3 py-3">{{ $i + 1 }}</td><td class="px-3 py-3 font-medium">{{ $sp->nama_barang }} @if($sp->kode_barang)<span class="block font-normal text-neutral-500">{{ $sp->kode_barang }}</span>@endif</td><td class="px-3 py-3">{{ $sp->jenis_label }}</td><td class="px-3 py-3 text-right">{{ number_format($sp->unit_terjual,0,',','.') }}</td><td class="px-3 py-3 text-right">{{ $sp->frekuensi }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sp->omzet) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sp->modal) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sp->laba_kotor) }}</td></tr>
 
                 @empty
 
-                    <tr><td colspan="7" class="px-4 py-8 text-center text-neutral-500">Belum ada penjualan sparepart pada periode ini.</td></tr>
+                    <tr><td colspan="8" class="px-4 py-8 text-center text-neutral-500">Belum ada penjualan sparepart pada periode ini.</td></tr>
 
                 @endforelse
 
@@ -529,9 +529,9 @@
 
             @if($sparepartTerlaris->isNotEmpty())
 
-            <tfoot class="bg-neutral-800/40 text-white"><tr class="font-semibold"><td colspan="2" class="px-3 py-3">10 teratas saja</td><td class="px-3 py-3 text-right">{{ number_format($sumTop->unit,0,',','.') }}</td><td></td><td class="px-3 py-3 text-right">{{ $rupiah($sumTop->omzet) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sumTop->modal) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sumTop->laba) }}</td></tr>
+            <tfoot class="bg-neutral-800/40 text-white"><tr class="font-semibold"><td colspan="3" class="px-3 py-3">10 teratas</td><td class="px-3 py-3 text-right">{{ number_format($sumTop->unit,0,',','.') }}</td><td></td><td class="px-3 py-3 text-right">{{ $rupiah($sumTop->omzet) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sumTop->modal) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($sumTop->laba) }}</td></tr>
 
-            <tr><td colspan="2" class="px-3 py-3">Seluruh sparepart periode ini</td><td class="px-3 py-3 text-right">{{ number_format($ringkasanSparepart->unit_terjual,0,',','.') }}</td><td></td><td class="px-3 py-3 text-right">{{ $rupiah($ringkasanSparepart->omzet) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($ringkasanSparepart->modal) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($ringkasanSparepart->laba_kotor) }}</td></tr></tfoot>
+            <tr><td colspan="3" class="px-3 py-3">Seluruh sparepart periode ini</td><td class="px-3 py-3 text-right">{{ number_format($ringkasanSparepart->unit_terjual,0,',','.') }}</td><td></td><td class="px-3 py-3 text-right">{{ $rupiah($ringkasanSparepart->omzet) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($ringkasanSparepart->modal) }}</td><td class="px-3 py-3 text-right">{{ $rupiah($ringkasanSparepart->laba_kotor) }}</td></tr></tfoot>
 
             @endif
 
@@ -547,7 +547,7 @@
 
         @if($sparepartBelumLunas->isNotEmpty())
 
-        <div class="overflow-x-auto border-t border-neutral-800"><table class="w-full min-w-[430px] text-xs"><thead class="bg-neutral-900 text-neutral-400"><tr><th class="px-4 py-2 text-left">Sparepart</th><th class="px-4 py-2 text-right">Jumlah terpakai</th><th class="px-4 py-2 text-right">Nilai tercatat</th></tr></thead><tbody class="divide-y divide-neutral-800 text-neutral-200">@foreach($sparepartBelumLunas as $sp)<tr><td class="px-4 py-2">{{ $sp->nama_barang }}</td><td class="px-4 py-2 text-right">{{ $sp->unit }}</td><td class="px-4 py-2 text-right">{{ $rupiah($sp->nilai) }}</td></tr>@endforeach</tbody></table></div>
+        <div class="overflow-x-auto border-t border-neutral-800"><table class="w-full min-w-[430px] text-xs"><thead class="bg-neutral-900 text-neutral-400"><tr><th class="px-4 py-2 text-left">Sparepart</th><th class="px-4 py-2 text-left">Jenis</th><th class="px-4 py-2 text-right">Jumlah terpakai</th><th class="px-4 py-2 text-right">Nilai tercatat</th></tr></thead><tbody class="divide-y divide-neutral-800 text-neutral-200">@foreach($sparepartBelumLunas as $sp)<tr><td class="px-4 py-2">{{ $sp->nama_barang }}</td><td class="px-4 py-2">{{ $sp->jenis_label }}</td><td class="px-4 py-2 text-right">{{ $sp->unit }}</td><td class="px-4 py-2 text-right">{{ $rupiah($sp->nilai) }}</td></tr>@endforeach</tbody></table></div>
 
         @endif
 
@@ -565,8 +565,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (typeof Chart === 'undefined') return;
 
     const rupiah = nilai => 'Rp ' + Number(nilai || 0).toLocaleString('id-ID');
-    const warnaTeks = '#a3a3a3';
-    const warnaGrid = 'rgba(163,163,163,0.10)';
+    const ringkas = v => {
+        v = Number(v || 0);
+        if (v >= 1000000) return 'Rp ' + (v / 1000000).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' jt';
+        if (v >= 1000) return 'Rp ' + (v / 1000).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + ' rb';
+        return 'Rp ' + v.toLocaleString('id-ID');
+    };
     const uangMasuk = @json($grafikPemasukan);
     const labelTanggal = @json($grafikLabels);
     const jumlahServis = @json($grafikServisJumlah);
@@ -574,141 +578,313 @@ document.addEventListener('DOMContentLoaded', function () {
     const komposisi = @json($grafikMetode);
     const spareparts = @json($grafikSparepartData);
 
-    const tooltipDasar = {
-        backgroundColor: '#262626',
-        titleColor: '#fff',
-        bodyColor: '#e5e5e5',
-        padding: 12,
-        cornerRadius: 9,
-        displayColors: false,
-    };
-    const sumbuAngka = {
-        beginAtZero: true,
-        grid: { color: warnaGrid, drawTicks: false },
-        border: { display: false },
-        ticks: { color: warnaTeks, padding: 10, maxTicksLimit: 6, callback: v => Number(v).toLocaleString('id-ID') }
-    };
-    const sumbuLabel = {
-        grid: { display: false },
-        border: { display: false },
-        ticks: { color: warnaTeks, maxRotation: 0, autoSkip: true, maxTicksLimit: 8, padding: 10 }
-    };
-
-    const tren = document.getElementById('sirakaTrendLaporan');
-    if (tren) {
-        const ctx = tren.getContext('2d');
-        const gradien = ctx.createLinearGradient(0, 0, 0, 310);
-        gradien.addColorStop(0, 'rgba(52,211,153,.27)');
-        gradien.addColorStop(1, 'rgba(52,211,153,0)');
-        new Chart(ctx, {
-            type: 'line',
-            data: { labels: labelTanggal, datasets: [{
-                label: 'Pemasukan', data: uangMasuk, borderColor: '#34d399',
-                backgroundColor: gradien, borderWidth: 2.5, fill: true,
-                tension: 0.36, pointRadius: labelTanggal.length > 35 ? 0 : 2.5,
-                pointHoverRadius: 6, pointBackgroundColor: '#34d399',
-                pointBorderColor: '#171717', pointBorderWidth: 2,
-            }] },
-            options: {
-                responsive: true, maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                plugins: { legend: { display: false }, tooltip: {
-                    ...tooltipDasar,
-                    callbacks: { label: c => 'Pemasukan: ' + rupiah(c.parsed.y) }
-                } },
-                scales: { x: sumbuLabel, y: { ...sumbuAngka, ticks: {
-                    ...sumbuAngka.ticks, callback: v => v >= 1000000 ? (v / 1000000).toLocaleString('id-ID') + ' jt' : v >= 1000 ? (v / 1000).toLocaleString('id-ID') + ' rb' : v
-                } } }
-            }
-        });
+    /* ---------- Deteksi tema dari warna latar kartu yang benar-benar tampil ---------- */
+    const kanvasWarna = document.createElement('canvas');
+    kanvasWarna.width = kanvasWarna.height = 1;
+    const cx = kanvasWarna.getContext('2d', { willReadFrequently: true });
+    function keRgba(teks) {
+        cx.clearRect(0, 0, 1, 1);
+        cx.fillStyle = '#000';
+        cx.fillStyle = teks;
+        cx.fillRect(0, 0, 1, 1);
+        const d = cx.getImageData(0, 0, 1, 1).data;
+        return { r: d[0], g: d[1], b: d[2], a: d[3] / 255 };
     }
-
-    const servis = document.getElementById('sirakaServisBulanan');
-    if (servis) new Chart(servis, {
-        type: 'bar',
-        data: { labels: bulanServis, datasets: [{
-            label: 'Jumlah Servis', data: jumlahServis,
-            backgroundColor: 'rgba(249,115,22,.75)', hoverBackgroundColor: '#fb923c',
-            borderRadius: 7, borderSkipped: false, maxBarThickness: 46,
-            categoryPercentage: .7, barPercentage: .8,
-        }] },
-        options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false }, tooltip: {
-                ...tooltipDasar, callbacks: { label: c => 'Jumlah servis: ' + c.parsed.y.toLocaleString('id-ID') }
-            } },
-            scales: { x: sumbuLabel, y: { ...sumbuAngka, ticks: { ...sumbuAngka.ticks, precision: 0, stepSize: 1 } } }
+    function warnaLatar() {
+        const acuan = document.getElementById('sirakaTrendLaporan');
+        let el = acuan ? acuan.parentElement : document.body;
+        while (el) {
+            const c = keRgba(getComputedStyle(el).backgroundColor);
+            if (c.a > 0.5) return c;
+            el = el.parentElement;
         }
-    });
+        return null;
+    }
+    function modeGelap() {
+        const c = warnaLatar();
+        if (c) return (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255 < 0.5;
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    }
 
-    const donut = document.getElementById('sirakaMetodeLaporan');
-    if (donut) {
-        const namaMetode = Object.keys(komposisi).map(x => x.toUpperCase());
-        const angkaMetode = Object.values(komposisi).map(Number);
-        const punyaData = angkaMetode.some(v => v > 0);
-        new Chart(donut, {
-            type: 'doughnut',
-            data: {
-                labels: punyaData ? namaMetode : ['Belum ada pembayaran'],
-                datasets: [{
-                    data: punyaData ? angkaMetode : [1],
-                    backgroundColor: punyaData ? ['#f97316','#38bdf8','#34d399','#a78bfa'] : ['#404040'],
-                    borderColor: '#171717', borderWidth: 4, hoverOffset: 6, borderRadius: 4,
-                }]
-            },
-            options: {
-                responsive: true, maintainAspectRatio: false, cutout: '73%',
-                plugins: {
-                    legend: { position: 'bottom', labels: {
-                        color: '#d4d4d4', usePointStyle: true, pointStyle: 'circle',
-                        padding: 15, boxWidth: 9, font: { size: 11 }
+    /* ---------- Palet warna grafik untuk tiap tema ---------- */
+    function palet(gelap, kartu) {
+        const tepiKartu = kartu ? `rgb(${kartu.r},${kartu.g},${kartu.b})` : (gelap ? '#171717' : '#ffffff');
+        return gelap ? {
+            teks: '#a3a3a3',
+            teksKuat: '#e5e5e5',
+            grid: 'rgba(163,163,163,0.12)',
+            legend: '#d4d4d4',
+            garisTren: '#34d399',
+            areaAtas: 'rgba(52,211,153,.28)',
+            areaBawah: 'rgba(52,211,153,0)',
+            titikTepi: tepiKartu,
+            batang: 'rgba(249,115,22,.78)',
+            batangHover: '#fb923c',
+            batangUtama: '#fb923c',
+            batangHoverSp: '#fdba74',
+            donut: ['#f97316', '#38bdf8', '#34d399', '#a78bfa'],
+            donutKosong: '#2f2f2f',
+            donutTepi: tepiKartu,
+            tipBg: '#262626', tipJudul: '#ffffff', tipIsi: '#e5e5e5', tipTepi: 'rgba(255,255,255,.08)'
+        } : {
+            teks: '#737373',
+            teksKuat: '#171717',
+            grid: 'rgba(0,0,0,0.07)',
+            legend: '#404040',
+            garisTren: '#059669',
+            areaAtas: 'rgba(5,150,105,.22)',
+            areaBawah: 'rgba(5,150,105,0)',
+            titikTepi: tepiKartu,
+            batang: 'rgba(234,88,12,.85)',
+            batangHover: '#c2410c',
+            batangUtama: '#ea580c',
+            batangHoverSp: '#c2410c',
+            donut: ['#ea580c', '#0284c7', '#059669', '#7c3aed'],
+            donutKosong: '#ececec',
+            donutTepi: tepiKartu,
+            tipBg: '#171717', tipJudul: '#ffffff', tipIsi: '#e5e5e5', tipTepi: 'rgba(0,0,0,.1)'
+        };
+    }
+
+    let grafikAktif = [];
+    const daftar = grafik => { grafikAktif.push(grafik); return grafik; };
+
+    function bangunSemua() {
+        grafikAktif.forEach(g => g.destroy());
+        grafikAktif = [];
+
+        const kartu = warnaLatar();
+        const gelap = modeGelap();
+        const w = palet(gelap, kartu);
+
+        Chart.defaults.color = w.teks;
+        Chart.defaults.borderColor = w.grid;
+
+        const tooltipDasar = {
+            backgroundColor: w.tipBg,
+            titleColor: w.tipJudul,
+            bodyColor: w.tipIsi,
+            borderWidth: 0,
+            padding: 12,
+            cornerRadius: 9,
+            displayColors: false,
+        };
+        const sumbuAngka = {
+            beginAtZero: true,
+            grid: { color: w.grid, drawTicks: false },
+            border: { display: false },
+            ticks: { color: w.teks, padding: 10, maxTicksLimit: 6, callback: v => Number(v).toLocaleString('id-ID') }
+        };
+        const sumbuLabel = {
+            grid: { display: false },
+            border: { display: false },
+            ticks: { color: w.teks, maxRotation: 0, autoSkip: true, maxTicksLimit: 8, padding: 10 }
+        };
+
+        /* Pesan di tengah grafik saat belum ada data */
+        const pesanKosong = teks => ({
+            id: 'pesanKosong',
+            afterDraw(chart) {
+                const ada = chart.data.datasets.some(d => d.data.some(v => Number(v) > 0));
+                if (ada || !chart.chartArea) return;
+                const a = chart.chartArea, c = chart.ctx;
+                c.save();
+                c.fillStyle = w.teks;
+                c.font = '500 13px ' + Chart.defaults.font.family;
+                c.textAlign = 'center';
+                c.textBaseline = 'middle';
+                c.fillText(teks, (a.left + a.right) / 2, (a.top + a.bottom) / 2);
+                c.restore();
+            }
+        });
+
+        /* Tren pemasukan */
+        const tren = document.getElementById('sirakaTrendLaporan');
+        if (tren) {
+            const trenKosong = !uangMasuk.some(v => Number(v) > 0);
+            daftar(new Chart(tren.getContext('2d'), {
+                type: 'line',
+                data: { labels: labelTanggal, datasets: [{
+                    label: 'Pemasukan', data: uangMasuk, borderColor: w.garisTren,
+                    backgroundColor: (ctx) => {
+                        const area = ctx.chart.chartArea;
+                        if (!area) return 'transparent';
+                        const g = ctx.chart.ctx.createLinearGradient(0, area.top, 0, area.bottom);
+                        g.addColorStop(0, w.areaAtas);
+                        g.addColorStop(1, w.areaBawah);
+                        return g;
+                    },
+                    borderWidth: 2.5, fill: true,
+                    tension: 0.36, pointRadius: labelTanggal.length > 35 ? 0 : 2.5,
+                    pointHoverRadius: 6, pointBackgroundColor: w.garisTren,
+                    pointBorderWidth: 0,
+                }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { display: false }, tooltip: {
+                        ...tooltipDasar,
+                        callbacks: { label: c => 'Pemasukan: ' + rupiah(c.parsed.y) }
                     } },
-                    tooltip: { ...tooltipDasar, callbacks: {
-                        label: c => punyaData ? c.label + ': ' + rupiah(c.parsed) : 'Belum ada pembayaran'
-                    } }
+                    scales: { x: sumbuLabel, y: { ...sumbuAngka, suggestedMax: trenKosong ? 100000 : undefined, ticks: {
+                        ...sumbuAngka.ticks, callback: v => v >= 1000000 ? (v / 1000000).toLocaleString('id-ID') + ' jt' : v >= 1000 ? (v / 1000).toLocaleString('id-ID') + ' rb' : v
+                    } } }
+                },
+                plugins: [pesanKosong('Belum ada pemasukan pada periode ini')]
+            }));
+        }
+
+        /* Jumlah servis per bulan */
+        const servis = document.getElementById('sirakaServisBulanan');
+        if (servis) {
+            const servisKosong = !jumlahServis.some(v => Number(v) > 0);
+            daftar(new Chart(servis, {
+                type: 'bar',
+                data: { labels: bulanServis, datasets: [{
+                    label: 'Jumlah Servis', data: jumlahServis,
+                    backgroundColor: w.batang, hoverBackgroundColor: w.batangHover,
+                    borderWidth: 0, borderRadius: 7, borderSkipped: false, maxBarThickness: 46,
+                    categoryPercentage: .7, barPercentage: .8,
+                }] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false }, tooltip: {
+                        ...tooltipDasar, enabled: !servisKosong,
+                        callbacks: { label: c => 'Jumlah servis: ' + c.parsed.y.toLocaleString('id-ID') }
+                    } },
+                    scales: { x: sumbuLabel, y: { ...sumbuAngka, suggestedMax: servisKosong ? 4 : undefined, ticks: { ...sumbuAngka.ticks, precision: 0 } } }
+                },
+                plugins: [pesanKosong('Belum ada servis pada periode ini')]
+            }));
+        }
+
+        /* Komposisi metode pembayaran */
+        const donut = document.getElementById('sirakaMetodeLaporan');
+        if (donut) {
+            const namaAsli = Object.keys(komposisi).map(x => x.toUpperCase());
+            const angkaMetode = Object.values(komposisi).map(Number);
+            const totalMetode = angkaMetode.reduce((a, b) => a + b, 0);
+            const punyaData = totalMetode > 0;
+            const persen = v => (v / totalMetode * 100).toLocaleString('id-ID', { maximumFractionDigits: 1 }) + '%';
+            const namaMetode = namaAsli.map((n, i) => punyaData ? n + ' (' + persen(angkaMetode[i]) + ')' : n);
+
+            const teksTengah = {
+                id: 'teksTengah',
+                afterDraw(chart) {
+                    const a = chart.chartArea;
+                    if (!a) return;
+                    const x = (a.left + a.right) / 2, y = (a.top + a.bottom) / 2, c = chart.ctx;
+                    const fam = Chart.defaults.font.family;
+                    c.save();
+                    c.textAlign = 'center';
+                    c.textBaseline = 'middle';
+                    if (punyaData) {
+                        c.fillStyle = w.teks;
+                        c.font = '500 11px ' + fam;
+                        c.fillText('Total diterima', x, y - 12);
+                        c.fillStyle = w.teksKuat;
+                        c.font = '700 18px ' + fam;
+                        c.fillText(ringkas(totalMetode), x, y + 8);
+                    } else {
+                        c.fillStyle = w.teks;
+                        c.font = '500 12px ' + fam;
+                        c.fillText('Belum ada', x, y - 8);
+                        c.fillText('pembayaran', x, y + 9);
+                    }
+                    c.restore();
                 }
-            }
-        });
+            };
+
+            daftar(new Chart(donut, {
+                type: 'doughnut',
+                data: {
+                    labels: punyaData ? namaMetode : [],
+                    datasets: [{
+                        data: punyaData ? angkaMetode : [1],
+                        backgroundColor: punyaData ? w.donut : [w.donutKosong],
+                        borderWidth: 0, spacing: punyaData && angkaMetode.length > 1 ? 3 : 0,
+                        hoverOffset: punyaData ? 6 : 0, borderRadius: punyaData ? 4 : 0,
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false, cutout: '72%',
+                    layout: { padding: 6 },
+                    plugins: {
+                        legend: { display: punyaData, position: 'bottom', labels: {
+                            color: w.legend, usePointStyle: true, pointStyle: 'circle',
+                            padding: 14, boxWidth: 8, boxHeight: 8, font: { size: 11 }
+                        } },
+                        tooltip: { ...tooltipDasar, enabled: punyaData, callbacks: {
+                            title: () => '',
+                            label: c => namaAsli[c.dataIndex] + ': ' + rupiah(c.parsed) + ' (' + persen(c.parsed) + ')'
+                        } }
+                    }
+                },
+                plugins: [teksTengah]
+            }));
+        }
+
+        /* Sparepart terlaris */
+        const sparepart = document.getElementById('sirakaSparepartLaporan');
+        if (sparepart && spareparts.length) {
+            const lebarLabel = window.innerWidth < 640 ? 18 : 30;
+            const pendekkan = (teks, maks) => teks.length > maks ? teks.slice(0, maks - 1) + '…' : teks;
+            daftar(new Chart(sparepart, {
+                type: 'bar',
+                data: {
+                    labels: spareparts.map(sp => pendekkan(String(sp.nama), lebarLabel)),
+                    datasets: [{
+                        label: 'Jumlah Terjual', data: spareparts.map(sp => sp.unit),
+                        backgroundColor: spareparts.map((_, i) => i === 0 ? w.batangUtama : w.batang),
+                        hoverBackgroundColor: w.batangHoverSp, borderWidth: 0, borderRadius: 6,
+                        borderSkipped: false, maxBarThickness: 24,
+                        categoryPercentage: .75, barPercentage: .85,
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    layout: { padding: { right: 24 } },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { ...tooltipDasar, callbacks: {
+                            title: c => spareparts[c[0].dataIndex].nama,
+                            label: c => [
+                                'Jumlah terjual: ' + spareparts[c.dataIndex].unit.toLocaleString('id-ID'),
+                                'Nilai penjualan: ' + rupiah(spareparts[c.dataIndex].omzet),
+                            ]
+                        } }
+                    },
+                    scales: {
+                        x: { ...sumbuAngka, ticks: { ...sumbuAngka.ticks, precision: 0 } },
+                        y: { ...sumbuLabel, ticks: { ...sumbuLabel.ticks, autoSkip: false, font: { size: 11 } } }
+                    }
+                }
+            }));
+        }
     }
 
-    const sparepart = document.getElementById('sirakaSparepartLaporan');
-    if (sparepart && spareparts.length) {
-        const lebarLabel = window.innerWidth < 640 ? 18 : 30;
-        const pendekkan = (teks, maks) => teks.length > maks ? teks.slice(0, maks - 1) + '…' : teks;
-        new Chart(sparepart, {
-            type: 'bar',
-            data: {
-                labels: spareparts.map(sp => pendekkan(String(sp.nama), lebarLabel)),
-                datasets: [{
-                    label: 'Jumlah Terjual', data: spareparts.map(sp => sp.unit),
-                    backgroundColor: spareparts.map((_, i) => i === 0 ? '#fb923c' : 'rgba(249,115,22,.65)'),
-                    hoverBackgroundColor: '#fdba74', borderRadius: 6,
-                    borderSkipped: false, maxBarThickness: 24,
-                    categoryPercentage: .75, barPercentage: .85,
-                }]
-            },
-            options: {
-                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                layout: { padding: { right: 24 } },
-                plugins: {
-                    legend: { display: false },
-                    tooltip: { ...tooltipDasar, callbacks: {
-                        title: c => spareparts[c[0].dataIndex].nama,
-                        label: c => [
-                            'Jumlah terjual: ' + spareparts[c.dataIndex].unit.toLocaleString('id-ID'),
-                            'Nilai penjualan: ' + rupiah(spareparts[c.dataIndex].omzet),
-                        ]
-                    } }
-                },
-                scales: {
-                    x: { ...sumbuAngka, ticks: { ...sumbuAngka.ticks, precision: 0 } },
-                    y: { ...sumbuLabel, ticks: { ...sumbuLabel.ticks, autoSkip: false, font: { size: 11 } } }
-                }
-            }
-        });
+    /* ---------- Gambar ulang grafik otomatis saat tema diganti ---------- */
+    let tandaTerakhir = '';
+    function tanda() {
+        const c = warnaLatar();
+        return c ? [c.r, c.g, c.b].join(',') : 'x';
     }
+    function periksaTema() {
+        const sekarang = tanda();
+        if (sekarang !== tandaTerakhir) {
+            tandaTerakhir = sekarang;
+            bangunSemua();
+        }
+    }
+    periksaTema();
+    const opsiObserver = { attributes: true, subtree: false };
+    new MutationObserver(() => setTimeout(periksaTema, 60)).observe(document.documentElement, opsiObserver);
+    if (document.body) new MutationObserver(() => setTimeout(periksaTema, 60)).observe(document.body, opsiObserver);
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => setTimeout(periksaTema, 60));
+    setInterval(periksaTema, 600);
 });
 </script>
+
 
 @endpush
 
