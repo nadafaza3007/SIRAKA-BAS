@@ -21,7 +21,8 @@ class RekamServis extends Model
      */
     protected $fillable = [
         'kendaraan_id',
-        'km_akhir',
+        'km_masuk',
+        'km_keluar',
         'keluhan_awal',
         'diagnosa_awal',
         'diagnosa_akhir',
@@ -39,6 +40,7 @@ class RekamServis extends Model
         'sedang_dikerjakan'   => ['Sedang dikerjakan', 'blue'],
         'dikerjakan'          => ['Sedang dikerjakan', 'blue'],
         'proses'              => ['Sedang dikerjakan', 'blue'],
+        'siap_cetak_nota'     => ['Siap cetak nota', 'blue'],
         'selesai'             => ['Selesai', 'green'],
         'dibatalkan'          => ['Dibatalkan', 'red'],
         'batal'               => ['Dibatalkan', 'red'],
@@ -140,9 +142,15 @@ class RekamServis extends Model
             }
         );
 
-        $totalJasa = $this->detailJasas->sum(
-            'harga_saat_transaksi'
-        );
+        // Diskon jasa adalah potongan TOTAL per baris jasa (bukan per unit).
+        
+        $totalJasa = $this->detailJasas->sum(function ($item) {
+            $jumlah = (int) ($item->qty ?? 1);
+            $harga = (float) $item->harga_saat_transaksi;
+
+            return $harga * $jumlah;
+        });
+
 
         return $totalSparepart + $totalJasa;
     }

@@ -17,6 +17,28 @@ class LaporanInspeksi extends Model
         'rating_score' => 'integer',
     ];
 
+    public function getNamaPelangganInspeksiAttribute(): string
+    {
+        return $this->nama_konsumen_inspeksi ?: ($this->konsumen?->nama_lengkap ?? '-');
+    }
+
+    public function getNomorWaPelangganInspeksiAttribute(): ?string
+    {
+        // Pilihan dari master memakai nomor terkini; input bebas memakai nomor snapshot inspeksi.
+        return $this->konsumen_id ? ($this->konsumen?->no_hp ?? $this->no_wa_inspeksi) : $this->no_wa_inspeksi;
+    }
+
+    public function getLinkWhatsappInspeksiAttribute(): ?string
+    {
+        $raw = trim((string)$this->nomor_wa_pelanggan_inspeksi);
+        $digits = preg_replace('/\D+/', '', $raw);
+        if (str_starts_with($digits, '0')) $digits = '62'.substr($digits, 1);
+        elseif (str_starts_with($digits, '8')) $digits = '62'.$digits;
+        if (!preg_match('/^628[0-9]{7,12}$/', $digits)) return null;
+        $pesan = 'Halo '.$this->nama_pelanggan_inspeksi.', berikut informasi laporan inspeksi kendaraan '.$this->nomor_inspeksi.'. Silakan hubungi bengkel untuk memperoleh dokumen laporan.';
+        return 'https://wa.me/'.$digits.'?text='.rawurlencode($pesan);
+    }
+
     public function konsumen(): BelongsTo { return $this->belongsTo(Konsumen::class); }
     public function kendaraan(): BelongsTo { return $this->belongsTo(Kendaraan::class); }
     public function user(): BelongsTo { return $this->belongsTo(User::class); }

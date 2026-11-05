@@ -128,7 +128,7 @@ class DatabaseSeeder extends Seeder
 
         // 7. Sampel Data Rekam Servis 1
         $servis1 = RekamServis::firstOrCreate(
-            ['kendaraan_id' => $kendaraan1->id, 'km_akhir' => 45000],
+            ['kendaraan_id' => $kendaraan1->id, 'km_masuk' => 45000],
             [
                 'keluhan_awal'   => 'Rem bunyi berdecit saat diinjak pada kecepatan tinggi',
                 'diagnosa_awal'  => 'Pengecekan Kampas & Piringan Rem Depan/Belakang',
@@ -142,7 +142,7 @@ class DatabaseSeeder extends Seeder
 
         // 8. Sampel Data Rekam Servis 2
         $servis2 = RekamServis::firstOrCreate(
-            ['kendaraan_id' => $kendaraan2->id, 'km_akhir' => 28000],
+            ['kendaraan_id' => $kendaraan2->id, 'km_masuk' => 28000],
             [
                 'keluhan_awal'   => 'Waktunya servis berkala dan ganti oli mesin',
                 'diagnosa_awal'  => 'Pengantian Oli Mesin & Filter Oli',

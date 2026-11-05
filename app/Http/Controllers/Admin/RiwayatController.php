@@ -73,7 +73,7 @@ class RiwayatController extends Controller
             ->get();
 
         return response()->json($kendaraans->map(function ($k) {
-            $lastKm = $k->rekamServis()->latest('tanggal_servis')->value('km_akhir') ?? 0;
+            $lastKm = $k->rekamServis()->latest('tanggal_servis')->value('km_masuk') ?? 0;
             return [
                 'id' => $k->id,
                 'plat_nomor' => $k->plat_nomor,
@@ -88,4 +88,3 @@ class RiwayatController extends Controller
         }));
     }
 }
-

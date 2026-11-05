@@ -300,7 +300,7 @@
                                 @endif
 
                                 <span class="tabular-nums">
-                                    {{ $km($s->km_akhir) }}
+                                    {{ $km($s->km_masuk) }}
                                 </span>
 
                             </div>
@@ -450,11 +450,23 @@
                                 <div>
 
                                     <dt class="text-xs font-medium text-slate-500">
-                                        Kilometer
+                                        KM Masuk
                                     </dt>
 
                                     <dd class="mt-1 font-medium tabular-nums text-slate-900">
-                                        {{ $km($s->km_akhir) }}
+                                        {{ $s->km_masuk !== null ? $km($s->km_masuk) : '—' }}
+                                    </dd>
+
+                                </div>
+
+                                <div>
+
+                                    <dt class="text-xs font-medium text-slate-500">
+                                        KM Keluar
+                                    </dt>
+
+                                    <dd class="mt-1 font-medium tabular-nums text-slate-900">
+                                        {{ $s->km_keluar !== null ? $km($s->km_keluar) : '—' }}
                                     </dd>
 
                                 </div>
@@ -663,6 +675,16 @@
                     {{-- =================================================
                         REKOMENDASI BENGKEL
                     ================================================== --}}
+                    @if($nota && trim((string) $nota->catatan_nota) !== '')
+                        <section class="mt-8 border-t border-slate-100 pt-6">
+                            <h3 class="font-semibold text-slate-900">Catatan Rekomendasi pada Nota</h3>
+                            <p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">{{ $nota->catatan_nota }}</p>
+                            <p class="mt-2 text-xs font-semibold {{ $nota->status_rekomendasi === 'sudah' ? 'text-emerald-600' : 'text-amber-600' }}">
+                                {{ $nota->status_rekomendasi === 'sudah' ? 'Sudah ditangani' : ($nota->status_rekomendasi === 'belum' ? 'Belum ditangani' : 'Status belum dicatat') }}
+                            </p>
+                        </section>
+                    @endif
+
                     @if ($rekomendasi->isNotEmpty())
 
                         <section class="mt-8 border-t border-slate-100 pt-6">
@@ -751,7 +773,7 @@
                                 class="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-700"
                             >
 
-                                Lihat Rincian & Nota
+                                Lihat Detail Servis
 
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
