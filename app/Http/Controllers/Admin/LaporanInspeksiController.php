@@ -10,6 +10,8 @@ use App\Models\Jasa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use App\Services\InspeksiWhatsAppService;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class LaporanInspeksiController extends Controller
 {
@@ -162,21 +164,95 @@ class LaporanInspeksiController extends Controller
 
     public function show($id)
     {
-    $inspeksi = LaporanInspeksi::with([
-        'konsumen', 
-        'kendaraan', 
-        'user', 
-        'kelistrikan', 
-        'interior', 
-        'kakiKaki',
-        'exterior', 
-        'mesin', 
-        'dokumen', 
-        'estimasi.sparepart', 
-        'estimasi.jasa',
-    ])->findOrFail($id);
-    return view('admin.inspeksi.show', compact('inspeksi'));
+        $inspeksi = LaporanInspeksi::with([
+            'konsumen',
+            'kendaraan',
+            'user',
+            'kelistrikan',
+            'interior',
+            'kakiKaki',
+            'exterior',
+            'mesin',
+            'dokumen',
+            'estimasi.sparepart',
+            'estimasi.jasa',
+        ])->findOrFail($id);
 
+        $riwayatWhatsApp = \App\Models\InspeksiWhatsappDelivery::where(
+            'laporan_inspeksi_id',
+            $inspeksi->id
+        )
+            ->latest()
+            ->get();
+
+        return view(
+            'admin.inspeksi.show',
+            compact('inspeksi', 'riwayatWhatsApp')
+        );
+    }
+
+        /**
+     * Mengirim PDF laporan inspeksi melalui WhatsApp.
+     */
+    public function kirimWhatsApp(
+        $id,
+        InspeksiWhatsAppService $whatsapp
+    ) {
+        $inspeksi = LaporanInspeksi::findOrFail($id);
+
+        try {
+            $whatsapp->kirimPdf($inspeksi);
+
+            return redirect()
+                ->route('admin.inspeksi.show', $inspeksi->id)
+                ->with(
+                    'success',
+                    'PDF laporan inspeksi berhasil dikirim melalui WhatsApp.'
+                );
+
+        } catch (\Throwable $e) {
+
+            return redirect()
+                ->route('admin.inspeksi.show', $inspeksi->id)
+                ->with(
+                    'error',
+                    'Pengiriman PDF gagal: ' . $e->getMessage()
+                );
+        }
+    }
+
+        /**
+     * Cetak PDF laporan inspeksi menggunakan DOMPDF.
+     * Mengikuti mekanisme cetak PDF Rekam Servis.
+     */
+    public function cetakPdf($id)
+    {
+        $inspeksi = LaporanInspeksi::with([
+            'konsumen',
+            'kendaraan',
+            'user',
+            'kelistrikan',
+            'interior',
+            'kakiKaki',
+            'exterior',
+            'mesin',
+            'dokumen',
+            'estimasi.sparepart',
+            'estimasi.jasa',
+        ])->findOrFail($id);
+
+        $nomor = $inspeksi->nomor_inspeksi;
+
+        $namaFile = 'laporan-inspeksi-' .
+            preg_replace('/[^A-Za-z0-9_-]/', '-', $nomor) .
+            '.pdf';
+
+        return Pdf::loadView(
+            'admin.inspeksi.pdf',
+            compact('inspeksi')
+        )
+        ->setPaper('a4', 'portrait')
+        ->stream($namaFile);
     }
 
     public function destroy($id)

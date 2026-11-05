@@ -87,11 +87,11 @@
             @csrf
             <div>
                 <label class="block font-bold mb-1 text-neutral-300">Nama Jasa / Pekerjaan *</label>
-                <input type="text" name="nama_jasa" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="Contoh: Tune Up Mesin">
+                <input type="text" name="nama_jasa" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="Masukkan Nama Jasa / Pekerjaan ">
             </div>
             <div>
                 <label class="block font-bold mb-1 text-neutral-300">Tarif (Rp) *</label>
-                <input type="number" name="harga" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="150000">
+                <input type="number" name="harga" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="Masukkan Tarif (Rp)">
             </div>
             <div class="flex justify-end gap-2 pt-2">
                 <button type="button" onclick="document.getElementById('modalTambahJasa').classList.add('hidden')" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-xl font-bold">Batal</button>

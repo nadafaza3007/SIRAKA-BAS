@@ -4,6 +4,8 @@
 
 {{-- Tampilan kartu detail inspeksi khusus HP; format field dan name tetap. --}}
 <style>
+/* Baris sub-panel: netral, terlihat di tema terang maupun gelap */
+.siraka-row { background: rgba(127,127,127,.10); border: 1px solid rgba(127,127,127,.22); }
 @media (max-width: 639px) {
   [id^="container-"] > .inspeksi-detail-row {
     display: grid;
@@ -11,8 +13,8 @@
     align-items: stretch;
     gap: 10px;
     padding: 12px;
-    background: #0e0e0e;
-    border: 1px solid #303030;
+    background: rgba(127,127,127,.10);
+    border: 1px solid rgba(127,127,127,.30);
   }
   [id^="container-"] > .inspeksi-detail-row > div {
     min-width: 0;
@@ -38,18 +40,18 @@
   #container-kaki_kaki > .inspeksi-detail-row > div:nth-child(3)::before {content: 'Kanan';}
   #container-kaki_kaki > .inspeksi-detail-row > div:nth-child(2)::before,
   #container-kaki_kaki > .inspeksi-detail-row > div:nth-child(3)::before {
-    display:block;color:#aaa;font-size:11px;margin-bottom:5px;
+    display:block;color:#8a8a8a;font-size:11px;margin-bottom:5px;
   }
   [id^="container-"] > .inspeksi-detail-row > div:first-child::before {
-    content:'Komponen'; display:block; color:#aaa; font-size:11px; margin-bottom:5px;
+    content:'Komponen'; display:block; color:#8a8a8a; font-size:11px; margin-bottom:5px;
   }
   #container-dokumen > .inspeksi-detail-row > div:first-child::before {content:'Dokumen';}
   [id^="container-"]:not(#container-kaki_kaki) > .inspeksi-detail-row > div:nth-child(2)::before {
-    content:'Kondisi / Status'; display:block; color:#aaa; font-size:11px; margin-bottom:5px;
+    content:'Kondisi / Status'; display:block; color:#8a8a8a; font-size:11px; margin-bottom:5px;
   }
   [id^="container-"]:not(#container-kaki_kaki) > .inspeksi-detail-row > div:nth-child(3)::before,
   #container-kaki_kaki > .inspeksi-detail-row > div:nth-child(4)::before {
-    content:'Keterangan / Catatan'; display:block; color:#aaa; font-size:11px; margin-bottom:5px;
+    content:'Keterangan / Catatan'; display:block; color:#8a8a8a; font-size:11px; margin-bottom:5px;
   }
 }
 
@@ -67,12 +69,12 @@
 .estimasi-field input { width: 100%; min-width: 0; min-height: 42px; }
 @media (max-width: 1023px) {
     .estimasi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    .estimasi-row { padding: 14px; border: 1px solid #333; background: #101010; }
+    .estimasi-row { padding: 14px; border: 1px solid rgba(127,127,127,.30); background: rgba(127,127,127,.10); }
     .estimasi-row > .estimasi-field:nth-child(-n+3) { grid-column: 1 / -1; }
     .estimasi-row > .estimasi-field:nth-child(4) { grid-column: 1; }
     .estimasi-row > .estimasi-field:nth-child(5) { grid-column: 2; }
     .estimasi-row > .estimasi-hapus { grid-column: 1 / -1; justify-self: end; }
-    .estimasi-label { display: block; margin-bottom: 6px; font-size: 11px; font-weight: 600; color: #a3a3a3; }
+    .estimasi-label { display: block; margin-bottom: 6px; font-size: 11px; font-weight: 600; color: #8a8a8a; }
     .estimasi-field select,
     .estimasi-field input { min-height: 46px; padding: 10px 12px; font-size: 16px; }
     .estimasi-hapus button { min-height: 42px; padding: 0 14px; border: 1px solid #71313b; border-radius: 10px; background: rgba(244,63,94,.1); }
@@ -104,33 +106,33 @@
             </div>
             <div id="boxWaInspeksi" class="md:col-span-2 lg:col-span-3">
                 <label class="mb-1 block text-[10px] font-bold text-neutral-400">Nomor WhatsApp *</label>
-                <input type="tel" name="no_wa_inspeksi" id="waInspeksi" value="{{ old('no_wa_inspeksi') }}" placeholder="Contoh: 081234567890" autocomplete="tel" inputmode="tel" required maxlength="25" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
+                <input type="tel" name="no_wa_inspeksi" id="waInspeksi" value="{{ old('no_wa_inspeksi') }}" placeholder="Masukkan Nomor WhatsApp" autocomplete="tel" inputmode="tel" required maxlength="25" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
             </div>
             <div class="md:col-span-2 lg:col-span-3 text-[11px] font-semibold text-neutral-400">Informasi Kendaraan (Opsional)</div>
             <div>
                 <label class="mb-1 block text-[10px] font-bold text-neutral-400">Plat Nomor</label>
-                <input type="text" name="plat_nomor" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white uppercase" placeholder="B 1234 CD (opsional)">
+                <input type="text" name="plat_nomor" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="Masukkan Plat Nomor">
             </div>
             <div>
                 <label class="mb-1 block text-[10px] font-bold text-neutral-400">Merk</label>
-                <input type="text" name="merk" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="Toyota (opsional)">
+                <input type="text" name="merk" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="Masukkan Merk">
             </div>
             <div>
                 <label class="mb-1 block text-[10px] font-bold text-neutral-400">Tipe / Model</label>
-                <input type="text" name="tipe_model" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="Avanza (opsional)">
+                <input type="text" name="tipe_model" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="Masukkan Tipe / Model">
             </div>
             <div>
                 <label class="mb-1 block text-[10px] font-bold text-neutral-400">Tahun</label>
-                <input type="number" name="tahun" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="2020 (opsional)">
+                <input type="number" name="tahun" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="Masukkan Tahun">
             </div>
             <div>
-                <label class="mb-1 block text-[10px] font-bold text-neutral-400">CC (Liter, cth: 2,2)</label>
-                <input type="text" name="cc" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="2,2 (opsional)">
+                <label class="mb-1 block text-[10px] font-bold text-neutral-400">CC</label>
+                <input type="text" name="cc" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="Masukkan CC, pisahkan dengan koma">
             </div>
             <div>
                 <label class="mb-1 block text-[10px] font-bold text-neutral-400">Transmisi</label>
                 <select name="transmisi" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
-                    <option value="">Pilih (opsional)</option>
+                    <option value="">Pilih Transmisi</option>
                     <option value="manual">Manual</option>
                     <option value="otomatis">Otomatis</option>
                     <option value="cvt">CVT</option>
@@ -148,11 +150,11 @@
             </div>
             <div>
                 <label class="mb-1 block text-[10px] font-bold text-neutral-400">Kilometer (KM)</label>
-                <input type="number" name="km_kendaraan" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="175000 (opsional)">
+                <input type="number" name="km_kendaraan" class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white" placeholder="Masukkan Kilometer (KM)">
             </div>
             <div>
                 <label class="mb-1 block text-[10px] font-bold text-neutral-400">Rating Score (1-10) *</label>
-                <input type="number" name="rating_score" min="1" max="10" value="5" required class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
+                <input type="number" name="rating_score" min="1" max="10" value="10" required class="w-full rounded-xl border border-neutral-700 bg-neutral-800 p-2.5 text-xs text-white">
             </div>
             <div class="grid grid-cols-2 gap-2">
                 <div>
@@ -422,7 +424,7 @@ function addRow(type, komponenName = '', status = 'Baik', keterangan = '') {
 
     if (type === 'kaki_kaki') {
         html = `
-        <div class="inspeksi-detail-row grid grid-cols-12 gap-2 rounded-xl bg-black/20 p-3 items-center">
+        <div class="inspeksi-detail-row grid grid-cols-12 gap-2 siraka-row rounded-xl p-3 items-center">
             <div class="col-span-4">
                 <input type="text" name="${type}[${index}][komponen]" value="${komponenName}" placeholder="Komponen"
                     class="w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">
@@ -455,7 +457,7 @@ function addRow(type, komponenName = '', status = 'Baik', keterangan = '') {
         </div>`;
     } else if (type === 'dokumen') {
         html = `
-        <div class="inspeksi-detail-row grid grid-cols-12 gap-2 rounded-xl bg-black/20 p-3 items-center">
+        <div class="inspeksi-detail-row grid grid-cols-12 gap-2 siraka-row rounded-xl p-3 items-center">
             <div class="col-span-4">
                 <input type="text" name="${type}[${index}][dokumen]" value="${komponenName}" placeholder="Dokumen"
                     class="w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">
@@ -479,7 +481,7 @@ function addRow(type, komponenName = '', status = 'Baik', keterangan = '') {
         </div>`;
     } else {
         html = `
-        <div class="inspeksi-detail-row grid grid-cols-12 gap-2 rounded-xl bg-black/20 p-3 items-center">
+        <div class="inspeksi-detail-row grid grid-cols-12 gap-2 siraka-row rounded-xl p-3 items-center">
             <div class="col-span-4">
                 <input type="text" name="${type}[${index}][komponen]" value="${komponenName}" placeholder="Komponen"
                     class="w-full rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white">
@@ -533,7 +535,7 @@ function addEstimasi() {
     jasas.forEach(j => jasaOptions += `<option value="${j.id}" data-harga="${j.harga}" data-nama="${j.nama_jasa}">${j.nama_jasa}</option>`);
 
     const html = `
-    <div class="estimasi-row estimasi-grid rounded-xl bg-black/20 p-3">
+    <div class="estimasi-row estimasi-grid siraka-row rounded-xl p-3">
         <div class="estimasi-field">
             <label class="estimasi-label">Kategori</label>
             <select name="estimasi[${index}][kategori]" class="kategori-select rounded-lg border border-neutral-700 bg-neutral-800 p-2 text-xs text-white" onchange="toggleEstimasiFields(this)">

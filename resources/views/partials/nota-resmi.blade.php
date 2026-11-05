@@ -1,11 +1,11 @@
-        <article id="printArea"
+        <article id="printArea" data-subtotal="{{ (float) $subtotal }}"
             class="rounded-2xl border border-neutral-300 bg-white p-6 text-neutral-800 sm:p-10
                    {{ $notaAkhir ? 'nota-lunas' : '' }}">
 
             {{-- KOP: logo + nama bengkel (memakai <div>, bukan <header>, agar tidak
                  ikut disembunyikan oleh CSS layout admin saat cetak) --}}
             <div class="nota-kop">
-                <img src="{{ asset('images/logo_bengkel.jpe') }}"
+                <img src="{{ asset('images/logo_bengkel.jpg') }}"
                     alt="Logo Baba Auto Service" class="nota-logo"
                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <div class="nota-logo-cadangan" style="display:none" aria-hidden="true">BAS</div>
@@ -105,7 +105,7 @@
                             </td>
                             @if($bolehEdit)
                                 <td class="no-print text-right">
-                                    <form method="POST" action="{{ route('admin.rekam-servis.sparepart.hapus', [$servis->id, $item->id]) }}">
+                                    <form method="POST" action="{{ route('admin.rekam-servis.sparepart.hapus', [$servis->id, $item->id]) }}" data-ajax-transaksi="hapus-sparepart">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" data-confirm="Hapus sparepart ini dari rincian?" class="font-bold text-rose-600">Hapus</button>
@@ -176,7 +176,7 @@
                             </td>
                             @if($bolehEdit)
                                 <td class="no-print text-right">
-                                    <form method="POST" action="{{ route('admin.rekam-servis.jasa.hapus', [$servis->id, $item->id]) }}">
+                                    <form method="POST" action="{{ route('admin.rekam-servis.jasa.hapus', [$servis->id, $item->id]) }}" data-ajax-transaksi="hapus-jasa">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit" data-confirm="Hapus jasa ini dari rincian?" class="font-bold text-rose-600">Hapus</button>

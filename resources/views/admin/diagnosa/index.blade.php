@@ -80,12 +80,12 @@
             @csrf
             <div>
                 <label class="block font-bold mb-1 text-neutral-300">Kata Kunci Keluhan *</label>
-                <input type="text" name="kata_kunci" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="Contoh: rem, bunyi, decit">
+                <input type="text" name="kata_kunci" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="Masukkan Kata Kunci Keluhan">
                 <span class="text-[10px] text-neutral-500 mt-1 block">Gunakan tanda koma untuk kata kunci jamak.</span>
             </div>
             <div>
                 <label class="block font-bold mb-1 text-neutral-300">Diagnosa Terkait *</label>
-                <input type="text" name="diagnosa_terkait" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="Contoh: Pengecekan Kampas & Piringan Rem">
+                <input type="text" name="diagnosa_terkait" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="Masukkan Diagnosa Terkait">
             </div>
             <div class="flex justify-end gap-2 pt-2">
                 <button type="button" onclick="document.getElementById('modalTambahDiagnosa').classList.add('hidden')" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-xl font-bold">Batal</button>

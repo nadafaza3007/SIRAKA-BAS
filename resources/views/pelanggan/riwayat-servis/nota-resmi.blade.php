@@ -26,7 +26,14 @@
 <div class="mx-auto max-w-5xl space-y-5">
     <div class="no-print flex flex-wrap items-center justify-between gap-3">
         <a href="{{ route('pelanggan.riwayat') }}" class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">&larr; Kembali ke Riwayat</a>
-        <button type="button" onclick="window.print()" class="rounded-lg bg-orange-500 px-5 py-2 text-sm font-bold text-white">Cetak Nota A4</button>
+        <a
+            href="{{ route('pelanggan.nota-pdf', $servis->id) }}"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="rounded-lg bg-orange-500 px-5 py-2 text-sm font-bold text-white"
+        >
+            Cetak Nota PDF
+        </a>
     </div>
     @include('partials.nota-resmi')
 </div>

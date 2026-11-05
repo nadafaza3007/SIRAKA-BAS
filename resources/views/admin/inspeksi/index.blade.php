@@ -1,6 +1,9 @@
 @extends('layouts.admin')
 @section('title', 'Laporan Inspeksi - SIRAKA')
 @section('content')
+<style>
+.siraka-row { background: rgba(127,127,127,.10); }
+</style>
 <div class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
     <div>
         <h2 class="text-xl font-extrabold tracking-tight text-white">
@@ -58,7 +61,7 @@
 <div class="hidden overflow-hidden rounded-2xl border border-neutral-800 bg-ink-900 shadow-sm lg:block">
     <div class="overflow-x-auto">
         <table class="w-full min-w-[950px] text-left text-xs text-neutral-400">
-            <thead class="border-b border-neutral-800 bg-black/40 font-bold uppercase text-neutral-500">
+            <thead class="border-b border-neutral-800 siraka-row font-bold uppercase text-neutral-500">
                 <tr>
                     <th class="p-4">No. Inspeksi</th>
                     <th class="p-4">Tanggal</th>

@@ -23,9 +23,7 @@ use App\Http\Controllers\Admin\DashboardController;
 | Auth & Root Routes
 |--------------------------------------------------------------------------
 */
-Route::get('/', function () {
-    return redirect('/login');
-});
+Route::view('/', 'landing')->name('home');
 
 Route::get('/login', [\App\Http\Controllers\AuthController::class, 'showLogin'])->name('login');
 
@@ -93,6 +91,9 @@ Route::prefix('pelanggan')
             return view('pelanggan.riwayat-servis.nota-resmi', compact('servis', 'nota'));
         })->name('pelanggan.nota-resmi');
 
+        Route::get('/servis/{id}/nota/pdf', [PelangganController::class, 'cetakNotaPdf']
+        )->name('pelanggan.nota-pdf');
+
         // Detail satu rekam servis
         Route::get('/servis/{id}', [PelangganController::class, 'detailServis'])
             ->name('pelanggan.detail-servis');
@@ -145,6 +146,9 @@ Route::prefix('admin')->middleware(['auth', StaffOnlyMiddleware::class])->group(
     Route::post('/rekam-servis/{id}/koreksi', [\App\Http\Controllers\Admin\RekamServisController::class, 'simpanKoreksi'])->name('admin.rekam-servis.koreksi');
 
     Route::get('/rekam-servis/{id}/nota', [\App\Http\Controllers\Admin\RekamServisController::class, 'nota'])->name('admin.rekam-servis.nota');
+
+    // Pratinjau PDF A4 di browser; halaman transaksi dan thermal tetap menggunakan route lama.
+    Route::get('/rekam-servis/{id}/nota/pdf', [\App\Http\Controllers\Admin\RekamServisController::class, 'cetakNotaPdf'])->name('admin.rekam-servis.nota-pdf');
 
     Route::post('/rekam-servis/{id}/sparepart', [\App\Http\Controllers\Admin\DetailNotaSparepartController::class, 'tambah'])->name('admin.rekam-servis.sparepart.tambah');
 
@@ -301,23 +305,52 @@ Route::post(
 
 Route::post('/rekam-servis/{id}/selesaikan', [\App\Http\Controllers\Admin\PenyelesaianServisController::class, 'selesaikan'])->name('admin.rekam-servis.selesaikan');
 
+    
     /*
-|--------------------------------------------------------------------------
-| LAPORAN INSPEKSI KENDARAAN
-|--------------------------------------------------------------------------
-*/
+    |--------------------------------------------------------------------------
+    | LAPORAN INSPEKSI KENDARAAN
+    |--------------------------------------------------------------------------
+    */
 
-// 1. Daftar laporan inspeksi (GET)
-Route::get('/inspeksi', [\App\Http\Controllers\Admin\LaporanInspeksiController::class, 'index'])->name('admin.inspeksi.index');
+    // 1. Daftar laporan inspeksi
+    Route::get(
+        '/inspeksi',
+        [\App\Http\Controllers\Admin\LaporanInspeksiController::class, 'index']
+    )->name('admin.inspeksi.index');
 
-// 2. Form buat inspeksi baru (GET)
-Route::get('/inspeksi/create', [\App\Http\Controllers\Admin\LaporanInspeksiController::class, 'create'])->name('admin.inspeksi.create');
+    // 2. Form inspeksi baru
+    Route::get(
+        '/inspeksi/create',
+        [\App\Http\Controllers\Admin\LaporanInspeksiController::class, 'create']
+    )->name('admin.inspeksi.create');
 
-Route::post('/inspeksi', [\App\Http\Controllers\Admin\LaporanInspeksiController::class, 'store'])->name('admin.inspeksi.store');
+    // 3. Simpan hasil inspeksi
+    Route::post(
+        '/inspeksi',
+        [\App\Http\Controllers\Admin\LaporanInspeksiController::class, 'store']
+    )->name('admin.inspeksi.store');
 
-// 4. Detail inspeksi (GET) - TAMBAHKAN INI
-Route::get('/inspeksi/{id}', [\App\Http\Controllers\Admin\LaporanInspeksiController::class, 'show'])->name('admin.inspeksi.show');
+    // 4. Kirim PDF laporan inspeksi melalui WhatsApp
+    Route::post(
+        '/inspeksi/{id}/kirim-whatsapp',
+        [\App\Http\Controllers\Admin\LaporanInspeksiController::class, 'kirimWhatsApp']
+    )->name('admin.inspeksi.kirim-whatsapp');
 
-// 5. Hapus inspeksi (DELETE)
-Route::delete('/inspeksi/{id}', [\App\Http\Controllers\Admin\LaporanInspeksiController::class, 'destroy'])->name('admin.inspeksi.destroy');
+    // 5. Hapus laporan inspeksi
+    Route::delete(
+        '/inspeksi/{id}',
+        [\App\Http\Controllers\Admin\LaporanInspeksiController::class, 'destroy']
+    )->name('admin.inspeksi.destroy');
+
+    // 6. Detail inspeksi (letakkan terakhir)
+    Route::get(
+        '/inspeksi/{id}',
+        [\App\Http\Controllers\Admin\LaporanInspeksiController::class, 'show']
+    )->name('admin.inspeksi.show');
+
+    // CETAK PDF LAPORAN INSPEKSI (DOMPDF)
+Route::get(
+    '/inspeksi/{id}/cetak-pdf',
+    [\App\Http\Controllers\Admin\LaporanInspeksiController::class, 'cetakPdf']
+)->name('admin.inspeksi.cetak-pdf');
 });

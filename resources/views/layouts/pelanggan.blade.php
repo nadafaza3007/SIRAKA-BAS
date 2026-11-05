@@ -207,7 +207,7 @@
 <body class="min-h-screen bg-page text-main antialiased">
 
     {{-- ================= SIDEBAR DESKTOP ================= --}}
-    <aside class="no-print fixed inset-y-0 left-0 z-30 hidden w-64 flex-col justify-between border-r border-line bg-side lg:flex">
+    <aside class="dark no-print fixed inset-y-0 left-0 z-30 hidden w-64 flex-col justify-between border-r border-neutral-900 bg-side lg:flex">
         <div>
             <div class="flex h-16 items-center gap-3 border-b border-neutral-900 bg-black px-6">
                 <img src="{{ asset('images/logo_bengkel.jpg') }}" alt="Logo SIRAKA" class="h-9 w-9 shrink-0 rounded-lg object-cover">
@@ -259,32 +259,32 @@
 
     <div class="min-w-0 lg:pl-64 flex min-h-screen flex-col">
         {{-- ================= TOPBAR (desktop & mobile, hitam seperti admin) ================= --}}
-        <header class="no-print sticky top-0 z-40 flex h-16 items-center justify-between border-b border-neutral-900 bg-black/95 px-4 backdrop-blur sm:px-6 lg:z-20">
+        <header class="no-print sticky top-0 z-40 flex h-16 items-center justify-between border-b border-line bg-white/95 px-4 backdrop-blur dark:border-neutral-900 dark:bg-black/95 sm:px-6 lg:z-20">
             <a href="{{ route('pelanggan.dashboard') }}" class="flex min-w-0 items-center gap-2.5 lg:hidden">
                 <img src="{{ asset('images/logo_bengkel.jpg') }}" alt="Logo SIRAKA" class="h-8 w-8 rounded-lg object-cover">
                 <span class="min-w-0">
-                    <span class="block text-sm font-extrabold leading-none text-white">SIRAKA</span>
+                    <span class="block text-sm font-extrabold leading-none text-main">SIRAKA</span>
                     <span class="mt-0.5 block text-[9px] font-bold uppercase tracking-wider text-brand-400">Portal Pelanggan</span>
                 </span>
             </a>
-            <div class="hidden text-xs font-bold text-neutral-400 lg:block">Portal Pelanggan <span class="text-brand-500">SIRAKA</span></div>
+            <div class="hidden text-xs font-bold text-muted lg:block">Portal Pelanggan <span class="text-brand-500">SIRAKA</span></div>
 
-            <div class="flex items-center gap-3 text-xs font-bold text-neutral-300">
+            <div class="flex items-center gap-3 text-xs font-bold text-main">
                 <div class="flex items-center gap-2">
-                    <span class="js-theme-label hidden text-xs font-semibold text-neutral-300 sm:inline">Dark</span>
+                    <span class="js-theme-label hidden text-xs font-semibold text-main sm:inline">Dark</span>
                     <label class="theme-switch" title="Ganti tema tampilan">
                         <input type="checkbox" class="js-theme-switch" onchange="toggleSirakaTheme()" aria-label="Ganti Light Mode dan Dark Mode">
                         <span class="theme-slider"></span>
                     </label>
                 </div>
                 <span class="hidden items-center gap-2.5 sm:flex">
-                    <span class="grid h-8 w-8 place-items-center rounded-full border border-neutral-700 bg-neutral-800 text-brand-500">{{ $inisial }}</span>
+                    <span class="grid h-8 w-8 place-items-center rounded-full border border-line bg-surface2 text-brand-500">{{ $inisial }}</span>
                     <span class="hidden max-w-[10rem] truncate md:inline">{{ $pengguna->name ?? 'Pelanggan' }}</span>
                 </span>
                 @if ($bisaKeluar)
                     <form method="POST" action="{{ route('logout') }}" class="lg:hidden">
                         @csrf
-                        <button type="submit" aria-label="Keluar" class="grid h-9 w-9 place-items-center rounded-lg bg-neutral-900 text-neutral-300 transition hover:text-rose-400">
+                        <button type="submit" aria-label="Keluar" class="grid h-9 w-9 place-items-center rounded-lg bg-surface2 text-muted transition hover:text-rose-500">
                             <x-icon name="logout" class="h-4 w-4" />
                         </button>
                     </form>
