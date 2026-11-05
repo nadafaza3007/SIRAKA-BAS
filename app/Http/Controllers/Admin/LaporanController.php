@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class LaporanController extends Controller
 {
@@ -214,6 +215,8 @@ class LaporanController extends Controller
                     . ', kembalian Rp ' . number_format($data['totalKembalian'], 0, ',', '.'),
             ]);
         } catch (\Throwable $e) { report($e); }
-        return view('admin.laporan.cetak', $data);
+        return Pdf::loadView('admin.laporan.cetak', $data)
+            ->setPaper('a4', 'landscape')
+            ->stream('laporan-pemasukan-' . $data['startDate'] . '-sampai-' . $data['endDate'] . '.pdf');
     }
 }
