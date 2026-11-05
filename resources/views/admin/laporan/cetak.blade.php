@@ -2,138 +2,198 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laporan Keuangan & Laba Bersih - SIRAKA ({{ $startDate }} s/d {{ $endDate }})</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Laporan Pemasukan SIRAKA — {{ $startDate }} s.d. {{ $endDate }}</title>
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        @media print {
-            .no-print { display: none !important; }
-            body { background: white !important; color: black !important; padding: 0 !important; }
-            @page { margin: 1.5cm; }
-        }
+        @page { size: A4 landscape; margin: 12mm; }
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 0; color: #222; background: #fff; font: 10px DejaVu Sans, sans-serif; }
+        .actions { display: none !important; }
+        .paper { width: 100%; margin: 0; padding: 0; background: #fff; }
+        /* Satu blok judul: brand sebagai identitas, judul laporan sebagai fokus */
+        .report-header { text-align: center; border-bottom: 1.5px solid #222; padding-bottom: 11px; margin-bottom: 17px; }
+        .report-header .brand { font-size: 9px; font-weight: bold; letter-spacing: 1px; color: #555; margin: 0 0 5px; }
+        .report-header h1 { margin: 0 0 7px; font-size: 17px; line-height: 1.25; text-transform: uppercase; }
+        .report-header .periode { margin: 0 0 5px; font-size: 10px; color: #333; }
+        .report-header .metadata { margin: 0; font-size: 8px; color: #666; }
+        .section { margin-top: 18px; page-break-inside: auto; }
+        .section h3 { margin: 0 0 8px; font-size: 10px; text-transform: uppercase; page-break-after: avoid; }
+        .note { color: #555; font-size: 8px; line-height: 1.45; margin: 6px 0 0; }
+        .table-wrap { width: 100%; overflow: visible; }
+        table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 7px; }
+        thead { display: table-header-group; }
+        tfoot { display: table-footer-group; }
+        tr { page-break-inside: avoid; }
+        th, td { border: 1px solid #bbb; padding: 4px 3px; vertical-align: top; overflow-wrap: break-word; word-wrap: break-word; }
+        th { background: #eee; text-align: left; font-weight: bold; }
+        .num { text-align: right; white-space: normal; }
+        .total td { font-weight: bold; background: #f4f4f4; }
+        .muted { color: #555; }
+        .signature { margin-top: 28px; text-align: right; page-break-inside: avoid; }
+        .signature > div { display: inline-block; text-align: center; width: 210px; line-height: 1.6; }
+        .signature .signline { margin-top: 50px; border-top: 1px solid #222; padding-top: 3px; }
     </style>
 </head>
-<body class="bg-neutral-100 text-neutral-800 p-6 sm:p-10 text-xs">
+<body>
+@php
+    $rp = fn ($n) => 'Rp ' . number_format((float) $n, 0, ',', '.');
+    $sumTop = (object) [
+        'unit' => $sparepartTerlaris->sum('unit_terjual'),
+        'omzet' => $sparepartTerlaris->sum('omzet'),
+        'modal' => $sparepartTerlaris->sum('modal'),
+        'laba' => $sparepartTerlaris->sum('laba_kotor'),
+    ];
+@endphp
 
-    <!-- Action Toolbar (Hidden When Printed) -->
-    <div class="max-w-4xl mx-auto mb-6 flex items-center justify-between no-print bg-white p-4 rounded-2xl shadow-sm border border-neutral-200">
-        <a href="{{ route('admin.laporan.index') }}" class="inline-flex items-center gap-2 font-bold text-neutral-600 hover:text-neutral-900">
-            <i class="fa-solid fa-arrow-left"></i>
-            <span>Kembali ke Panel Laporan</span>
-        </a>
-        <button onclick="window.print()" class="px-5 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-extrabold shadow flex items-center gap-2 transition">
-            <i class="fa-solid fa-print"></i>
-            <span>Cetak / Unduh PDF</span>
-        </button>
+
+
+<main class="paper">
+    <div class="report-header">
+        <p class="brand">BABA AUTO SERVICE &bull; SIRAKA</p>
+        <h1>Laporan Pemasukan Bengkel</h1>
+        <p class="periode">Periode {{ \Carbon\Carbon::parse($startDate)->locale('id')->translatedFormat('d F Y') }} s.d. {{ \Carbon\Carbon::parse($endDate)->locale('id')->translatedFormat('d F Y') }}</p>
+        <p class="metadata">Dicetak: {{ now()->format('d/m/Y H:i') }} &nbsp; | &nbsp; Petugas: {{ auth()->user()->name ?? '-' }}</p>
     </div>
 
-    <!-- Paper Sheet Document (UC-13) -->
-    <div class="max-w-4xl mx-auto bg-white p-8 sm:p-12 rounded-2xl shadow-sm border border-neutral-200">
-        <!-- Kop Surat Bengkel -->
-        <div class="flex items-center justify-between pb-6 border-b-2 border-neutral-800 mb-6">
-            <div>
-                <h1 class="text-2xl font-black tracking-wider text-neutral-900">BABA AUTO SERVICE</h1>
-                <p class="text-xs font-bold text-orange-600 uppercase tracking-widest mt-0.5">SISTEM INFORMASI REKAM KENDARAAN & ADMINISTRASI (SIRAKA)</p>
-                <p class="text-[11px] text-neutral-500 mt-1">Jl. H.R. Soebrantas No. 88, Panam, Kota Pekanbaru, Riau &bull; WhatsApp: 0812-3456-7890</p>
-            </div>
-            <div class="text-right">
-                <span class="px-3 py-1 rounded bg-neutral-100 text-neutral-700 font-extrabold text-[11px] uppercase tracking-wider block mb-1">
-                    LAPORAN RESMI
-                </span>
-                <span class="text-[11px] text-neutral-500">Dicetak: {{ date('d/m/Y H:i') }}</span>
-                <span class="text-[10px] text-neutral-400 block">Oleh: {{ auth()->user()->name }}</span>
-            </div>
+    <section class="section">
+        <h3>A. Rekapitulasi Keuangan</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr><th>Uraian</th><th class="num" style="width: 23%;">Jumlah</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Penerimaan servis (suku cadang dan jasa, termasuk cicilan)</td><td class="num">{{ $rp($pendapatanKotor) }}</td></tr>
+                    <tr><td>Tips pelanggan</td><td class="num">{{ $rp($totalTips) }}</td></tr>
+                    <tr class="total"><td>Total pemasukan</td><td class="num">{{ $rp($totalPemasukan) }}</td></tr>
+                    <tr><td>Modal suku cadang pada nota yang menerima pembayaran dalam periode</td><td class="num">{{ $rp($totalModalSparepart) }}</td></tr>
+                </tbody>
+            </table>
         </div>
+        <p class="note">
+            Uang diterima: {{ $rp($totalUangDiterima) }}; kembalian: {{ $rp($totalKembalian) }}.
+            Total pemasukan mencakup penerimaan servis dan tips. Modal suku cadang dihitung sekali per nota yang mempunyai pembayaran dalam periode,
+            bukan pengeluaran kas pembelian suku cadang pada periode tersebut. Laporan ini tidak menghitung laba bersih bengkel.
+        </p>
+    </section>
 
-        <!-- Judul Laporan -->
-        <div class="text-center mb-6">
-            <h2 class="text-base font-extrabold uppercase tracking-wide text-neutral-900">Laporan Rekapitulasi Pendapatan & Laba/Rugi Bersih</h2>
-            <p class="text-xs text-neutral-600 mt-1">
-                Periode: <strong class="text-neutral-900">{{ \Carbon\Carbon::parse($startDate)->translatedFormat('d F Y') }}</strong> s/d <strong class="text-neutral-900">{{ \Carbon\Carbon::parse($endDate)->translatedFormat('d F Y') }}</strong>
-            </p>
-        </div>
-
-        <!-- 3 Kotak Ringkasan Metrik -->
-        <div class="grid grid-cols-3 gap-4 p-4 rounded-xl bg-neutral-50 border border-neutral-200 mb-6 text-center">
-            <div>
-                <span class="text-[10px] uppercase font-bold text-neutral-500 block">Total Pendapatan Kotor (Omzet)</span>
-                <span class="text-base font-black text-neutral-900 font-mono">Rp {{ number_format($pendapatanKotor, 0, ',', '.') }}</span>
-            </div>
-            <div>
-                <span class="text-[10px] uppercase font-bold text-neutral-500 block">Total Modal Suku Cadang</span>
-                <span class="text-base font-black text-neutral-700 font-mono">Rp {{ number_format($totalModal, 0, ',', '.') }}</span>
-            </div>
-            <div>
-                <span class="text-[10px] uppercase font-bold text-emerald-600 block">Laba / Rugi Bersih</span>
-                <span class="text-base font-black text-emerald-600 font-mono">Rp {{ number_format($labaBersih, 0, ',', '.') }}</span>
-            </div>
-        </div>
-
-        <!-- Tabel Rincian Nota Transaksi -->
-        <table class="w-full text-left border-collapse border border-neutral-300 text-xs mb-8">
-            <thead>
-                <tr class="bg-neutral-100 text-neutral-700 font-bold uppercase text-[10px] tracking-wider">
-                    <th class="border border-neutral-300 p-2.5">No</th>
-                    <th class="border border-neutral-300 p-2.5">No. Nota</th>
-                    <th class="border border-neutral-300 p-2.5">Tanggal</th>
-                    <th class="border border-neutral-300 p-2.5">Konsumen & Plat</th>
-                    <th class="border border-neutral-300 p-2.5 text-right">Modal Part</th>
-                    <th class="border border-neutral-300 p-2.5 text-right">Tagihan (Omzet)</th>
-                    <th class="border border-neutral-300 p-2.5 text-right">Laba Bersih</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($transaksi as $i => $nota)
-                    @php
-                        $m = $nota->totalModalSparepart();
-                        $l = $nota->labaBersih();
-                    @endphp
-                    <tr class="even:bg-neutral-50">
-                        <td class="border border-neutral-300 p-2 text-center">{{ $i + 1 }}</td>
-                        <td class="border border-neutral-300 p-2 font-mono font-bold">{{ $nota->no_nota }}</td>
-                        <td class="border border-neutral-300 p-2">{{ \Carbon\Carbon::parse($nota->tanggal_cetak)->format('d/m/Y') }}</td>
-                        <td class="border border-neutral-300 p-2">
-                            <strong>{{ $nota->rekamServis->kendaraan->plat_nomor ?? '-' }}</strong> - {{ $nota->rekamServis->kendaraan->konsumen->nama_lengkap ?? '-' }}
-                        </td>
-                        <td class="border border-neutral-300 p-2 text-right font-mono">Rp {{ number_format($m, 0, ',', '.') }}</td>
-                        <td class="border border-neutral-300 p-2 text-right font-mono font-bold">Rp {{ number_format($nota->total_biaya, 0, ',', '.') }}</td>
-                        <td class="border border-neutral-300 p-2 text-right font-mono font-bold text-emerald-700">Rp {{ number_format($l, 0, ',', '.') }}</td>
-                    </tr>
-                @empty
+    <section class="section">
+        <h3>B. Rincian Pembayaran ({{ $pembayaran->count() }} Pembayaran)</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
                     <tr>
-                        <td colspan="7" class="border border-neutral-300 p-6 text-center text-neutral-500 italic">Tidak ada transaksi pada periode ini.</td>
+                        <th>Tanggal Bayar</th>
+                        <th>No. Nota</th>
+                        <th>Pelanggan / Plat Nomor</th>
+                        <th>Petugas Penerima</th>
+                        <th>Metode</th>
+                        <th class="num">Untuk Tagihan</th>
+                        <th class="num">Diterima</th>
+                        <th class="num">Kembalian</th>
+                        <th class="num">Tips</th>
+                        <th class="num">Pemasukan</th>
                     </tr>
-                @endforelse
-            </tbody>
-            <tfoot>
-                <tr class="bg-neutral-100 font-black">
-                    <td colspan="4" class="border border-neutral-300 p-2.5 text-right uppercase">Total:</td>
-                    <td class="border border-neutral-300 p-2.5 text-right font-mono">Rp {{ number_format($totalModal, 0, ',', '.') }}</td>
-                    <td class="border border-neutral-300 p-2.5 text-right font-mono text-orange-600">Rp {{ number_format($pendapatanKotor, 0, ',', '.') }}</td>
-                    <td class="border border-neutral-300 p-2.5 text-right font-mono text-emerald-700">Rp {{ number_format($labaBersih, 0, ',', '.') }}</td>
-                </tr>
-            </tfoot>
-        </table>
+                </thead>
+                <tbody>
+                    @forelse($pembayaran as $p)
+                        <tr>
+                            <td>{{ \Carbon\Carbon::parse($p->tanggal_bayar)->format('d/m/Y H:i') }}</td>
+                            <td>{{ $p->no_nota }}</td>
+                            <td>{{ $p->nama_lengkap ?? '-' }}<br><span class="muted">{{ $p->plat_nomor ?? '-' }}</span></td>
+                            <td>{{ $p->petugas_penerima ?? 'Petugas tidak tersedia' }}</td>
+                            <td>{{ strtoupper($p->metode_pembayaran ?? '-') }}</td>
+                            <td class="num">{{ $rp($p->nominal_dialokasikan) }}</td>
+                            <td class="num">{{ $rp($p->jumlah_diterima) }}</td>
+                            <td class="num">{{ $rp($p->kembalian) }}</td>
+                            <td class="num">{{ $rp($p->tips) }}</td>
+                            <td class="num">{{ $rp($p->jumlah_diterima - $p->kembalian) }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="10" style="text-align: center;">Tidak ada pembayaran untuk periode ini.</td></tr>
+                    @endforelse
+                    @if($pembayaran->isNotEmpty())
+                        <tr class="total">
+                            <td colspan="5">TOTAL</td>
+                            <td class="num">{{ $rp($pendapatanKotor) }}</td>
+                            <td class="num">{{ $rp($totalUangDiterima) }}</td>
+                            <td class="num">{{ $rp($totalKembalian) }}</td>
+                            <td class="num">{{ $rp($totalTips) }}</td>
+                            <td class="num">{{ $rp($totalPemasukan) }}</td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+    </section>
 
-        <!-- Lembar Pengesahan / Tanda Tangan -->
-        <div class="flex justify-between items-end pt-8 text-xs">
-            <div class="text-neutral-500 text-[10px]">
-                <p>Dokumen ini diterbitkan secara otomatis oleh Sistem SIRAKA.</p>
-                <p>Arsip operasional resmi Baba Auto Service.</p>
-            </div>
-            <div class="text-center w-52">
-                <p class="text-neutral-600 mb-16">Pekanbaru, {{ \Carbon\Carbon::now()->translatedFormat('d F Y') }}<br><strong class="text-neutral-900">Kepala Bengkel / Owner</strong></p>
-                <div class="border-t border-neutral-800 pt-1 font-bold text-neutral-900">
-                    ( Baba Auto Service )
-                </div>
-            </div>
+    <section class="section">
+        <h3>C. Analisis Penjualan Suku Cadang (10 Terlaris)</h3>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 4%;">No.</th>
+                        <th>Nama Suku Cadang</th>
+                        <th>Jenis</th>
+                        <th class="num">Jumlah Terjual</th>
+                        <th class="num">Jumlah Tagihan</th>
+                        <th class="num">Omzet</th>
+                        <th class="num">Modal</th>
+                        <th class="num">Laba Kotor</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($sparepartTerlaris as $i => $sp)
+                        <tr>
+                            <td>{{ $i + 1 }}</td>
+                            <td>{{ $sp->nama_barang }} @if($sp->kode_barang)<span class="muted">({{ $sp->kode_barang }})</span>@endif</td>
+                            <td>{{ $sp->jenis_label }}</td>
+                            <td class="num">{{ $sp->unit_terjual }}</td>
+                            <td class="num">{{ $sp->frekuensi }}</td>
+                            <td class="num">{{ $rp($sp->omzet) }}</td>
+                            <td class="num">{{ $rp($sp->modal) }}</td>
+                            <td class="num">{{ $rp($sp->laba_kotor) }}</td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="8" style="text-align: center;">Tidak ada penjualan suku cadang pada periode ini.</td></tr>
+                    @endforelse
+                    @if($sparepartTerlaris->isNotEmpty())
+                        <tr class="total">
+                            <td colspan="3">Total 10 teratas</td>
+                            <td class="num">{{ $sumTop->unit }}</td>
+                            <td></td>
+                            <td class="num">{{ $rp($sumTop->omzet) }}</td>
+                            <td class="num">{{ $rp($sumTop->modal) }}</td>
+                            <td class="num">{{ $rp($sumTop->laba) }}</td>
+                        </tr>
+                        <tr class="total">
+                            <td colspan="3">Seluruh suku cadang periode ini</td>
+                            <td class="num">{{ $ringkasanSparepart->unit_terjual }}</td>
+                            <td></td>
+                            <td class="num">{{ $rp($ringkasanSparepart->omzet) }}</td>
+                            <td class="num">{{ $rp($ringkasanSparepart->modal) }}</td>
+                            <td class="num">{{ $rp($ringkasanSparepart->laba_kotor) }}</td>
+                        </tr>
+                    @endif
+                </tbody>
+            </table>
+        </div>
+        <p class="note">
+            Nilai penjualan suku cadang berasal dari tagihan yang diterbitkan dalam periode, termasuk tagihan yang belum lunas. Diskon nota dialokasikan secara proporsional.
+            Pada periode tanggal servis yang sama terdapat {{ $ringkasanBelumLunas->unit }} suku cadang terpakai dalam
+            {{ $ringkasanBelumLunas->jumlah_servis }} servis belum lunas
+            (nilai sebelum diskon {{ $rp($ringkasanBelumLunas->nilai) }}).
+        </p>
+    </section>
+
+    <div class="signature">
+        <div>
+            Pekanbaru, {{ now()->locale('id')->translatedFormat('d F Y') }}<br>
+            Kepala Bengkel / Owner
+            <div class="signline">Baba Auto Service</div>
         </div>
     </div>
-
+</main>
 </body>
 </html>
