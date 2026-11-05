@@ -128,6 +128,7 @@
     </section>
 
     <section class="section">
+
         <h3>C. Analisis Penjualan Suku Cadang (10 Terlaris)</h3>
         <div class="table-wrap">
             <table>
