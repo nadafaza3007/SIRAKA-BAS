@@ -14,6 +14,14 @@ class DetailNotaSparepartController extends Controller
 {
     public function tambah($id, Request $request)
     {
+    // Form mengirim persen berformat Indonesia (mis. "11,36"); ubah ke titik
+    // agar lolos validasi numeric.
+    if ($request->filled('diskon_persen')) {
+        $request->merge([
+            'diskon_persen' => str_replace(',', '.', (string) $request->input('diskon_persen')),
+        ]);
+    }
+
     $data = $request->validate([
         'sparepart_id' => ['required', 'exists:spareparts,id'],
         'qty' => ['required', 'integer', 'min:1', 'max:999'],
@@ -140,8 +148,20 @@ class DetailNotaSparepartController extends Controller
                     'qty' => 'Stok tidak mencukupi. Tersedia ' . $sparepart->stok . '.',
                 ]);
             }
+            // Persen diskon tetap; nominal dihitung ulang mengikuti qty baru
+            // agar tidak basi dan tetap sama dengan persen yang tersimpan.
+            $brutoBaru = (float) $detail->harga_jual_saat_transaksi * $qtyBaru;
+            $diskonNominalBaru = min(
+                round($brutoBaru * (float) $detail->diskon_persen / 100),
+                $brutoBaru
+            );
+
             DB::table('detail_spareparts')->where('id', $detail->id)
-                ->update(['qty' => $qtyBaru, 'updated_at' => now()]);
+                ->update([
+                    'qty' => $qtyBaru,
+                    'diskon_nominal' => $diskonNominalBaru,
+                    'updated_at' => now(),
+                ]);
             if ($sparepart->isBarangStok()) {
                 if ($selisih > 0) {
                     $sparepart->decrement('stok', $selisih);
