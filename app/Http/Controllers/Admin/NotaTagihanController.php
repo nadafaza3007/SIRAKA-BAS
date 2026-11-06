@@ -33,6 +33,14 @@ class NotaTagihanController extends Controller
             403
         );
 
+        // Persen dari form berformat Indonesia (mis. "11,36"); ubah ke titik
+        // agar lolos validasi numeric.
+        if ($request->filled('diskon_persen_total')) {
+            $request->merge([
+                'diskon_persen_total' => str_replace(',', '.', (string) $request->input('diskon_persen_total')),
+            ]);
+        }
+
         $data = $request->validate([
             'diskon_persen_total' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'diskon_nominal_total' => ['nullable', 'string'],
