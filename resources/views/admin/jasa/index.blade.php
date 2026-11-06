@@ -91,7 +91,15 @@
             </div>
             <div>
                 <label class="block font-bold mb-1 text-neutral-300">Tarif (Rp) *</label>
-                <input type="number" name="harga" required class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500" placeholder="Masukkan Tarif (Rp)">
+                <input
+                    type="text"
+                    id="harga_display"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    required
+                    class="w-full p-2.5 bg-neutral-800/60 border border-neutral-700 text-white placeholder-neutral-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                    placeholder="Masukkan Tarif (Rp)">
+                <input type="hidden" name="harga" id="harga">
             </div>
             <div class="flex justify-end gap-2 pt-2">
                 <button type="button" onclick="document.getElementById('modalTambahJasa').classList.add('hidden')" class="px-4 py-2 bg-neutral-800 hover:bg-neutral-700 text-neutral-200 rounded-xl font-bold">Batal</button>
@@ -100,4 +108,24 @@
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const hargaDisplay = document.getElementById('harga_display');
+    const hargaInput = document.getElementById('harga');
+
+    if (!hargaDisplay || !hargaInput) return;
+
+    hargaDisplay.addEventListener('input', function () {
+        // Ambil angka saja
+        let angka = this.value.replace(/\D/g, '');
+
+        // Format pemisah ribuan menggunakan titik
+        this.value = angka.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+
+        // Nilai asli untuk dikirim ke database
+        hargaInput.value = angka;
+    });
+});
+</script>
 @endsection
