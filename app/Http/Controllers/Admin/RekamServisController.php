@@ -20,14 +20,15 @@ use Barryvdh\DomPDF\Facade\Pdf;
  */
 class RekamServisController extends Controller
 {
-    public function index()
+        public function index()
     {
         $servis = RekamServis::with([
             'kendaraan',
             'kendaraan.konsumen',
             'nota',
         ])
-            ->latest()
+            ->orderByDesc('tanggal_servis')
+            ->orderByDesc('id')
             ->get();
 
         return view('admin.rekam-servis.index', compact('servis'));
