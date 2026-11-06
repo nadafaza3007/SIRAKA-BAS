@@ -16,6 +16,14 @@ class DetailNotaJasaController extends Controller
     {
         abort_unless(in_array(auth()->user()->role, ['admin', 'anggota'], true), 403);
 
+        // Form mengirim persen berformat Indonesia (mis. "11,36"); ubah ke titik
+        // agar lolos validasi numeric.
+        if ($request->filled('diskon_persen')) {
+            $request->merge([
+                'diskon_persen' => str_replace(',', '.', (string) $request->input('diskon_persen')),
+            ]);
+        }
+
         $data = $request->validate([
             'jasa_id' => ['required', 'exists:jasas,id'],
             'harga_custom' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
