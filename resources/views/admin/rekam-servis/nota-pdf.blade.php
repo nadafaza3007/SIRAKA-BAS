@@ -58,10 +58,14 @@ foreach ($detailJasas as $item) {
     $totalDiskon += $diskonNominal;
 }
 
-    // Subtotal sebelum diskon; total item di atas sudah memperhitungkan diskon.
-    $subTotal = $totalSparepart + $totalJasa + $totalDiskon;
+        // Samakan dengan tampilan nota di layar:
+    // sub total = harga kotor, diskon = diskon total pada tagihan.
+    $subTotal = (float) $servis->subtotal();
+    $totalDiskon = (float) ($nota->diskon ?? 0);
 
-    $totalTagihan = (float) ($nota->total_biaya ?? ($subTotal - $totalDiskon));
+    $totalTagihan = $nota
+        ? (float) $nota->total_biaya
+        : max(0, $subTotal - $totalDiskon);
     $totalDibayar = $nota ? (float) $nota->pembayaran->sum('nominal_dialokasikan') : 0;
     $sisaTagihan = max(0, $totalTagihan - $totalDibayar);
 

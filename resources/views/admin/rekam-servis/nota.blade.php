@@ -331,14 +331,28 @@
                             'sending' => 'Sedang dikirim',
                             default => 'Menunggu',
                         };
+                        $kartuClass = match($riwayat->status) {
+                            'sent'    => 'border-emerald-500/30 border-l-emerald-500 bg-emerald-500/10',
+                            'failed'  => 'border-rose-500/30 border-l-rose-500 bg-rose-500/10',
+                            'sending' => 'border-amber-500/30 border-l-amber-500 bg-amber-500/10',
+                            default   => 'border-neutral-700 border-l-neutral-500 bg-neutral-800',
+                        };
+
+                        $ikonStatus = match($riwayat->status) {
+                            'sent'    => 'fa-circle-check text-emerald-500',
+                            'failed'  => 'fa-circle-xmark text-rose-500',
+                            'sending' => 'fa-spinner fa-spin text-amber-500',
+                            default   => 'fa-clock text-neutral-500',
+                        };
                     @endphp
 
-                    <div class="rounded-xl border border-neutral-700 bg-neutral-800/60 p-4">
+                    <div class="rounded-xl border border-l-4 {{ $kartuClass }} p-4">
 
                         <div class="flex flex-wrap items-center justify-between gap-3">
 
                             <div>
                                 <p class="text-sm font-bold text-white">
+                                    <i class="fa-solid {{ $ikonStatus }} mr-1.5"></i>
                                     {{ $namaJenis }}
                                 </p>
 
@@ -368,7 +382,7 @@
                             @endif
 
                             @if($riwayat->error_message)
-                                <div class="mt-3 rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-rose-300">
+                                <div class="mt-3 rounded-lg border border-rose-500/20 bg-rose-500/5 p-3 text-rose-400">
                                     <p class="font-bold">
                                         Keterangan kegagalan:
                                     </p>
