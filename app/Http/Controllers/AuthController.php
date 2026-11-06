@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\DB;
 use App\Models\User;
 use App\Models\Konsumen;
 use Illuminate\Http\Request;
@@ -217,19 +218,26 @@ class AuthController extends Controller
         ]);
     }
 
-    // MEMPERTAHANKAN alur lama. PERINGATAN: pencocokan nomor saja belum
-    // membuktikan kepemilikan akun. Perlu OTP/verifikasi sebelum data
-    // kendaraan dan riwayat servis boleh diakses.
-    $konsumen = Konsumen::whereIn('no_hp', $variasiNomor)->first();
+        // Catatan: pencocokan nomor saja belum membuktikan kepemilikan akun.
+    // Pengembangan lanjutan: verifikasi OTP WhatsApp sebelum data lama dibuka.
+    DB::transaction(function () use ($request, $nomorNormal, $variasiNomor) {
+        // Pakai konsumen lama kalau nomornya sudah ada, kalau belum buat baru
+        $konsumen = Konsumen::whereIn('no_hp', $variasiNomor)->first()
+            ?? Konsumen::create([
+                'nama_lengkap' => trim($request->nama_lengkap),
+                'no_hp'        => $nomorNormal,
+                'status'       => 'aktif',
+            ]);
 
-    User::create([
-        'name'        => trim($request->nama_lengkap),
-        'username'    => strtolower(trim($request->username)),
-        'no_hp'       => $nomorNormal,
-        'role'        => 'pelanggan',
-        'konsumen_id' => $konsumen ? $konsumen->id : null,
-        'password'    => bcrypt($request->password),
-    ]);
+        User::create([
+            'name'        => trim($request->nama_lengkap),
+            'username'    => strtolower(trim($request->username)),
+            'no_hp'       => $nomorNormal,
+            'role'        => 'pelanggan',
+            'konsumen_id' => $konsumen->id,
+            'password'    => bcrypt($request->password),
+        ]);
+    });
 
     /*
     |--------------------------------------------------------------------------
