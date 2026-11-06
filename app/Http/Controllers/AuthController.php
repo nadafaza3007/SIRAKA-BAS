@@ -184,7 +184,7 @@ class AuthController extends Controller
             'required',
             'string',
             'confirmed',
-            Password::min(12)->max(128)->uncompromised(),
+            Password::min(8)->max(128)->uncompromised(),
         ],
     ], [
         'nama_lengkap.required' => 'Nama lengkap wajib diisi.',
@@ -197,7 +197,7 @@ class AuthController extends Controller
         'no_hp.regex'           => 'Masukkan nomor HP Indonesia yang valid.',
         'no_hp.unique'          => 'Nomor HP sudah terdaftar. Silakan masuk menggunakan akun tersebut.',
         'password.required'     => 'Kata sandi wajib diisi.',
-        'password.min'          => 'Kata sandi minimal 12 karakter.',
+        'password.min'          => 'Kata sandi minimal 8 karakter.',
         'password.max'          => 'Kata sandi maksimal 128 karakter.',
         'password.uncompromised' => 'Kata sandi ini tidak aman karena pernah ditemukan dalam kebocoran data. Gunakan kata sandi lain.',
         'password.confirmed'    => 'Konfirmasi kata sandi tidak cocok.',
