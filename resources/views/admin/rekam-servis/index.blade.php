@@ -67,14 +67,15 @@
                         | Tahap ditentukan dari data nyata, bukan hanya kolom status:
                         | menunggu -> dikerjakan -> menunggu pembayaran -> data akhir -> selesai
                         */
-                        $tahap = match (true) {
-                            // Lunas = seluruh transaksi selesai (termasuk data lama)
-                            $nota && $nota->status_pembayaran === 'lunas'          => 'selesai',
-                            // Data akhir sudah disimpan, tinggal pembayaran
-                            $nota && $item->status === 'selesai'
-                                  && $item->km_keluar !== null                     => 'pembayaran',
-                            // Tagihan terbit, data akhir belum diisi
-                            (bool) $nota                                           => 'data_akhir',
+                                                $tahap = match (true) {
+                            // Lunas dan data akhir sudah diisi (termasuk data lama) = selesai
+                            $nota && $nota->status_pembayaran === 'lunas'
+                                  && $item->status === 'selesai'                   => 'selesai',
+                            // Sudah lunas, tinggal melengkapi data akhir
+                            $nota && $nota->status_pembayaran === 'lunas'          => 'data_akhir',
+                            // Tagihan terbit tapi belum lunas (belum bayar / DP).
+                            // Data akhir tetap bisa diisi dari halaman yang sama.
+                            (bool) $nota                                           => 'pembayaran',
                             // Data lama yang selesai tanpa nota
                             $item->status === 'selesai'                            => 'selesai',
                             $item->status === 'menunggu_pengerjaan'                => 'menunggu',
