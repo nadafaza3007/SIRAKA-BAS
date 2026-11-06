@@ -21,8 +21,8 @@ class DetailJasa extends Model
         return $this->belongsTo(RekamServis::class, 'rekam_servis_id');
     }
 
-    public function jasa(): BelongsTo
+        public function jasa(): BelongsTo
     {
-        return $this->belongsTo(Jasa::class, 'jasa_id');
+        return $this->belongsTo(Jasa::class, 'jasa_id')->withTrashed();
     }
 }
