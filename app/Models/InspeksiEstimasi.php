@@ -20,7 +20,7 @@ class InspeksiEstimasi extends Model
         return $this->belongsTo(Sparepart::class);
     }
     public function jasa(): BelongsTo {
-        return $this->belongsTo(Jasa::class);
+        return $this->belongsTo(Jasa::class)->withTrashed();
     }
     public function getTotalAttribute(): float {
         return ($this->harga_part * $this->qty) + $this->harga_jasa;

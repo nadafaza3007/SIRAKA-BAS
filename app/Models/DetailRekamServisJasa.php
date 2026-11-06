@@ -12,6 +12,6 @@ class DetailRekamServisJasa extends Model
 
     public function jasa()
     {
-        return $this->belongsTo(Jasa::class, 'jasa_id');
+        return $this->belongsTo(Jasa::class, 'jasa_id')->withTrashed();
     }
 }
